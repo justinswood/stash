@@ -5,6 +5,7 @@ import * as GQL from "src/core/generated-graphql";
 import { useFindSavedFilter } from "src/core/StashService";
 import { useConfigurationContext } from "src/hooks/Config";
 import { ListFilterModel } from "src/models/list-filter/filter";
+import { applyHideMaleTransPerformers } from "src/core/performers";
 import { GalleryRecommendationRow } from "../Galleries/GalleryRecommendationRow";
 import { ImageRecommendationRow } from "../Images/ImageRecommendationRow";
 import { GroupRecommendationRow } from "../Groups/GroupRecommendationRow";
@@ -107,6 +108,8 @@ const SavedFilterResults: React.FC<ISavedFilterResults> = ({
 }) => {
   const { configuration: config } = useConfigurationContext();
   const { loading, data } = useFindSavedFilter(savedFilterID.toString());
+  const showMaleTransPerformers =
+    config?.ui?.showMaleTransPerformers ?? true;
 
   const filter = useMemo(() => {
     if (!data?.findSavedFilter) return;
@@ -117,8 +120,12 @@ const SavedFilterResults: React.FC<ISavedFilterResults> = ({
     ret.currentPage = 1;
     ret.configureFromSavedFilter(data.findSavedFilter);
     ret.randomSeed = -1;
+
+    if (!showMaleTransPerformers && mode === GQL.FilterMode.Performers) {
+      applyHideMaleTransPerformers(ret);
+    }
     return ret;
-  }, [data?.findSavedFilter, config]);
+  }, [data?.findSavedFilter, config, showMaleTransPerformers]);
 
   if (loading || !data?.findSavedFilter || !filter) {
     return <></>;
@@ -138,6 +145,8 @@ const CustomFilterResults: React.FC<ICustomFilterProps> = ({
 }) => {
   const { configuration: config } = useConfigurationContext();
   const intl = useIntl();
+  const showMaleTransPerformers =
+    config?.ui?.showMaleTransPerformers ?? true;
 
   const filter = useMemo(() => {
     const itemsPerPage = 25;
@@ -147,8 +156,15 @@ const CustomFilterResults: React.FC<ICustomFilterProps> = ({
     ret.itemsPerPage = itemsPerPage;
     ret.currentPage = 1;
     ret.randomSeed = -1;
+
+    if (
+      !showMaleTransPerformers &&
+      customFilter.mode === GQL.FilterMode.Performers
+    ) {
+      applyHideMaleTransPerformers(ret);
+    }
     return ret;
-  }, [customFilter, config]);
+  }, [customFilter, config, showMaleTransPerformers]);
 
   const header = customFilter.message
     ? intl.formatMessage(

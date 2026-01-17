@@ -504,6 +504,13 @@ export const SettingsInterfacePanel: React.FC = PatchComponent(
             checked={ui.showLinksOnPerformerCard ?? undefined}
             onChange={(v) => saveUI({ showLinksOnPerformerCard: v })}
           />
+          <BooleanSetting
+            id="show-male-trans-performers"
+            headingID="config.ui.performer_list.options.show_male_trans_performers.heading"
+            subHeadingID="config.ui.performer_list.options.show_male_trans_performers.description"
+            checked={ui.showMaleTransPerformers ?? true}
+            onChange={(v) => saveUI({ showMaleTransPerformers: v })}
+          />
         </SettingSection>
 
         <SettingSection headingID="config.ui.image_wall.heading">
