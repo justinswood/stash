@@ -26,9 +26,11 @@ import {
   faBars,
   faChartColumn,
   faFilm,
-  faHeart,
+  faHardDrive,
   faImage,
   faImages,
+  faClock,
+  faSearch,
   faMapMarkerAlt,
   faPlayCircle,
   faQuestionCircle,
@@ -40,6 +42,13 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { baseURL } from "src/core/createClient";
 import { PatchComponent } from "src/patch";
+import { mutateMetadataScan } from "src/core/StashService";
+import { useToast } from "src/hooks/Toast";
+import { withoutTypename } from "src/utils/data";
+import * as GQL from "src/core/generated-graphql";
+import { queryFindPerformersForSelect } from "src/core/StashService";
+import { ListFilterModel } from "src/models/list-filter/filter";
+import { useDebounce } from "src/hooks/debounce";
 
 interface IMenuItem {
   name: string;
@@ -86,9 +95,9 @@ const messages = defineMessages({
     id: "sceneTagger",
     defaultMessage: "Scene Tagger",
   },
-  donate: {
-    id: "donate",
-    defaultMessage: "Donate",
+  recents: {
+    id: "recents",
+    defaultMessage: "Recents",
   },
   statistics: {
     id: "statistics",
@@ -183,6 +192,7 @@ export const MainNavbar: React.FC = () => {
   const location = useLocation();
   const { configuration } = useConfigurationContext();
   const { openManual } = React.useContext(ManualStateContext);
+  const Toast = useToast();
 
   const [expanded, setExpanded] = useState(false);
 
@@ -292,26 +302,180 @@ export const MainNavbar: React.FC = () => {
   }
 
   const handleDismiss = useCallback(() => setExpanded(false), [setExpanded]);
+  const [performerQuery, setPerformerQuery] = useState("");
+  const [performerResults, setPerformerResults] = useState<
+    GQL.FindPerformersForSelectQuery["findPerformers"]["performers"]
+  >([]);
+  const [performerLoading, setPerformerLoading] = useState(false);
+  const [showPerformerResults, setShowPerformerResults] = useState(false);
+  const [activePerformerIndex, setActivePerformerIndex] = useState(-1);
+
+  function getDefaultScanOptions(): GQL.ScanMetadataInput {
+    return {
+      scanGenerateCovers: true,
+      scanGeneratePreviews: false,
+      scanGenerateImagePreviews: false,
+      scanGenerateSprites: false,
+      scanGeneratePhashes: false,
+      scanGenerateThumbnails: false,
+      scanGenerateClipPreviews: false,
+    };
+  }
+
+  async function runScan() {
+    try {
+      const uiScanDefaults = configuration?.ui?.taskDefaults
+        ?.scan as GQL.ScanMetadataInput | undefined;
+      const scanDefaults = uiScanDefaults
+        ? withoutTypename(uiScanDefaults)
+        : configuration?.defaults?.scan
+        ? withoutTypename(configuration.defaults.scan)
+        : undefined;
+
+      await mutateMetadataScan(scanDefaults ?? getDefaultScanOptions());
+      Toast.success(
+        intl.formatMessage(
+          { id: "config.tasks.added_job_to_queue" },
+          { operation_name: intl.formatMessage({ id: "actions.scan" }) }
+        )
+      );
+    } catch (e) {
+      Toast.error(e);
+    }
+  }
+
+  const debouncedSearchPerformers = useDebounce(async (value: string) => {
+    if (!value.trim()) {
+      setPerformerResults([]);
+      setActivePerformerIndex(-1);
+      return;
+    }
+
+    const filter = new ListFilterModel(GQL.FilterMode.Performers);
+    filter.searchTerm = value;
+    filter.currentPage = 1;
+    filter.itemsPerPage = 10;
+    filter.sortBy = "name";
+    filter.sortDirection = GQL.SortDirectionEnum.Asc;
+
+    setPerformerLoading(true);
+    try {
+      const query = await queryFindPerformersForSelect(filter);
+      setPerformerResults(query.data.findPerformers.performers.slice());
+      setActivePerformerIndex(0);
+    } catch {
+      setPerformerResults([]);
+      setActivePerformerIndex(-1);
+    } finally {
+      setPerformerLoading(false);
+    }
+  }, 250);
+
+  useEffect(() => {
+    debouncedSearchPerformers(performerQuery);
+    return () => {
+      debouncedSearchPerformers.cancel();
+    };
+  }, [debouncedSearchPerformers, performerQuery]);
+
+  function onPerformerResultSelect(performerId: string) {
+    setShowPerformerResults(false);
+    setPerformerQuery("");
+    history.push(`/performers/${performerId}`);
+  }
+
+  function onPerformerKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (!showPerformerResults || performerResults.length === 0) {
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActivePerformerIndex((prev) =>
+        Math.min(prev + 1, performerResults.length - 1)
+      );
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActivePerformerIndex((prev) => Math.max(prev - 1, 0));
+    } else if (event.key === "Enter" && activePerformerIndex >= 0) {
+      event.preventDefault();
+      const performer = performerResults[activePerformerIndex];
+      if (performer) {
+        onPerformerResultSelect(performer.id);
+      }
+    } else if (event.key === "Escape") {
+      setShowPerformerResults(false);
+    }
+  }
 
   function renderUtilityButtons() {
     return (
       <>
-        <Nav.Link
+        <div className="nav-utility navbar-performer-search">
+          <Icon icon={faSearch} className="navbar-performer-search-icon" />
+          <input
+            className="form-control form-control-sm"
+            placeholder=""
+            aria-label={intl.formatMessage({ id: "actions.search" })}
+            value={performerQuery}
+            onFocus={() => setShowPerformerResults(true)}
+            onBlur={() => {
+              setTimeout(() => setShowPerformerResults(false), 150);
+            }}
+            onChange={(event) => setPerformerQuery(event.target.value)}
+            onKeyDown={onPerformerKeyDown}
+          />
+          {showPerformerResults && performerQuery.trim() && (
+            <div className="navbar-performer-search-results">
+              {performerLoading && (
+                <div className="navbar-performer-search-item">
+                  <FormattedMessage
+                    id="loading.generic"
+                    defaultMessage="Loading..."
+                  />
+                </div>
+              )}
+              {!performerLoading && performerResults.length === 0 && (
+                <div className="navbar-performer-search-item">
+                  <FormattedMessage
+                    id="no_results_found"
+                    defaultMessage="No performers found"
+                  />
+                </div>
+              )}
+              {!performerLoading &&
+                performerResults.map((performer, index) => (
+                  <button
+                    key={performer.id}
+                    className={
+                      "navbar-performer-search-item" +
+                      (index === activePerformerIndex ? " is-active" : "")
+                    }
+                    type="button"
+                    onMouseDown={() => onPerformerResultSelect(performer.id)}
+                  >
+                    {performer.name}
+                  </button>
+                ))}
+            </div>
+          )}
+        </div>
+        <NavLink
           className="nav-utility"
-          href="https://opencollective.com/stashapp"
-          target="_blank"
+          exact
+          to={{
+            pathname: "/scenes",
+            search: "?sortby=created_at&sortdir=desc&perPage=10&disp=3",
+          }}
           onClick={handleDismiss}
         >
           <Button
-            className="minimal donate"
-            title={intl.formatMessage({ id: "donate" })}
+            className="minimal d-flex align-items-center h-100"
+            title={intl.formatMessage(messages.recents)}
           >
-            <Icon icon={faHeart} />
-            <span className="d-none d-sm-inline">
-              {intl.formatMessage(messages.donate)}
-            </span>
+            <Icon icon={faClock} />
           </Button>
-        </Nav.Link>
+        </NavLink>
         <NavLink
           className="nav-utility"
           exact
@@ -325,6 +489,18 @@ export const MainNavbar: React.FC = () => {
             <Icon icon={faChartColumn} />
           </Button>
         </NavLink>
+        <div className="nav-utility">
+          <Button
+            className="minimal d-flex align-items-center h-100"
+            title={intl.formatMessage({ id: "actions.scan" })}
+            onClick={() => {
+              handleDismiss();
+              runScan();
+            }}
+          >
+            <Icon icon={faHardDrive} />
+          </Button>
+        </div>
         <NavLink
           className="nav-utility"
           exact
