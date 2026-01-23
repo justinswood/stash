@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # This dockerfile should be built with `make docker-build` from the stash root.
 
 # Build Frontend
@@ -11,11 +12,15 @@ COPY ./graphql /stash/graphql/
 COPY ./ui /stash/ui/
 # pnpm install with npm
 RUN npm install -g pnpm
-RUN make pre-ui
-RUN make generate-ui
+ENV PNPM_STORE_PATH=/root/.pnpm-store
+RUN --mount=type=cache,target=/root/.pnpm-store \
+  make pre-ui
+RUN --mount=type=cache,target=/root/.pnpm-store \
+  make generate-ui
 ARG GITHASH
 ARG STASH_VERSION
-RUN BUILD_DATE=$(date +"%Y-%m-%d %H:%M:%S") make ui-only
+RUN --mount=type=cache,target=/root/.pnpm-store \
+  BUILD_DATE=$(date +"%Y-%m-%d %H:%M:%S") make ui-only
 
 # Build Backend
 FROM golang:1.24.3-alpine AS backend
@@ -29,11 +34,15 @@ COPY ./cmd /stash/cmd/
 COPY ./internal /stash/internal/
 # needed for generate-login-locale
 COPY ./ui /stash/ui/
-RUN make generate-backend generate-login-locale
+RUN --mount=type=cache,target=/go/pkg/mod \
+  --mount=type=cache,target=/root/.cache/go-build \
+  make generate-backend generate-login-locale
 COPY --from=frontend /stash /stash/
 ARG GITHASH
 ARG STASH_VERSION
-RUN make flags-release flags-pie stash
+RUN --mount=type=cache,target=/go/pkg/mod \
+  --mount=type=cache,target=/root/.cache/go-build \
+  make flags-release flags-pie stash
 
 # Final Runnable Image
 FROM alpine:latest
