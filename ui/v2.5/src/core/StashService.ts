@@ -2873,6 +2873,11 @@ export const mutateMetadataIdentify = (input: GQL.IdentifyMetadataInput) =>
     variables: { input },
   });
 
+export const mutateMetadataCleanUpTitles = () =>
+  client.mutate<GQL.MetadataCleanUpTitlesMutation>({
+    mutation: GQL.MetadataCleanUpTitlesDocument,
+  });
+
 export const mutateMetadataAutoTag = (input: GQL.AutoTagMetadataInput) =>
   client.mutate<GQL.MetadataAutoTagMutation>({
     mutation: GQL.MetadataAutoTagDocument,

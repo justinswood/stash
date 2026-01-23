@@ -15,6 +15,7 @@ import {
 } from "../PerformerList";
 import { PatchComponent } from "src/patch";
 import { CustomFields } from "src/components/Shared/CustomFields";
+import PerformerDetailsExtended from "./PerformerDetailsExtended";
 
 interface IPerformerDetails {
   performer: GQL.PerformerDataFragment;
@@ -187,6 +188,7 @@ export const PerformerDetailsPanel: React.FC<IPerformerDetails> =
         {(fullWidth || !collapsed) && (
           <CustomFields values={performer.custom_fields} />
         )}
+        <PerformerDetailsExtended performer={performer} collapsed={collapsed} />
       </PerformerDetailGroup>
     );
   });

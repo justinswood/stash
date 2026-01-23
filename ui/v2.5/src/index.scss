@@ -1123,6 +1123,66 @@ div.dropdown-menu {
     white-space: nowrap;
   }
 
+  .navbar-performer-search {
+    position: relative;
+    width: 200px;
+
+    .form-control {
+      background-color: #2b2b2b;
+      border: 1px solid #444;
+      color: #f0f0f0;
+      height: 32px;
+      padding: 0 0.5rem 0 1.75rem;
+    }
+
+    .form-control::placeholder {
+      color: #bdbdbd;
+    }
+  }
+
+  .navbar-performer-search-icon {
+    color: #bdbdbd;
+    left: 0.5rem;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .navbar-performer-search-results {
+    background-color: #1f1f1f;
+    border: 1px solid #444;
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    max-height: 300px;
+    min-width: 220px;
+    overflow-y: auto;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.25rem);
+    z-index: 2000;
+  }
+
+  .navbar-performer-search-item {
+    background: none;
+    border: 0;
+    color: #f0f0f0;
+    display: block;
+    padding: 0.4rem 0.6rem;
+    text-align: left;
+    width: 100%;
+  }
+
+  .navbar-performer-search-item:hover,
+  .navbar-performer-search-item:focus {
+    background-color: #2a2a2a;
+    outline: none;
+  }
+
+  .navbar-performer-search-item.is-active {
+    background-color: #2a2a2a;
+  }
+
   @include media-breakpoint-down(lg) {
     .navbar-brand {
       margin-left: -8px;

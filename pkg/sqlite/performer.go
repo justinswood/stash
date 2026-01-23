@@ -948,3 +948,142 @@ AND NOT EXISTS(SELECT 1 FROM `+table+` o WHERE o.`+idColumn+` = `+table+`.`+idCo
 
 	return nil
 }
+
+type performerPartnerCountRow struct {
+	PerformerID int    `db:"performer_id"`
+	Count       int    `db:"cnt"`
+	Name        string `db:"name"`
+}
+
+func (qb *PerformerStore) DetailsExtendedStats(ctx context.Context, performerID int) (*models.PerformerDetailsExtendedStats, error) {
+	stats := &models.PerformerDetailsExtendedStats{}
+
+	totalScenesQuery := dialect.From(performersScenesTable).
+		Select(goqu.COUNT("*")).
+		Where(goqu.Ex{performerIDColumn: performerID})
+	if err := querySimple(ctx, totalScenesQuery, &stats.ScenesTotal); err != nil {
+		return nil, err
+	}
+
+	organizedScenesQuery := dialect.From(sceneTable).
+		Join(goqu.T(performersScenesTable), goqu.On(goqu.I(sceneTable+"."+idColumn).Eq(goqu.I(performersScenesTable+"."+sceneIDColumn)))).
+		Select(goqu.COUNT("*")).
+		Where(
+			goqu.I(performersScenesTable+"."+performerIDColumn).Eq(performerID),
+			goqu.I(sceneTable+".organized").Eq(true),
+		)
+	if err := querySimple(ctx, organizedScenesQuery, &stats.ScenesOrganized); err != nil {
+		return nil, err
+	}
+
+	durationQuery := dialect.From(performersScenesTable).
+		Select(goqu.COALESCE(goqu.SUM(goqu.I("video_files.duration")), 0)).
+		LeftJoin(goqu.T(sceneTable), goqu.On(goqu.I(performersScenesTable+"."+sceneIDColumn).Eq(goqu.I(sceneTable+"."+idColumn)))).
+		LeftJoin(goqu.T(scenesFilesTable), goqu.On(goqu.I(scenesFilesTable+"."+sceneIDColumn).Eq(goqu.I(sceneTable+"."+idColumn)))).
+		LeftJoin(goqu.T(videoFileTable), goqu.On(goqu.I(videoFileTable+"."+fileIDColumn).Eq(goqu.I(scenesFilesTable+"."+fileIDColumn)))).
+		Where(goqu.I(performersScenesTable + "." + performerIDColumn).Eq(performerID))
+	if err := querySimple(ctx, durationQuery, &stats.TotalContentTime); err != nil {
+		return nil, err
+	}
+
+	timespanQuery := dialect.From(sceneTable).
+		Select(
+			goqu.MIN(goqu.I(sceneTable+".date")).As("earliest_date"),
+			goqu.MAX(goqu.I(sceneTable+".date")).As("latest_date"),
+		).
+		Join(goqu.T(performersScenesTable), goqu.On(goqu.I(sceneTable+"."+idColumn).Eq(goqu.I(performersScenesTable+"."+sceneIDColumn)))).
+		Where(
+			goqu.I(performersScenesTable+"."+performerIDColumn).Eq(performerID),
+			goqu.I(sceneTable+".date").IsNotNull(),
+			goqu.I(sceneTable+".date").Neq(""),
+		)
+	var timespanRow struct {
+		Earliest null.String `db:"earliest_date"`
+		Latest   null.String `db:"latest_date"`
+	}
+	if err := queryFunc(ctx, timespanQuery, true, func(rows *sqlx.Rows) error {
+		return rows.StructScan(&timespanRow)
+	}); err != nil {
+		return nil, err
+	}
+	if timespanRow.Earliest.Valid {
+		stats.ScenesTimespan.EarliestDate = &timespanRow.Earliest.String
+	}
+	if timespanRow.Latest.Valid {
+		stats.ScenesTimespan.LatestDate = &timespanRow.Latest.String
+	}
+
+	topMaleIDs, topMaleCount, err := qb.topPartnerIDsByGender(ctx, performerID, []models.GenderEnum{
+		models.GenderEnumMale,
+		models.GenderEnumTransgenderMale,
+	})
+	if err != nil {
+		return nil, err
+	}
+	stats.TopMalePartnerIDs = topMaleIDs
+	stats.TopMalePartnerCount = topMaleCount
+
+	topFemaleIDs, topFemaleCount, err := qb.topPartnerIDsByGender(ctx, performerID, []models.GenderEnum{
+		models.GenderEnumFemale,
+		models.GenderEnumTransgenderFemale,
+	})
+	if err != nil {
+		return nil, err
+	}
+	stats.TopFemalePartnerIDs = topFemaleIDs
+	stats.TopFemalePartnerCount = topFemaleCount
+
+	return stats, nil
+}
+
+func (qb *PerformerStore) topPartnerIDsByGender(ctx context.Context, performerID int, genders []models.GenderEnum) ([]int, int, error) {
+	if len(genders) == 0 {
+		return nil, 0, nil
+	}
+
+	genderValues := make([]string, 0, len(genders))
+	for _, gender := range genders {
+		genderValues = append(genderValues, gender.String())
+	}
+
+	query := dialect.From(goqu.T(performersScenesTable).As("ps1")).
+		Join(goqu.T(performersScenesTable).As("ps2"), goqu.On(goqu.I("ps1."+sceneIDColumn).Eq(goqu.I("ps2."+sceneIDColumn)))).
+		Join(goqu.T(performerTable).As("p"), goqu.On(goqu.I("p."+idColumn).Eq(goqu.I("ps2."+performerIDColumn)))).
+		Select(
+			goqu.I("ps2."+performerIDColumn).As("performer_id"),
+			goqu.COUNT(goqu.I("ps2."+sceneIDColumn)).As("cnt"),
+			goqu.I("p.name").As("name"),
+		).
+		Where(
+			goqu.I("ps1."+performerIDColumn).Eq(performerID),
+			goqu.I("ps2."+performerIDColumn).Neq(performerID),
+			goqu.I("p.gender").In(genderValues),
+		).
+		GroupBy(goqu.I("ps2."+performerIDColumn), goqu.I("p.name")).
+		Order(goqu.I("cnt").Desc(), goqu.I("name").Asc())
+
+	sql, args, err := query.ToSQL()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var rows []performerPartnerCountRow
+	if err := dbWrapper.Select(ctx, &rows, sql, args...); err != nil {
+		return nil, 0, err
+	}
+
+	if len(rows) == 0 {
+		return nil, 0, nil
+	}
+
+	topCount := rows[0].Count
+	ids := make([]int, 0, len(rows))
+	for _, row := range rows {
+		if row.Count != topCount {
+			break
+		}
+		ids = append(ids, row.PerformerID)
+	}
+
+	return ids, topCount, nil
+}

@@ -87,6 +87,8 @@ type Query {
     performer_ids: [Int!] @deprecated(reason: "use ids")
     ids: [ID!]
   ): FindPerformersResultType!
+  "Get aggregated performer stats for the performer details panel"
+  performerDetailsExtended(performer_id: ID!): PerformerDetailsExtendedResult!
 
   "Find a studio by ID"
   findStudio(id: ID!): Studio
@@ -474,6 +476,8 @@ type Mutation {
   metadataGenerate(input: GenerateMetadataInput!): ID!
   "Start auto-tagging. Returns the job ID"
   metadataAutoTag(input: AutoTagMetadataInput!): ID!
+  "Clean up scene titles based on filename patterns. Returns the job ID"
+  metadataCleanUpTitles: ID!
   "Clean metadata. Returns the job ID"
   metadataClean(input: CleanMetadataInput!): ID!
   "Clean generated files. Returns the job ID"

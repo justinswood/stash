@@ -1,0 +1,21 @@
+query PerformerDetailsExtended($performer_id: ID!) {
+  performerDetailsExtended(performer_id: $performer_id) {
+    top_male_partners {
+      id
+      name
+    }
+    top_male_partner_count
+    top_female_partners {
+      id
+      name
+    }
+    top_female_partner_count
+    total_content_time
+    scenes_total
+    scenes_organized
+    scenes_timespan {
+      earliest_date
+      latest_date
+    }
+  }
+}

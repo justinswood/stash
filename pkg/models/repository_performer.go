@@ -74,6 +74,7 @@ type PerformerReader interface {
 	PerformerQueryer
 	PerformerAutoTagQueryer
 	PerformerCounter
+	PerformerDetailsExtendedStatsReader
 
 	AliasLoader
 	StashIDLoader
@@ -85,6 +86,10 @@ type PerformerReader interface {
 	All(ctx context.Context) ([]*Performer, error)
 	GetImage(ctx context.Context, performerID int) ([]byte, error)
 	HasImage(ctx context.Context, performerID int) (bool, error)
+}
+
+type PerformerDetailsExtendedStatsReader interface {
+	DetailsExtendedStats(ctx context.Context, performerID int) (*PerformerDetailsExtendedStats, error)
 }
 
 // PerformerWriter provides all methods to modify performers.

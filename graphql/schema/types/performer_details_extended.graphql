@@ -1,0 +1,15 @@
+type PerformerDetailsExtendedTimespan {
+  earliest_date: String
+  latest_date: String
+}
+
+type PerformerDetailsExtendedResult {
+  top_male_partners: [Performer!]!
+  top_male_partner_count: Int!
+  top_female_partners: [Performer!]!
+  top_female_partner_count: Int!
+  total_content_time: Float!
+  scenes_total: Int!
+  scenes_organized: Int!
+  scenes_timespan: PerformerDetailsExtendedTimespan
+}

@@ -4,6 +4,7 @@ import { Button, Form } from "react-bootstrap";
 import {
   mutateMetadataScan,
   mutateMetadataAutoTag,
+  mutateMetadataCleanUpTitles,
   mutateMetadataGenerate,
 } from "src/core/StashService";
 import { withoutTypename } from "src/utils/data";
@@ -257,6 +258,21 @@ export const LibraryTasks: React.FC = () => {
     }
   }
 
+  async function runCleanUpTitles() {
+    try {
+      await mutateMetadataCleanUpTitles();
+
+      Toast.success(
+        intl.formatMessage(
+          { id: "config.tasks.added_job_to_queue" },
+          { operation_name: intl.formatMessage({ id: "actions.cleanup_titles" }) }
+        )
+      );
+    } catch (e) {
+      Toast.error(e);
+    }
+  }
+
   function maybeRenderIdentifyDialog() {
     if (!dialogOpen.identify) return;
 
@@ -366,6 +382,17 @@ export const LibraryTasks: React.FC = () => {
             onClick={() => setDialogOpen({ identify: true })}
           >
             <FormattedMessage id="actions.identify" />…
+          </Button>
+        </Setting>
+      </SettingSection>
+
+      <SettingSection advanced>
+        <Setting
+          heading={<FormattedMessage id="actions.cleanup_titles" />}
+          subHeadingID="config.tasks.cleanup_titles_desc"
+        >
+          <Button variant="secondary" type="submit" onClick={runCleanUpTitles}>
+            <FormattedMessage id="actions.cleanup_titles" />
           </Button>
         </Setting>
       </SettingSection>

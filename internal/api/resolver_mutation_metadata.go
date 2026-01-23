@@ -87,6 +87,11 @@ func (r *mutationResolver) MetadataAutoTag(ctx context.Context, input manager.Au
 	return strconv.Itoa(jobID), nil
 }
 
+func (r *mutationResolver) MetadataCleanUpTitles(ctx context.Context) (string, error) {
+	jobID := manager.GetInstance().CleanupSceneTitles(ctx)
+	return strconv.Itoa(jobID), nil
+}
+
 func (r *mutationResolver) MetadataIdentify(ctx context.Context, input identify.Options) (string, error) {
 	t := manager.CreateIdentifyJob(input)
 	jobID := manager.GetInstance().JobManager.Add(ctx, "Identifying...", t)

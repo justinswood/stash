@@ -107,6 +107,29 @@ func (_m *PerformerReaderWriter) Destroy(ctx context.Context, id int) error {
 	return r0
 }
 
+// DetailsExtendedStats provides a mock function with given fields: ctx, performerID
+func (_m *PerformerReaderWriter) DetailsExtendedStats(ctx context.Context, performerID int) (*models.PerformerDetailsExtendedStats, error) {
+	ret := _m.Called(ctx, performerID)
+
+	var r0 *models.PerformerDetailsExtendedStats
+	if rf, ok := ret.Get(0).(func(context.Context, int) *models.PerformerDetailsExtendedStats); ok {
+		r0 = rf(ctx, performerID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*models.PerformerDetailsExtendedStats)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
+		r1 = rf(ctx, performerID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Find provides a mock function with given fields: ctx, id
 func (_m *PerformerReaderWriter) Find(ctx context.Context, id int) (*models.Performer, error) {
 	ret := _m.Called(ctx, id)

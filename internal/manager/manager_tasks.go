@@ -281,6 +281,14 @@ func (s *Manager) AutoTag(ctx context.Context, input AutoTagMetadataInput) int {
 	return s.JobManager.Add(ctx, "Auto-tagging...", &j)
 }
 
+func (s *Manager) CleanupSceneTitles(ctx context.Context) int {
+	j := cleanupTitlesJob{
+		repository: s.Repository,
+	}
+
+	return s.JobManager.Add(ctx, "Cleaning up scene titles...", &j)
+}
+
 type CleanMetadataInput struct {
 	Paths []string `json:"paths"`
 	// Do a dry run. Don't delete any files
