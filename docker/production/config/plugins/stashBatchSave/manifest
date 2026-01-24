@@ -1,0 +1,11 @@
+id: stashBatchSave
+name: Stash Batch Save
+metadata:
+  description: Adds a batch save button to scenes tagger
+version: 0.6-10a6a27
+date: "2025-11-01 13:54:37"
+requires: []
+source_repository: https://serechops.github.io/Serechops-Stash/index.yml
+files:
+- stashBatchSave.js
+- stashBatchSave.yml

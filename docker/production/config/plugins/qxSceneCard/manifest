@@ -1,0 +1,18 @@
+id: qxSceneCard
+name: Qx Scene Card
+metadata:
+  description: Redesigns the scene card.
+version: 1.1-808fed3
+date: "2025-05-11 21:33:01"
+requires: []
+source_repository: https://qxxxgit.github.io/stash-plugins/index.yml
+files:
+- fonts/Inter-Thin.woff2
+- fonts/Inter-Regular.woff2
+- fonts/Inter-Bold.woff2
+- fonts/Inter-Light.woff2
+- CHANGELOG.md
+- qxSceneCard.css
+- README.md
+- qxSceneCard.yml
+- qxSceneCard.js

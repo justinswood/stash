@@ -1,0 +1,12 @@
+id: stashUserscriptLibrary7dJx1qP
+name: 7dJx1qP's Stash Userscript Library
+metadata:
+  description: Exports utility functions and a Stash class that emits events whenever
+    a GQL response is received and whenenever a page navigation change is detected
+version: 0.43.0-d997037
+date: "2024-04-08 13:36:15"
+requires: []
+source_repository: https://7djx1qp.github.io/stash-plugins/main/index.yml
+files:
+- stashUserscriptLibrary7dJx1qP.js
+- stashUserscriptLibrary7dJx1qP.yml

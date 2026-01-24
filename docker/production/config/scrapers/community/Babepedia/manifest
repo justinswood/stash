@@ -1,0 +1,10 @@
+id: Babepedia
+name: Babepedia
+metadata: {}
+version: 4527e74e
+date: "2025-10-11 06:56:44"
+requires: []
+source_repository: https://stashapp.github.io/CommunityScrapers/stable/index.yml
+files:
+- Babepedia.yml
+- Babepedia.py

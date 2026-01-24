@@ -1,0 +1,11 @@
+id: stashBatchSearch
+name: Stash Batch Search
+metadata:
+  description: Adds a batch search button to scenes and performers tagger
+version: 0.4.3-0132a6a
+date: "2024-02-11 03:26:25"
+requires: []
+source_repository: https://7djx1qp.github.io/stash-plugins/main/index.yml
+files:
+- stashBatchSearch.js
+- stashBatchSearch.yml
