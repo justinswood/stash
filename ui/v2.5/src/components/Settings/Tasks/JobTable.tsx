@@ -7,8 +7,7 @@ import {
   faHourglassStart,
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
-import moment from "moment/min/moment-with-locales";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button, Card, ProgressBar } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
 import { Icon } from "src/components/Shared/Icon";
@@ -30,13 +29,64 @@ type JobFragment = Pick<
   | "startTime"
 >;
 
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  }
+  return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+}
+
 interface IJob {
   job: JobFragment;
 }
 
+const WINDOW_MS = 60000; // Use last 60 seconds of progress for rate calculation
+const MIN_PROGRESS_FOR_ETA = 0.02; // Don't show ETA below 2%
+const MIN_SNAPSHOTS = 2; // Need at least 2 data points
+
 const Task: React.FC<IJob> = ({ job }) => {
   const [stopping, setStopping] = useState(false);
   const [className, setClassName] = useState("");
+  const progressHistory = useRef<Array<{ time: number; progress: number }>>([]);
+  const lastJobId = useRef(job.id);
+
+  // Reset history when job changes
+  if (job.id !== lastJobId.current) {
+    progressHistory.current = [];
+    lastJobId.current = job.id;
+  }
+
+  // Record progress snapshots
+  useEffect(() => {
+    if (
+      job.status === GQL.JobStatus.Running &&
+      job.progress !== null &&
+      job.progress !== undefined &&
+      job.progress > 0
+    ) {
+      const now = Date.now();
+      const history = progressHistory.current;
+
+      // Only add if progress actually changed
+      if (
+        history.length === 0 ||
+        history[history.length - 1].progress !== job.progress
+      ) {
+        history.push({ time: now, progress: job.progress });
+      }
+
+      // Trim to sliding window
+      const cutoff = now - WINDOW_MS;
+      while (history.length > MIN_SNAPSHOTS && history[0].time < cutoff) {
+        history.shift();
+      }
+    }
+  }, [job.progress, job.status]);
 
   useEffect(() => {
     setTimeout(() => setClassName("fade-in"));
@@ -133,25 +183,44 @@ const Task: React.FC<IJob> = ({ job }) => {
 
   function maybeRenderETA() {
     if (
-      job.status === GQL.JobStatus.Running &&
-      job.startTime !== null &&
-      job.startTime !== undefined &&
-      job.progress !== null &&
-      job.progress !== undefined &&
-      job.progress > 0
+      job.status !== GQL.JobStatus.Running ||
+      job.progress === null ||
+      job.progress === undefined ||
+      job.progress < MIN_PROGRESS_FOR_ETA
     ) {
-      const now = new Date();
-      const start = new Date(job.startTime);
-      const nowMS = now.valueOf();
-      const startMS = start.valueOf();
-      const estimatedLength = (nowMS - startMS) / job.progress;
-      const estLenStr = moment.duration(estimatedLength).humanize();
-      return (
-        <span className="job-eta">
-          <FormattedMessage id="eta" />: {estLenStr}
-        </span>
-      );
+      return;
     }
+
+    const history = progressHistory.current;
+
+    let remainingMs: number | undefined;
+
+    if (history.length >= MIN_SNAPSHOTS) {
+      // Use sliding window rate for accurate estimate
+      const oldest = history[0];
+      const newest = history[history.length - 1];
+      const timeDelta = newest.time - oldest.time;
+      const progressDelta = newest.progress - oldest.progress;
+
+      if (timeDelta > 0 && progressDelta > 0) {
+        const rate = progressDelta / timeDelta; // progress per ms
+        remainingMs = (1 - job.progress) / rate;
+      }
+    }
+
+    // Fallback to linear extrapolation from start
+    if (remainingMs === undefined && job.startTime) {
+      const elapsed = Date.now() - new Date(job.startTime).valueOf();
+      remainingMs = (elapsed * (1 - job.progress)) / job.progress;
+    }
+
+    if (remainingMs === undefined || remainingMs < 0) return;
+
+    return (
+      <span className="job-eta">
+        <FormattedMessage id="eta" />: {formatDuration(remainingMs)}
+      </span>
+    );
   }
 
   function maybeRenderSubTasks() {

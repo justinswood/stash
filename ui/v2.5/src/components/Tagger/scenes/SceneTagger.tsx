@@ -1,7 +1,7 @@
 import React, { useContext, useMemo, useState } from "react";
 import * as GQL from "src/core/generated-graphql";
 import { SceneQueue } from "src/models/sceneQueue";
-import { Button, Form } from "react-bootstrap";
+import { Button, Form, ProgressBar } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
 
 import { Icon } from "src/components/Shared/Icon";
@@ -22,7 +22,8 @@ const Scene: React.FC<{
   queue?: SceneQueue;
   index: number;
   showLightboxImage: (imagePath: string) => void;
-}> = ({ scene, searchResult, queue, index, showLightboxImage }) => {
+  onDismiss?: () => void;
+}> = ({ scene, searchResult, queue, index, showLightboxImage, onDismiss }) => {
   const intl = useIntl();
   const { currentSource, doSceneQuery, doSceneFragmentScrape, loading } =
     useContext(TaggerStateContext);
@@ -71,6 +72,7 @@ const Scene: React.FC<{
       showLightboxImage={showLightboxImage}
       queue={queue}
       index={index}
+      onDismiss={onDismiss}
     >
       {searchResult && searchResult.results?.length ? (
         <SceneSearchResults scenes={searchResult.results} target={scene} />
@@ -97,9 +99,15 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
     multiError,
     submitFingerprints,
     pendingFingerprints,
+    doBatchSave,
+    stopBatchSave,
+    loadingBatchSave,
+    batchSaveProgress,
+    batchSaveCount,
   } = useContext(TaggerStateContext);
   const [showConfig, setShowConfig] = useState(false);
   const [hideUnmatched, setHideUnmatched] = useState(false);
+  const [hiddenScenes, setHiddenScenes] = useState<Set<string>>(new Set());
 
   const intl = useIntl();
 
@@ -158,10 +166,12 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
 
   const filteredScenes = useMemo(
     () =>
-      !hideUnmatched
-        ? scenes
-        : scenes.filter((s) => searchResults[s.id]?.results?.length),
-    [scenes, searchResults, hideUnmatched]
+      scenes.filter((s) => {
+        if (hiddenScenes.has(s.id)) return false;
+        if (hideUnmatched && !searchResults[s.id]?.results?.length) return false;
+        return true;
+      }),
+    [scenes, searchResults, hideUnmatched, hiddenScenes]
   );
 
   const toggleHideUnmatchedScenes = () => {
@@ -252,6 +262,46 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
     );
   }
 
+  function renderBatchSaveButton() {
+    if (!Object.keys(searchResults).length) {
+      return;
+    }
+
+    if (loadingBatchSave) {
+      return (
+        <Button
+          className="ml-1"
+          variant="danger"
+          onClick={() => {
+            stopBatchSave();
+          }}
+        >
+          <LoadingIndicator message="" inline small />
+          <span className="ml-2">
+            {intl.formatMessage({ id: "actions.stop" })}
+          </span>
+        </Button>
+      );
+    }
+
+    return (
+      <div className="ml-1">
+        <Button
+          variant="primary"
+          disabled={loading || loadingMulti || batchSaveCount === 0}
+          onClick={async () => {
+            await doBatchSave();
+          }}
+        >
+          {intl.formatMessage(
+            { id: "component_tagger.verb_save_all" },
+            { count: batchSaveCount }
+          )}
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <SceneTaggerModals>
       <div className="tagger-container mx-md-auto">
@@ -262,10 +312,19 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
               {maybeRenderShowHideUnmatchedButton()}
               {maybeRenderSubmitFingerprintsButton()}
               {renderFragmentScrapeButton()}
+              {renderBatchSaveButton()}
               {renderConfigButton()}
             </div>
           </div>
           <Config show={showConfig} />
+          {loadingBatchSave && (
+            <ProgressBar
+              className="mt-2"
+              animated
+              now={batchSaveProgress}
+              label={`${Math.round(batchSaveProgress)}%`}
+            />
+          )}
         </div>
         <div>
           {filteredScenes.map((s, i) => (
@@ -276,6 +335,9 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
               index={i}
               showLightboxImage={showLightboxImage}
               queue={queue}
+              onDismiss={() => {
+                setHiddenScenes((prev) => new Set(prev).add(s.id));
+              }}
             />
           ))}
         </div>

@@ -140,7 +140,16 @@ Configured linters (`.golangci.yml`):
 3. **Title Cleanup Task**
    - `internal/manager/task_cleanup_titles.go`
    - `scripts/stash_cleanup_titles.py`
-4. **PerformerDetailsExtended Plugin** (standalone)
+4. **Performer Image Cropper** - Native Cropper.js integration (ported from plugin v0.3.3)
+   - Uses Cropper.js v1.6.1 to crop performer images directly on the performer detail page
+   - Saves cropped image via `usePerformerUpdate` GraphQL mutation as base64 data URL
+   - `ui/v2.5/src/components/Performers/PerformerDetails/PerformerImageCropper.tsx` (new component)
+   - `ui/v2.5/src/components/Performers/PerformerDetails/Performer.tsx` (integrated cropper + LightboxLink DOM stability fix)
+   - `ui/v2.5/src/index.scss` (cropper styles + `.cropper-view-box img { transition: none }` fix)
+   - `ui/v2.5/src/locales/en-GB.json` (added `actions.crop_image`)
+   - `ui/v2.5/package.json` / `pnpm-lock.yaml` (added cropperjs dependency)
+   - **Key architecture note:** The performer image must always remain inside `<LightboxLink>` in the React tree (never conditionally moved in/out) to preserve DOM node stability for Cropper.js. An `onClickCapture` wrapper blocks lightbox clicks during cropping.
+5. **PerformerDetailsExtended Plugin** (standalone)
    - `PerformerDetailsExtended-main/`
 
 ### Modified Files (unstaged):
@@ -150,9 +159,14 @@ Configured linters (`.golangci.yml`):
 - `pkg/models/repository_performer.go` - Performer repository
 - `pkg/sqlite/performer.go` - Performer database layer
 - `ui/v2.5/src/components/MainNavbar.tsx` - Navigation
+- `ui/v2.5/src/components/Performers/PerformerDetails/Performer.tsx` - Image cropper integration
+- `ui/v2.5/src/components/Performers/PerformerDetails/PerformerImageCropper.tsx` - New cropper component
 - `ui/v2.5/src/components/Performers/PerformerDetails/PerformerDetailsPanel.tsx`
 - `ui/v2.5/src/components/Settings/Tasks/LibraryTasks.tsx`
 - `ui/v2.5/src/core/StashService.ts` - Service layer
+- `ui/v2.5/src/index.scss` - Cropper styles
+- `ui/v2.5/src/locales/en-GB.json` - Crop image locale string
+- `ui/v2.5/package.json` / `pnpm-lock.yaml` - cropperjs dependency
 - Docker configuration files
 
 ## Development Workflow

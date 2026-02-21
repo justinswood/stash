@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import cx from "classnames";
 import { Badge, Button, Col, Form, Row } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
@@ -237,6 +237,8 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     resolveScene,
     currentSource,
     saveScene,
+    registerSaveCallback,
+    unregisterSaveCallback,
   } = React.useContext(TaggerStateContext);
 
   const performerGenders = config.performerGenders || genderList;
@@ -430,6 +432,17 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
 
     await saveScene(sceneCreateInput, includeStashID);
   }
+
+  // Register save callback for batch save when this result is active
+  const saveRef = useRef(handleSave);
+  saveRef.current = handleSave;
+
+  useEffect(() => {
+    if (isActive) {
+      registerSaveCallback(stashScene.id, () => saveRef.current());
+      return () => unregisterSaveCallback(stashScene.id);
+    }
+  }, [isActive, stashScene.id, registerSaveCallback, unregisterSaveCallback]);
 
   function showPerformerModal(t: GQL.ScrapedPerformer) {
     createPerformerModal(t, (toCreate) => {

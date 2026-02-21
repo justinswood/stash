@@ -50,6 +50,7 @@ import { PatchComponent } from "src/patch";
 import { ILightboxImage } from "src/hooks/Lightbox/types";
 import { goBackOrReplace } from "src/utils/history";
 import { OCounterButton } from "src/components/Shared/CountButton";
+import { PerformerImageCropper } from "./PerformerImageCropper";
 
 interface IProps {
   performer: GQL.PerformerDataFragment;
@@ -209,6 +210,7 @@ interface IPerformerHeaderImageProps {
   activeImage: string | null | undefined;
   collapsed: boolean;
   encodingImage: boolean;
+  isEditing: boolean;
   lightboxImages: ILightboxImage[];
   performer: GQL.PerformerDataFragment;
 }
@@ -216,17 +218,43 @@ interface IPerformerHeaderImageProps {
 const PerformerHeaderImage: React.FC<IPerformerHeaderImageProps> =
   PatchComponent(
     "PerformerHeaderImage",
-    ({ encodingImage, activeImage, lightboxImages, performer }) => {
+    ({
+      encodingImage,
+      activeImage,
+      isEditing,
+      lightboxImages,
+      performer,
+    }) => {
+      const [cropping, setCropping] = useState(false);
+
       return (
         <HeaderImage encodingImage={encodingImage}>
           {!!activeImage && (
-            <LightboxLink images={lightboxImages}>
-              <DetailImage
-                className="performer"
-                src={activeImage}
-                alt={performer.name}
-              />
-            </LightboxLink>
+            <>
+              <div
+                onClickCapture={(e) => {
+                  if (cropping) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }
+                }}
+              >
+                <LightboxLink images={lightboxImages}>
+                  <DetailImage
+                    className="performer"
+                    src={activeImage ?? undefined}
+                    alt={performer.name}
+                  />
+                </LightboxLink>
+              </div>
+              {!isEditing && (
+                <PerformerImageCropper
+                  performerId={performer.id}
+                  imageUrl={activeImage}
+                  onCroppingChange={setCropping}
+                />
+              )}
+            </>
           )}
         </HeaderImage>
       );
@@ -428,6 +456,7 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
               activeImage={activeImage}
               collapsed={collapsed}
               encodingImage={encodingImage}
+              isEditing={isEditing}
               lightboxImages={lightboxImages}
               performer={performer}
             />

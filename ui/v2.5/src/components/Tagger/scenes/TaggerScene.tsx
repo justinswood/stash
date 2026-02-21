@@ -17,6 +17,7 @@ import {
   faChevronDown,
   faChevronUp,
   faImage,
+  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { objectPath, objectTitle } from "src/core/files";
 import { useConfigurationContext } from "src/hooks/Config";
@@ -116,6 +117,7 @@ interface ITaggerScene {
   showLightboxImage: (imagePath: string) => void;
   queue?: SceneQueue;
   index?: number;
+  onDismiss?: () => void;
 }
 
 export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
@@ -129,6 +131,7 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
   showLightboxImage,
   queue,
   index,
+  onDismiss,
 }) => {
   const { config } = useContext(TaggerStateContext);
   const [queryString, setQueryString] = useState<string>("");
@@ -269,6 +272,15 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
                 >
                   <FormattedMessage id="actions.scrape_scene_fragment" />
                 </OperationButton>
+                {onDismiss && (
+                  <Button
+                    variant="danger"
+                    className="ml-2"
+                    onClick={onDismiss}
+                  >
+                    <Icon icon={faTimes} className="fa-fw" />
+                  </Button>
+                )}
               </div>
             ) : undefined}
           </div>

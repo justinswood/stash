@@ -65,6 +65,9 @@ importers:
       classnames:
         specifier: ^2.3.2
         version: 2.5.1
+      cropperjs:
+        specifier: ^1.6.1
+        version: 1.6.2
       crypto-js:
         specifier: ^4.2.0
         version: 4.2.0
@@ -2580,6 +2583,9 @@ packages:
 
   create-require@1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
+
+  cropperjs@1.6.2:
+    resolution: {integrity: sha512-nhymn9GdnV3CqiEHJVai54TULFAE3VshJTXSqSJKa8yXAKyBKDWdhHarnlIPrshJ0WMFTGuFvG02YjLXfPiuOA==}
 
   cross-fetch@3.2.0:
     resolution: {integrity: sha512-Q+xVJLoGOeIMXZmbUK4HYk+69cQH6LudR0Vu/pRm2YlU/hDV9CiS0gKUMaWY5f2NeUH9C1nV3bsTlCo0FsTV1Q==}
@@ -8144,6 +8150,8 @@ snapshots:
       typescript: 4.8.4
 
   create-require@1.1.1: {}
+
+  cropperjs@1.6.2: {}
 
   cross-fetch@3.2.0:
     dependencies:

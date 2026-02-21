@@ -382,6 +382,36 @@ dd {
   border-radius: 0.5rem;
 }
 
+/* Performer image cropper */
+#performer-page .detail-header-image {
+  flex-direction: column;
+}
+
+.performer-image-cropper {
+  margin-top: 0.5rem;
+  text-align: center;
+
+  .crop-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .crop-info {
+    color: #868791;
+    display: block;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    width: 100%;
+  }
+}
+
+.cropper-view-box img {
+  transition: none !important;
+}
+
 #tag-page {
   .full-width .detail-header-image img {
     max-width: 22rem;

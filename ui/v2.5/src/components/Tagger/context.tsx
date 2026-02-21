@@ -71,6 +71,16 @@ export interface ITaggerContextState {
     sceneCreateInput: GQL.SceneUpdateInput,
     queueFingerprint: boolean
   ) => Promise<void>;
+  registerSaveCallback: (
+    sceneID: string,
+    fn: () => Promise<void>
+  ) => void;
+  unregisterSaveCallback: (sceneID: string) => void;
+  doBatchSave: () => Promise<void>;
+  stopBatchSave: () => void;
+  loadingBatchSave: boolean;
+  batchSaveProgress: number;
+  batchSaveCount: number;
 }
 
 const dummyFn = () => {
@@ -102,6 +112,13 @@ export const TaggerStateContext = React.createContext<ITaggerContextState>({
   submitFingerprints: dummyFn,
   pendingFingerprints: [],
   saveScene: dummyFn,
+  registerSaveCallback: () => {},
+  unregisterSaveCallback: () => {},
+  doBatchSave: dummyFn,
+  stopBatchSave: () => {},
+  loadingBatchSave: false,
+  batchSaveProgress: 0,
+  batchSaveCount: 0,
 });
 
 export type IScrapedScene = GQL.ScrapedScene & { resolved?: boolean };
@@ -441,6 +458,51 @@ export const TaggerContext: React.FC = ({ children }) => {
 
   function stopMultiScrape() {
     stopping.current = true;
+  }
+
+  // Batch save
+  const saveCallbacks = useRef<Map<string, () => Promise<void>>>(new Map());
+  const stoppingBatchSave = useRef(false);
+  const [loadingBatchSave, setLoadingBatchSave] = useState(false);
+  const [batchSaveProgress, setBatchSaveProgress] = useState(0);
+  const [batchSaveCount, setBatchSaveCount] = useState(0);
+
+  function registerSaveCallback(sceneID: string, fn: () => Promise<void>) {
+    saveCallbacks.current.set(sceneID, fn);
+    setBatchSaveCount(saveCallbacks.current.size);
+  }
+
+  function unregisterSaveCallback(sceneID: string) {
+    saveCallbacks.current.delete(sceneID);
+    setBatchSaveCount(saveCallbacks.current.size);
+  }
+
+  async function doBatchSave() {
+    const callbacks = Array.from(saveCallbacks.current.entries());
+    if (callbacks.length === 0) return;
+
+    stoppingBatchSave.current = false;
+    setLoadingBatchSave(true);
+    setBatchSaveProgress(0);
+
+    let completed = 0;
+    for (const [, saveFn] of callbacks) {
+      if (stoppingBatchSave.current) break;
+      try {
+        await saveFn();
+      } catch (err) {
+        Toast.error(err);
+      }
+      completed++;
+      setBatchSaveProgress((completed / callbacks.length) * 100);
+    }
+
+    setLoadingBatchSave(false);
+    setBatchSaveProgress(0);
+  }
+
+  function stopBatchSave() {
+    stoppingBatchSave.current = true;
   }
 
   async function resolveScene(
@@ -940,6 +1002,13 @@ export const TaggerContext: React.FC = ({ children }) => {
         saveScene,
         submitFingerprints,
         pendingFingerprints: getPendingFingerprints(),
+        registerSaveCallback,
+        unregisterSaveCallback,
+        doBatchSave,
+        stopBatchSave,
+        loadingBatchSave,
+        batchSaveProgress,
+        batchSaveCount,
       }}
     >
       {children}

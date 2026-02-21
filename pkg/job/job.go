@@ -71,9 +71,9 @@ type Job struct {
 func (j *Job) TimeElapsed() time.Duration {
 	var end time.Time
 	if j.EndTime != nil {
-		end = time.Now()
-	} else {
 		end = *j.EndTime
+	} else {
+		end = time.Now()
 	}
 
 	return end.Sub(*j.StartTime)

@@ -1287,6 +1287,9 @@ func (qb *SceneStore) setSceneSort(query *queryBuilder, findFilter *models.FindF
 	case "studio":
 		query.joinSort(studioTable, "", "scenes.studio_id = studios.id")
 		query.sortAndPagination += getSort("name", direction, studioTable)
+	case "created_at", "updated_at":
+		// Use datetime() to normalize mixed timezone formats (Z vs offset) for correct sorting
+		query.sortAndPagination += " ORDER BY datetime(scenes." + sort + ") " + getSortDirection(direction)
 	default:
 		query.sortAndPagination += getSort(sort, direction, "scenes")
 	}
