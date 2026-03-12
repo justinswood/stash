@@ -21,8 +21,11 @@ import { useToast } from "src/hooks/Toast";
 import { useConfigurationContext } from "src/hooks/Config";
 import { ITaggerSource, SCRAPER_PREFIX, STASH_BOX_PREFIX } from "./constants";
 import { errorToString } from "src/utils";
-import { mergeStudioStashIDs } from "./utils";
+import { mergeStudioStashIDs, prepareQueryString, parsePath } from "./utils";
+import { objectPath } from "src/core/files";
 import { useTaggerConfig } from "./config";
+
+const BATCH_SEARCH_DELAY = 200;
 
 export interface ITaggerContextState {
   config: ITaggerConfig;
@@ -81,6 +84,12 @@ export interface ITaggerContextState {
   loadingBatchSave: boolean;
   batchSaveProgress: number;
   batchSaveCount: number;
+  doBatchSearch: (
+    scenes: GQL.SlimSceneDataFragment[]
+  ) => Promise<void>;
+  stopBatchSearch: () => void;
+  loadingBatchSearch: boolean;
+  batchSearchProgress: number;
 }
 
 const dummyFn = () => {
@@ -119,6 +128,10 @@ export const TaggerStateContext = React.createContext<ITaggerContextState>({
   loadingBatchSave: false,
   batchSaveProgress: 0,
   batchSaveCount: 0,
+  doBatchSearch: dummyFn,
+  stopBatchSearch: () => {},
+  loadingBatchSearch: false,
+  batchSearchProgress: 0,
 });
 
 export type IScrapedScene = GQL.ScrapedScene & { resolved?: boolean };
@@ -300,20 +313,20 @@ export const TaggerContext: React.FC = ({ children }) => {
     });
   }
 
-  async function doSceneQuery(sceneID: string, searchVal: string) {
+  async function sceneQuerySearch(sceneID: string, searchVal: string) {
     if (!currentSource) {
       return;
     }
 
-    try {
-      setLoading(true);
-      clearSearchResults(sceneID);
+    clearSearchResults(sceneID);
 
+    let newResult: ISceneQueryResult;
+
+    try {
       const results = await queryScrapeSceneQuery(
         currentSource.sourceInput,
         searchVal
       );
-      let newResult: ISceneQueryResult;
       // scenes are already resolved if they come from stash-box
       const resolved =
         currentSource.sourceInput.stash_box_endpoint !== undefined;
@@ -330,8 +343,23 @@ export const TaggerContext: React.FC = ({ children }) => {
           })),
         };
       }
+    } catch (err: unknown) {
+      newResult = { error: errorToString(err) };
+    }
 
-      setSearchResults({ ...searchResults, [sceneID]: newResult });
+    setSearchResults((current) => {
+      return { ...current, [sceneID]: newResult };
+    });
+  }
+
+  async function doSceneQuery(sceneID: string, searchVal: string) {
+    if (!currentSource) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await sceneQuerySearch(sceneID, searchVal);
     } catch (err) {
       Toast.error(err);
     } finally {
@@ -503,6 +531,54 @@ export const TaggerContext: React.FC = ({ children }) => {
 
   function stopBatchSave() {
     stoppingBatchSave.current = true;
+  }
+
+  // Batch search
+  const stoppingBatchSearch = useRef(false);
+  const [loadingBatchSearch, setLoadingBatchSearch] = useState(false);
+  const [batchSearchProgress, setBatchSearchProgress] = useState(0);
+
+  async function doBatchSearch(scenes: GQL.SlimSceneDataFragment[]) {
+    if (!currentSource || scenes.length === 0) return;
+
+    stoppingBatchSearch.current = false;
+    setLoadingBatchSearch(true);
+    setBatchSearchProgress(0);
+
+    let completed = 0;
+    for (const scene of scenes) {
+      if (stoppingBatchSearch.current) break;
+
+      const { paths, file: basename } = parsePath(objectPath(scene));
+      const queryString = prepareQueryString(
+        scene,
+        paths,
+        basename,
+        config.mode,
+        config.blacklist
+      );
+
+      try {
+        await sceneQuerySearch(scene.id, queryString);
+      } catch (err) {
+        Toast.error(err);
+      }
+
+      completed++;
+      setBatchSearchProgress((completed / scenes.length) * 100);
+
+      // delay between searches to avoid overwhelming the server
+      if (!stoppingBatchSearch.current && completed < scenes.length) {
+        await new Promise((r) => setTimeout(r, BATCH_SEARCH_DELAY));
+      }
+    }
+
+    setLoadingBatchSearch(false);
+    setBatchSearchProgress(0);
+  }
+
+  function stopBatchSearch() {
+    stoppingBatchSearch.current = true;
   }
 
   async function resolveScene(
@@ -1009,6 +1085,10 @@ export const TaggerContext: React.FC = ({ children }) => {
         loadingBatchSave,
         batchSaveProgress,
         batchSaveCount,
+        doBatchSearch,
+        stopBatchSearch,
+        loadingBatchSearch,
+        batchSearchProgress,
       }}
     >
       {children}

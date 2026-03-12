@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, Form, InputGroup, ProgressBar } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
 import { Link } from "react-router-dom";
@@ -275,35 +275,80 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
     GQL.ScrapedPerformerDataFragment | undefined
   >();
 
-  const doBoxSearch = (performerID: string, searchVal: string) => {
-    stashBoxPerformerQuery(searchVal, selectedEndpoint.endpoint)
-      .then((queryData) => {
+  const doBoxSearch = useCallback(
+    async (performerID: string, searchVal: string) => {
+      setLoading(true);
+      try {
+        const queryData = await stashBoxPerformerQuery(
+          searchVal,
+          selectedEndpoint.endpoint
+        );
         const s = queryData.data?.scrapeSinglePerformer ?? [];
-        setSearchResults({
-          ...searchResults,
+        setSearchResults((prev) => ({
+          ...prev,
           [performerID]: s,
-        });
-        setSearchErrors({
-          ...searchErrors,
+        }));
+        setSearchErrors((prev) => ({
+          ...prev,
           [performerID]: undefined,
+        }));
+      } catch {
+        setSearchResults((prev) => {
+          const { [performerID]: _, ...rest } = prev;
+          return rest;
         });
-        setLoading(false);
-      })
-      .catch(() => {
-        setLoading(false);
-        // Destructure to remove existing result
-        const { [performerID]: unassign, ...results } = searchResults;
-        setSearchResults(results);
-        setSearchErrors({
-          ...searchErrors,
+        setSearchErrors((prev) => ({
+          ...prev,
           [performerID]: intl.formatMessage({
             id: "performer_tagger.network_error",
           }),
-        });
-      });
+        }));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [selectedEndpoint.endpoint, intl]
+  );
 
-    setLoading(true);
-  };
+  // Batch search
+  const stoppingBatchSearch = useRef(false);
+  const [loadingBatchSearch, setLoadingBatchSearch] = useState(false);
+  const [batchSearchProgress, setBatchSearchProgress] = useState(0);
+
+  const doBatchPerformerSearch = useCallback(async () => {
+    // Only search untagged performers (those without a stash ID at this endpoint)
+    const untagged = performers.filter(
+      (p) => !p.stash_ids.some((s) => s.endpoint === selectedEndpoint.endpoint)
+    );
+    if (untagged.length === 0) return;
+
+    stoppingBatchSearch.current = false;
+    setLoadingBatchSearch(true);
+    setBatchSearchProgress(0);
+
+    let completed = 0;
+    for (const performer of untagged) {
+      if (stoppingBatchSearch.current) break;
+
+      const searchVal = queries[performer.id] ?? performer.name ?? "";
+      try {
+        await doBoxSearch(performer.id, searchVal);
+      } catch {
+        // errors handled in doBoxSearch
+      }
+
+      completed++;
+      setBatchSearchProgress((completed / untagged.length) * 100);
+
+      // delay between searches
+      if (!stoppingBatchSearch.current && completed < untagged.length) {
+        await new Promise((r) => setTimeout(r, 200));
+      }
+    }
+
+    setLoadingBatchSearch(false);
+    setBatchSearchProgress(0);
+  }, [performers, selectedEndpoint.endpoint, queries, doBoxSearch]);
 
   const doBoxUpdate = (
     performerID: string,
@@ -608,7 +653,37 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
         <Button className="ml-3" onClick={() => setShowBatchUpdate(true)}>
           <FormattedMessage id="performer_tagger.batch_update_performers" />
         </Button>
+        {loadingBatchSearch ? (
+          <Button
+            className="ml-3"
+            variant="danger"
+            onClick={() => {
+              stoppingBatchSearch.current = true;
+            }}
+          >
+            <LoadingIndicator message="" inline small />
+            <span className="ml-2">
+              <FormattedMessage id="actions.stop" />
+            </span>
+          </Button>
+        ) : (
+          <Button
+            className="ml-3"
+            disabled={loading}
+            onClick={() => doBatchPerformerSearch()}
+          >
+            <FormattedMessage id="component_tagger.verb_search_all" />
+          </Button>
+        )}
       </div>
+      {loadingBatchSearch && (
+        <ProgressBar
+          className="mb-3"
+          animated
+          now={batchSearchProgress}
+          label={`${Math.round(batchSearchProgress)}%`}
+        />
+      )}
       <div className={CLASSNAME}>{renderPerformers()}</div>
     </Card>
   );

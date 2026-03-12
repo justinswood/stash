@@ -1162,7 +1162,7 @@ div.dropdown-menu {
       border: 1px solid #444;
       color: #f0f0f0;
       height: 32px;
-      padding: 0 0.5rem 0 1.75rem;
+      padding: 0 0.5rem 0 2.25rem;
     }
 
     .form-control::placeholder {
@@ -1211,6 +1211,17 @@ div.dropdown-menu {
 
   .navbar-performer-search-item.is-active {
     background-color: #2a2a2a;
+  }
+
+  .navbar-stashdb-search {
+    color: #4fc3f7;
+    border-top: 1px solid #333;
+
+    &:hover,
+    &:focus {
+      color: #81d4fa;
+      background-color: #2a2a2a;
+    }
   }
 
   @include media-breakpoint-down(lg) {
@@ -1522,4 +1533,185 @@ select {
 // Fix descenders clipping in line-height #6047
 h3 .TruncatedText {
   line-height: 1.5;
+}
+
+// Qx Scene Card styles
+:root {
+  --gender-m: lightblue;
+  --gender-f: pink;
+  --gender-n: #dda0dd;
+}
+
+.scene-card {
+  border-radius: 6px;
+  box-shadow: 3px 3px 2px 0px rgba(16, 22, 26, 0.4);
+
+  &.watched {
+    opacity: 0.3;
+  }
+
+  .card-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    .performers {
+      order: 1;
+      display: flex;
+      flex-wrap: nowrap;
+      overflow: hidden;
+      width: 100%;
+      line-height: 2em;
+      max-height: 2em;
+
+      .list {
+        display: flex;
+        flex-wrap: nowrap;
+        width: 90%;
+        position: relative;
+
+        span.performer-name {
+          flex-shrink: 0;
+          margin-right: 1em;
+
+          a {
+            font-weight: 700;
+
+            &.gender-m {
+              color: var(--gender-m);
+            }
+
+            &.gender-f {
+              color: var(--gender-f);
+            }
+
+            &.gender-n {
+              color: var(--gender-n);
+            }
+          }
+        }
+      }
+
+      span.show-more {
+        width: 10%;
+        flex-shrink: 0;
+        margin-left: 0.5em;
+        text-align: right;
+        cursor: pointer;
+      }
+    }
+
+    a {
+      order: 2;
+    }
+
+    a .card-section-title {
+      font-weight: 700;
+      font-size: 18px;
+      height: 2.6em;
+      line-height: 1.3em;
+      align-items: unset;
+    }
+
+    .footer {
+      display: block;
+      width: 100%;
+      order: 3;
+      margin-top: auto;
+
+      span {
+        display: inline-block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        width: 50%;
+      }
+
+      span.views {
+        text-align: left;
+      }
+
+      span.date {
+        text-align: right;
+      }
+    }
+  }
+}
+
+.performer-popover-container {
+  min-width: 225px;
+  border-radius: 10px;
+  padding: 0.5em;
+  box-shadow: 1px 1px 2px 0px rgba(16, 22, 26, 0.4);
+
+  .performer-popover-content {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+
+    a {
+      text-decoration: none !important;
+
+      .performer-row {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 1em;
+        padding: 0.5em;
+        text-decoration: none;
+
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.2);
+          border-radius: 10px;
+        }
+
+        img {
+          width: 50px;
+          max-width: 50px;
+          height: 50px;
+          max-height: 50px;
+          clip-path: circle();
+          object-fit: cover;
+        }
+
+        .performer-details {
+          display: flex;
+          flex: 9;
+          flex-direction: column;
+          text-wrap: nowrap;
+
+          .name {
+            font-size: 18px;
+            font-weight: 700;
+
+            &.gender-m {
+              color: var(--gender-m);
+            }
+
+            &.gender-f {
+              color: var(--gender-f);
+            }
+
+            &.gender-n {
+              color: var(--gender-n);
+            }
+          }
+
+          .age {
+            font-size: 16px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.5);
+          }
+        }
+      }
+    }
+
+    .qx-loading-indicator > .LoadingIndicator {
+      padding-top: 0.5em;
+
+      .spinner-border {
+        width: 1em;
+        height: 1em;
+      }
+    }
+  }
 }

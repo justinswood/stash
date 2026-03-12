@@ -15,10 +15,15 @@ const PerformerCreate: React.FC = () => {
   const [image, setImage] = useState<string | null>();
   const [encodingImage, setEncodingImage] = useState<boolean>(false);
 
-  const location = useLocation();
+  const location = useLocation<{
+    scrapeResult?: GQL.ScrapedPerformerDataFragment;
+    stashBoxEndpoint?: string;
+  }>();
   const query = useMemo(() => new URLSearchParams(location.search), [location]);
+  const initialScrapeResult = location.state?.scrapeResult;
+  const initialStashBoxEndpoint = location.state?.stashBoxEndpoint;
   const performer = {
-    name: query.get("q") ?? undefined,
+    name: initialScrapeResult?.name ?? query.get("q") ?? undefined,
   };
 
   const [createPerformer] = usePerformerCreate();
@@ -77,6 +82,8 @@ const PerformerCreate: React.FC = () => {
           onSubmit={onSave}
           setImage={setImage}
           setEncodingImage={setEncodingImage}
+          initialScrapeResult={initialScrapeResult}
+          initialStashBoxEndpoint={initialStashBoxEndpoint}
         />
       </div>
     </div>

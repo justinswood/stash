@@ -49,6 +49,10 @@ import * as GQL from "src/core/generated-graphql";
 import { queryFindPerformersForSelect } from "src/core/StashService";
 import { ListFilterModel } from "src/models/list-filter/filter";
 import { useDebounce } from "src/hooks/debounce";
+import PerformerStashBoxModal, {
+  IStashBox,
+} from "./Performers/PerformerDetails/PerformerStashBoxModal";
+import { stashboxDisplayName } from "src/utils/stashbox";
 
 interface IMenuItem {
   name: string;
@@ -309,6 +313,8 @@ export const MainNavbar: React.FC = () => {
   const [performerLoading, setPerformerLoading] = useState(false);
   const [showPerformerResults, setShowPerformerResults] = useState(false);
   const [activePerformerIndex, setActivePerformerIndex] = useState(-1);
+  const [showStashBoxModal, setShowStashBoxModal] = useState(false);
+  const [stashBoxModalQuery, setStashBoxModalQuery] = useState("");
 
   function getDefaultScanOptions(): GQL.ScanMetadataInput {
     return {
@@ -408,6 +414,23 @@ export const MainNavbar: React.FC = () => {
     }
   }
 
+  const stashBoxes = configuration?.general.stashBoxes ?? [];
+
+  function onSearchStashDB() {
+    setStashBoxModalQuery(performerQuery.trim());
+    setShowPerformerResults(false);
+    setShowStashBoxModal(true);
+  }
+
+  function onStashBoxPerformerSelected(performer: GQL.ScrapedPerformer) {
+    setShowStashBoxModal(false);
+    setPerformerQuery("");
+    history.push("/performers/new", {
+      scrapeResult: performer,
+      stashBoxEndpoint: stashBoxes[0].endpoint,
+    });
+  }
+
   function renderUtilityButtons() {
     return (
       <>
@@ -436,12 +459,25 @@ export const MainNavbar: React.FC = () => {
                 </div>
               )}
               {!performerLoading && performerResults.length === 0 && (
-                <div className="navbar-performer-search-item">
-                  <FormattedMessage
-                    id="no_results_found"
-                    defaultMessage="No performers found"
-                  />
-                </div>
+                <>
+                  <div className="navbar-performer-search-item">
+                    <FormattedMessage
+                      id="no_results_found"
+                      defaultMessage="No performers found"
+                    />
+                  </div>
+                  {stashBoxes.length > 0 && (
+                    <button
+                      className="navbar-performer-search-item navbar-stashdb-search"
+                      type="button"
+                      onMouseDown={onSearchStashDB}
+                    >
+                      <Icon icon={faSearch} className="mr-2" />
+                      Search {stashboxDisplayName(stashBoxes[0].name, 0)} for
+                      &ldquo;{performerQuery.trim()}&rdquo;
+                    </button>
+                  )}
+                </>
               )}
               {!performerLoading &&
                 performerResults.map((performer, index) => (
@@ -458,6 +494,14 @@ export const MainNavbar: React.FC = () => {
                   </button>
                 ))}
             </div>
+          )}
+          {showStashBoxModal && stashBoxes.length > 0 && (
+            <PerformerStashBoxModal
+              instance={{ ...stashBoxes[0], index: 0 }}
+              name={stashBoxModalQuery}
+              onHide={() => setShowStashBoxModal(false)}
+              onSelectPerformer={onStashBoxPerformerSelected}
+            />
           )}
         </div>
         <NavLink

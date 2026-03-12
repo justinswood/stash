@@ -233,6 +233,7 @@
     "verb_matched": "Matched",
     "verb_save_all": "Save All ({count})",
     "verb_scrape_all": "Scrape All",
+    "verb_search_all": "Search All",
     "verb_submit_fp": "Submit {fpCount, plural, one{# Fingerprint} other{# Fingerprints}}",
     "verb_toggle_config": "{toggle} {configuration}",
     "verb_toggle_unmatched": "{toggle} unmatched scenes"
@@ -789,6 +790,31 @@
           "vr_tag": {
             "description": "The VR button will only be displayed for scenes with this tag.",
             "heading": "VR Tag"
+          }
+        }
+      },
+      "scene_card": {
+        "heading": "Scene Cards",
+        "options": {
+          "fade_watched": {
+            "heading": "Fade watched scenes",
+            "description": "Reduce opacity of scenes that have been played"
+          },
+          "hide_markers": {
+            "heading": "Hide marker popover button",
+            "description": "Hide the scene markers button on scene cards"
+          },
+          "hide_groups": {
+            "heading": "Hide group popover button",
+            "description": "Hide the groups button on scene cards"
+          },
+          "hide_o_counter": {
+            "heading": "Hide O-counter popover button",
+            "description": "Hide the O-counter button on scene cards"
+          },
+          "hide_studio": {
+            "heading": "Hide studio overlay",
+            "description": "Hide the studio logo overlay on scene cards"
           }
         }
       },

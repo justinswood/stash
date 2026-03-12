@@ -51,6 +51,13 @@ export interface IUIConfig {
 
   abbreviateCounters?: boolean;
 
+  // Scene card display options
+  sceneCardFadeWatched?: boolean;
+  sceneCardHideMarkers?: boolean;
+  sceneCardHideGroups?: boolean;
+  sceneCardHideOCounter?: boolean;
+  sceneCardHideStudio?: boolean;
+
   ratingSystemOptions?: RatingSystemOptions;
 
   // if true a background image will be display on header

@@ -62,6 +62,8 @@ interface IPerformerDetails {
   onCancel?: () => void;
   setImage: (image?: string | null) => void;
   setEncodingImage: (loading: boolean) => void;
+  initialScrapeResult?: GQL.ScrapedPerformerDataFragment;
+  initialStashBoxEndpoint?: string;
 }
 
 function customFieldInput(isNew: boolean, input: {}) {
@@ -81,6 +83,8 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
   onCancel,
   setImage,
   setEncodingImage,
+  initialScrapeResult,
+  initialStashBoxEndpoint,
 }) => {
   const Toast = useToast();
 
@@ -313,7 +317,7 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
   }
 
   function updateStashIDs(remoteSiteID: string | null | undefined) {
-    if (remoteSiteID && (scraper as IStashBox).endpoint) {
+    if (remoteSiteID && scraper && (scraper as IStashBox).endpoint) {
       const newIDs =
         formik.values.stash_ids?.filter(
           (s) => s.endpoint !== (scraper as IStashBox).endpoint
@@ -336,6 +340,24 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
   useEffect(() => {
     setEncodingImage(encodingImage);
   }, [setEncodingImage, encodingImage]);
+
+  // Auto-apply scraped data when navigating from StashDB search
+  useEffect(() => {
+    if (initialScrapeResult && isNew) {
+      updatePerformerEditStateFromScraper(initialScrapeResult);
+      // Set stash ID if we have the endpoint and remote site ID
+      if (initialStashBoxEndpoint && initialScrapeResult.remote_site_id) {
+        formik.setFieldValue("stash_ids", [
+          {
+            endpoint: initialStashBoxEndpoint,
+            stash_id: initialScrapeResult.remote_site_id,
+            updated_at: new Date().toISOString(),
+          },
+        ]);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function onImageLoad(imageData: string | null) {
     formik.setFieldValue("image", imageData);

@@ -348,6 +348,44 @@ export const SettingsInterfacePanel: React.FC = PatchComponent(
           </SelectSetting>
         </SettingSection>
 
+        <SettingSection headingID="config.ui.scene_card.heading">
+          <BooleanSetting
+            id="scene-card-fade-watched"
+            headingID="config.ui.scene_card.options.fade_watched.heading"
+            subHeadingID="config.ui.scene_card.options.fade_watched.description"
+            checked={ui.sceneCardFadeWatched ?? false}
+            onChange={(v) => saveUI({ sceneCardFadeWatched: v })}
+          />
+          <BooleanSetting
+            id="scene-card-hide-markers"
+            headingID="config.ui.scene_card.options.hide_markers.heading"
+            subHeadingID="config.ui.scene_card.options.hide_markers.description"
+            checked={ui.sceneCardHideMarkers ?? false}
+            onChange={(v) => saveUI({ sceneCardHideMarkers: v })}
+          />
+          <BooleanSetting
+            id="scene-card-hide-groups"
+            headingID="config.ui.scene_card.options.hide_groups.heading"
+            subHeadingID="config.ui.scene_card.options.hide_groups.description"
+            checked={ui.sceneCardHideGroups ?? false}
+            onChange={(v) => saveUI({ sceneCardHideGroups: v })}
+          />
+          <BooleanSetting
+            id="scene-card-hide-o-counter"
+            headingID="config.ui.scene_card.options.hide_o_counter.heading"
+            subHeadingID="config.ui.scene_card.options.hide_o_counter.description"
+            checked={ui.sceneCardHideOCounter ?? false}
+            onChange={(v) => saveUI({ sceneCardHideOCounter: v })}
+          />
+          <BooleanSetting
+            id="scene-card-hide-studio"
+            headingID="config.ui.scene_card.options.hide_studio.heading"
+            subHeadingID="config.ui.scene_card.options.hide_studio.description"
+            checked={ui.sceneCardHideStudio ?? false}
+            onChange={(v) => saveUI({ sceneCardHideStudio: v })}
+          />
+        </SettingSection>
+
         <SettingSection headingID="config.ui.scene_list.heading">
           <BooleanSetting
             id="show-text-studios"

@@ -104,6 +104,10 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
     loadingBatchSave,
     batchSaveProgress,
     batchSaveCount,
+    doBatchSearch,
+    stopBatchSearch,
+    loadingBatchSearch,
+    batchSearchProgress,
   } = useContext(TaggerStateContext);
   const [showConfig, setShowConfig] = useState(false);
   const [hideUnmatched, setHideUnmatched] = useState(false);
@@ -216,6 +220,46 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
     }
   }
 
+  function renderBatchSearchButton() {
+    if (!currentSource?.supportSceneQuery) {
+      return;
+    }
+
+    if (scenes.length === 0) {
+      return;
+    }
+
+    if (loadingBatchSearch) {
+      return (
+        <Button
+          className="ml-1"
+          variant="danger"
+          onClick={() => {
+            stopBatchSearch();
+          }}
+        >
+          <LoadingIndicator message="" inline small />
+          <span className="ml-2">
+            {intl.formatMessage({ id: "actions.stop" })}
+          </span>
+        </Button>
+      );
+    }
+
+    return (
+      <div className="ml-1">
+        <OperationButton
+          disabled={loading || loadingMulti || loadingBatchSearch}
+          operation={async () => {
+            await doBatchSearch(scenes);
+          }}
+        >
+          {intl.formatMessage({ id: "component_tagger.verb_search_all" })}
+        </OperationButton>
+      </div>
+    );
+  }
+
   function renderFragmentScrapeButton() {
     if (!currentSource?.supportSceneFragment) {
       return;
@@ -311,12 +355,21 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
             <div className="d-flex">
               {maybeRenderShowHideUnmatchedButton()}
               {maybeRenderSubmitFingerprintsButton()}
+              {renderBatchSearchButton()}
               {renderFragmentScrapeButton()}
               {renderBatchSaveButton()}
               {renderConfigButton()}
             </div>
           </div>
           <Config show={showConfig} />
+          {loadingBatchSearch && (
+            <ProgressBar
+              className="mt-2"
+              animated
+              now={batchSearchProgress}
+              label={`${Math.round(batchSearchProgress)}%`}
+            />
+          )}
           {loadingBatchSave && (
             <ProgressBar
               className="mt-2"

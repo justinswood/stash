@@ -151,6 +151,27 @@ Configured linters (`.golangci.yml`):
    - **Key architecture note:** The performer image must always remain inside `<LightboxLink>` in the React tree (never conditionally moved in/out) to preserve DOM node stability for Cropper.js. An `onClickCapture` wrapper blocks lightbox clicks during cropping.
 5. **PerformerDetailsExtended Plugin** (standalone)
    - `PerformerDetailsExtended-main/`
+6. **Batch Save** - Native tagger batch save (ported from Stash Batch Save plugin v0.6)
+   - Adds "Save All" button to scene tagger with progress bar and stop functionality
+   - Callback registration pattern: search results register save callbacks, batch save iterates them
+   - `ui/v2.5/src/components/Tagger/context.tsx` (registerSaveCallback, doBatchSave, stopBatchSave)
+   - `ui/v2.5/src/components/Tagger/scenes/SceneTagger.tsx` (Save All button + progress bar)
+   - `ui/v2.5/src/components/Tagger/scenes/StashSearchResult.tsx` (callback registration)
+   - `ui/v2.5/src/components/Tagger/scenes/TaggerScene.tsx` (dismiss button)
+7. **Batch Search** - Native tagger batch search (ported from Stash Batch Search plugin v0.4.3)
+   - Adds "Search All" button to both scene tagger and performer tagger
+   - Scene tagger: generates query strings per scene using prepareQueryString, calls API sequentially with 200ms delay
+   - Performer tagger: searches untagged performers by name sequentially
+   - Both support progress tracking and cancellation
+   - `ui/v2.5/src/components/Tagger/context.tsx` (sceneQuerySearch internal helper, doBatchSearch, stopBatchSearch)
+   - `ui/v2.5/src/components/Tagger/scenes/SceneTagger.tsx` (Search All button + progress bar)
+   - `ui/v2.5/src/components/Tagger/performers/PerformerTagger.tsx` (Search All button + batch search)
+8. **Scene sorting fix** - `created_at`/`updated_at` sorting with mixed timezone formats
+   - SQLite text comparison failed with mixed `Z` vs `-06:00` timezone suffixes
+   - Fixed in `pkg/sqlite/scene.go` using `datetime()` SQL function for normalization
+9. **Task queue ETA fix** - Sliding window rate estimation for accurate time remaining
+   - `ui/v2.5/src/components/Settings/Tasks/JobTable.tsx` (60-second sliding window, precise duration formatting)
+   - `pkg/job/job.go` (fixed inverted TimeElapsed logic)
 
 ### Modified Files (unstaged):
 - `graphql/schema/schema.graphql` - Schema extensions
@@ -158,14 +179,22 @@ Configured linters (`.golangci.yml`):
 - `internal/manager/manager_tasks.go` - Task management
 - `pkg/models/repository_performer.go` - Performer repository
 - `pkg/sqlite/performer.go` - Performer database layer
+- `pkg/sqlite/scene.go` - Scene sorting datetime fix
+- `pkg/job/job.go` - TimeElapsed fix
 - `ui/v2.5/src/components/MainNavbar.tsx` - Navigation
 - `ui/v2.5/src/components/Performers/PerformerDetails/Performer.tsx` - Image cropper integration
 - `ui/v2.5/src/components/Performers/PerformerDetails/PerformerImageCropper.tsx` - New cropper component
 - `ui/v2.5/src/components/Performers/PerformerDetails/PerformerDetailsPanel.tsx`
 - `ui/v2.5/src/components/Settings/Tasks/LibraryTasks.tsx`
+- `ui/v2.5/src/components/Settings/Tasks/JobTable.tsx` - ETA sliding window
+- `ui/v2.5/src/components/Tagger/context.tsx` - Batch save + batch search
+- `ui/v2.5/src/components/Tagger/scenes/SceneTagger.tsx` - Save All + Search All buttons
+- `ui/v2.5/src/components/Tagger/scenes/StashSearchResult.tsx` - Save callback registration
+- `ui/v2.5/src/components/Tagger/scenes/TaggerScene.tsx` - Dismiss button
+- `ui/v2.5/src/components/Tagger/performers/PerformerTagger.tsx` - Performer batch search
 - `ui/v2.5/src/core/StashService.ts` - Service layer
 - `ui/v2.5/src/index.scss` - Cropper styles
-- `ui/v2.5/src/locales/en-GB.json` - Crop image locale string
+- `ui/v2.5/src/locales/en-GB.json` - Locale strings
 - `ui/v2.5/package.json` / `pnpm-lock.yaml` - cropperjs dependency
 - Docker configuration files
 

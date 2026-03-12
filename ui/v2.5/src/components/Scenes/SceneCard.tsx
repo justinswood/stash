@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { Button, ButtonGroup, OverlayTrigger, Tooltip } from "react-bootstrap";
-import { useHistory } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import cx from "classnames";
 import * as GQL from "src/core/generated-graphql";
 import { Icon } from "../Shared/Icon";
 import { GalleryLink, TagLink, SceneMarkerLink } from "../Shared/TagLink";
 import { HoverPopover } from "../Shared/HoverPopover";
-import { TruncatedText } from "../Shared/TruncatedText";
 import NavUtils from "src/utils/navigation";
 import TextUtils from "src/utils/text";
 import { SceneQueue } from "src/models/sceneQueue";
@@ -14,7 +13,7 @@ import { useConfigurationContext } from "src/hooks/Config";
 import { PerformerPopoverButton } from "../Shared/PerformerPopoverButton";
 import { GridCard } from "../Shared/GridCard/GridCard";
 import { RatingBanner } from "../Shared/RatingBanner";
-import { FormattedMessage } from "react-intl";
+import { FormattedMessage, useIntl } from "react-intl";
 import {
   faBox,
   faCopy,
@@ -23,13 +22,16 @@ import {
   faMapMarkerAlt,
   faTag,
 } from "@fortawesome/free-solid-svg-icons";
-import { objectPath, objectTitle } from "src/core/files";
+import { objectTitle } from "src/core/files";
 import { PreviewScrubber } from "./PreviewScrubber";
 import { PatchComponent } from "src/patch";
 import { StudioOverlay } from "../Shared/GridCard/StudioOverlay";
 import { GroupTag } from "../Groups/GroupTag";
 import { FileSize } from "../Shared/FileSize";
 import { OCounterButton } from "../Shared/CountButton";
+import { SceneCardPerformerList } from "./SceneCardPerformerList";
+import { FormattedDate } from "src/components/Shared/Date";
+import { IUIConfig } from "src/core/config";
 
 interface IScenePreviewProps {
   isPortrait: boolean;
@@ -125,6 +127,9 @@ const Description: React.FC<{
 const SceneCardPopovers = PatchComponent(
   "SceneCard.Popovers",
   (props: ISceneCardProps) => {
+    const { configuration } = useConfigurationContext();
+    const uiConfig = configuration?.ui as IUIConfig | undefined;
+
     const file = useMemo(
       () => (props.scene.files.length > 0 ? props.scene.files[0] : undefined),
       [props.scene]
@@ -298,9 +303,11 @@ const SceneCardPopovers = PatchComponent(
             <ButtonGroup className="card-popovers">
               {maybeRenderTagPopoverButton()}
               {maybeRenderPerformerPopoverButton()}
-              {maybeRenderGroupPopoverButton()}
-              {maybeRenderSceneMarkerPopoverButton()}
-              {maybeRenderOCounter()}
+              {!uiConfig?.sceneCardHideGroups &&
+                maybeRenderGroupPopoverButton()}
+              {!uiConfig?.sceneCardHideMarkers &&
+                maybeRenderSceneMarkerPopoverButton()}
+              {!uiConfig?.sceneCardHideOCounter && maybeRenderOCounter()}
               {maybeRenderGallery()}
               {maybeRenderOrganized()}
               {maybeRenderDupeCopies()}
@@ -314,21 +321,69 @@ const SceneCardPopovers = PatchComponent(
   }
 );
 
+const SceneCardFooter: React.FC<{
+  scene: GQL.SlimSceneDataFragment;
+}> = ({ scene }) => {
+  const intl = useIntl();
+  const [fetchLastPlayed, { data }] =
+    GQL.useFindSceneLazyQuery();
+
+  const onTooltipEnter = () => {
+    fetchLastPlayed({ variables: { id: scene.id } });
+  };
+
+  const lastPlayedAt = data?.findScene?.last_played_at;
+
+  const viewCount = scene.play_count ?? 0;
+  const viewText =
+    viewCount === 1
+      ? `1 ${intl.formatMessage({ id: "view", defaultMessage: "view" })}`
+      : `${viewCount} ${intl.formatMessage({ id: "views", defaultMessage: "views" })}`;
+
+  return (
+    <div className="footer">
+      <span className="views">
+        {viewCount > 0 ? (
+          <OverlayTrigger
+            placement="bottom"
+            onEnter={onTooltipEnter}
+            overlay={
+              <Tooltip id={`last-played-tooltip-${scene.id}`}>
+                {lastPlayedAt ? (
+                  <>
+                    Last Viewed{" "}
+                    <FormattedDate value={lastPlayedAt} />
+                  </>
+                ) : (
+                  "Loading..."
+                )}
+              </Tooltip>
+            }
+          >
+            <span>{viewText}</span>
+          </OverlayTrigger>
+        ) : (
+          <span>{viewText}</span>
+        )}
+      </span>
+      <span className="date">
+        {scene.date && <FormattedDate value={scene.date} />}
+      </span>
+    </div>
+  );
+};
+
 const SceneCardDetails = PatchComponent(
   "SceneCard.Details",
   (props: ISceneCardProps) => {
     return (
-      <div className="scene-card__details">
-        <span className="scene-card__date">{props.scene.date}</span>
-        <span className="file-path extra-scene-info">
-          {objectPath(props.scene)}
-        </span>
-        <TruncatedText
-          className="scene-card__description"
-          text={props.scene.details}
-          lineCount={3}
+      <>
+        <SceneCardPerformerList
+          performers={props.scene.performers}
+          sceneDate={props.scene.date}
         />
-      </div>
+        <SceneCardFooter scene={props.scene} />
+      </>
     );
   }
 );
@@ -336,6 +391,9 @@ const SceneCardDetails = PatchComponent(
 const SceneCardOverlays = PatchComponent(
   "SceneCard.Overlays",
   (props: ISceneCardProps) => {
+    const { configuration } = useConfigurationContext();
+    const uiConfig = configuration?.ui as IUIConfig | undefined;
+    if (uiConfig?.sceneCardHideStudio) return null;
     return <StudioOverlay studio={props.scene.studio} />;
   }
 );
@@ -429,6 +487,7 @@ export const SceneCard = PatchComponent(
   "SceneCard",
   (props: ISceneCardProps) => {
     const { configuration } = useConfigurationContext();
+    const uiConfig = configuration?.ui as IUIConfig | undefined;
 
     const file = useMemo(
       () => (props.scene.files.length > 0 ? props.scene.files[0] : undefined),
@@ -451,6 +510,11 @@ export const SceneCard = PatchComponent(
       return "";
     }
 
+    const watchedClass =
+      uiConfig?.sceneCardFadeWatched && props.scene.play_count
+        ? "watched"
+        : "";
+
     const cont = configuration?.interface.continuePlaylistDefault ?? false;
 
     const sceneLink = props.queue
@@ -462,7 +526,7 @@ export const SceneCard = PatchComponent(
 
     return (
       <GridCard
-        className={`scene-card ${zoomIndex()} ${filelessClass()}`}
+        className={`scene-card ${zoomIndex()} ${filelessClass()} ${watchedClass}`}
         url={sceneLink}
         title={objectTitle(props.scene)}
         width={props.width}
