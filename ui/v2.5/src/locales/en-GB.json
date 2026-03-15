@@ -22,6 +22,7 @@
     "clean": "Clean",
     "clean_generated": "Clean generated files",
     "cleanup_titles": "CleanUp",
+    "scan_all": "Scan All Libraries",
     "clear": "Clear",
     "clear_back_image": "Clear back image",
     "clear_date_data": "Clear date data",
@@ -496,7 +497,7 @@
       "backup_and_download": "Performs a backup of the database and downloads the resulting file.",
       "backup_database": "Performs a backup of the database to the backups directory, with the filename format {filename_format}",
       "cleanup_desc": "Check for missing files and remove them from the database. This is a destructive action.",
-      "cleanup_titles_desc": "Clean up scene titles based on filename patterns without overwriting scraped or edited titles.",
+      "cleanup_titles_desc": "Clean up scene and image titles based on filename patterns without overwriting scraped or edited titles.",
       "clean_generated": {
         "blob_files": "Blob files",
         "description": "Removes generated files without a corresponding database entry.",

@@ -64,6 +64,32 @@ mutation SceneUpdate($input: SceneUpdateInput!) {
 }
 """
 
+FIND_IMAGES_QUERY = """
+query FindImages($filter: FindFilterType) {
+  findImages(filter: $filter) {
+    count
+    images {
+      id
+      title
+      visual_files {
+        ... on ImageFile {
+          path
+        }
+      }
+    }
+  }
+}
+"""
+
+IMAGE_UPDATE_MUTATION = """
+mutation ImageUpdate($input: ImageUpdateInput!) {
+  imageUpdate(input: $input) {
+    id
+    title
+  }
+}
+"""
+
 
 def parse_filename(filename):
     """
@@ -103,10 +129,10 @@ def should_update_title(current_title, filename, filename_no_ext, performer, new
     return False
 
 
-def main():
+def process_scenes():
     page = 1
-    total_candidates = 0
-    total_updated = 0
+    candidates = 0
+    updated = 0
 
     while True:
         data = gql(FIND_SCENES_QUERY, {"filter": {"per_page": PER_PAGE, "page": page}})
@@ -114,7 +140,7 @@ def main():
         if not scenes:
             break
 
-        print(f"\n=== Page {page} ({len(scenes)} scenes) ===")
+        print(f"\n=== Scenes Page {page} ({len(scenes)} scenes) ===")
 
         for scene in scenes:
             sid = scene["id"]
@@ -138,13 +164,13 @@ def main():
             if current_title == new_title:
                 continue
 
-            total_candidates += 1
+            candidates += 1
             print(f"[SCENE {sid}] '{current_title}' -> '{new_title}'")
 
             if not DRY_RUN:
                 try:
                     gql(SCENE_UPDATE_MUTATION, {"input": {"id": sid, "title": new_title}})
-                    total_updated += 1
+                    updated += 1
                     time.sleep(0.05)
                 except Exception as exc:
                     print(f"  !! Failed to update scene {sid}: {exc}")
@@ -152,10 +178,75 @@ def main():
         page += 1
         time.sleep(0.2)
 
+    return candidates, updated
+
+
+def process_images():
+    page = 1
+    candidates = 0
+    updated = 0
+
+    while True:
+        data = gql(FIND_IMAGES_QUERY, {"filter": {"per_page": PER_PAGE, "page": page}})
+        images = data["findImages"]["images"]
+        if not images:
+            break
+
+        print(f"\n=== Images Page {page} ({len(images)} images) ===")
+
+        for img in images:
+            iid = img["id"]
+            current_title = img["title"] or ""
+            visual_files = img.get("visual_files") or []
+            if not visual_files:
+                continue
+
+            path = visual_files[0].get("path", "")
+            if not path:
+                continue
+
+            filename = os.path.basename(path)
+            filename_no_ext = filename.rsplit(".", 1)[0] if "." in filename else filename
+
+            performer, new_title = parse_filename(filename)
+            if not new_title:
+                continue
+
+            if not should_update_title(
+                current_title, filename, filename_no_ext, performer, new_title
+            ):
+                continue
+
+            if current_title == new_title:
+                continue
+
+            candidates += 1
+            print(f"[IMAGE {iid}] '{current_title}' -> '{new_title}'")
+
+            if not DRY_RUN:
+                try:
+                    gql(IMAGE_UPDATE_MUTATION, {"input": {"id": iid, "title": new_title}})
+                    updated += 1
+                    time.sleep(0.05)
+                except Exception as exc:
+                    print(f"  !! Failed to update image {iid}: {exc}")
+
+        page += 1
+        time.sleep(0.2)
+
+    return candidates, updated
+
+
+def main():
+    scene_candidates, scenes_updated = process_scenes()
+    image_candidates, images_updated = process_images()
+
     mode = "DRY RUN" if DRY_RUN else "APPLIED"
     print(f"\n{mode} complete.")
-    print(f"  Candidate scenes: {total_candidates}")
-    print(f"  Scenes updated:  {total_updated}")
+    print(f"  Candidate scenes: {scene_candidates}")
+    print(f"  Scenes updated:   {scenes_updated}")
+    print(f"  Candidate images: {image_candidates}")
+    print(f"  Images updated:   {images_updated}")
 
 
 if __name__ == "__main__":

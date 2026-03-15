@@ -11,7 +11,7 @@ import {
   MessageDescriptor,
   useIntl,
 } from "react-intl";
-import { Nav, Navbar, Button } from "react-bootstrap";
+import { Nav, Navbar, Button, Dropdown } from "react-bootstrap";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { LinkContainer } from "react-router-bootstrap";
 import { Link, NavLink, useLocation, useHistory } from "react-router-dom";
@@ -328,7 +328,7 @@ export const MainNavbar: React.FC = () => {
     };
   }
 
-  async function runScan() {
+  async function runScan(paths?: string[]) {
     try {
       const uiScanDefaults = configuration?.ui?.taskDefaults
         ?.scan as GQL.ScanMetadataInput | undefined;
@@ -338,7 +338,12 @@ export const MainNavbar: React.FC = () => {
         ? withoutTypename(configuration.defaults.scan)
         : undefined;
 
-      await mutateMetadataScan(scanDefaults ?? getDefaultScanOptions());
+      const scanInput = {
+        ...(scanDefaults ?? getDefaultScanOptions()),
+        ...(paths ? { paths } : {}),
+      };
+
+      await mutateMetadataScan(scanInput);
       Toast.success(
         intl.formatMessage(
           { id: "config.tasks.added_job_to_queue" },
@@ -349,6 +354,8 @@ export const MainNavbar: React.FC = () => {
       Toast.error(e);
     }
   }
+
+  const stashes = configuration?.general.stashes ?? [];
 
   const debouncedSearchPerformers = useDebounce(async (value: string) => {
     if (!value.trim()) {
@@ -533,18 +540,37 @@ export const MainNavbar: React.FC = () => {
             <Icon icon={faChartColumn} />
           </Button>
         </NavLink>
-        <div className="nav-utility">
-          <Button
+        <Dropdown className="nav-utility nav-scan-dropdown" drop="down">
+          <Dropdown.Toggle
+            as={Button}
             className="minimal d-flex align-items-center h-100"
             title={intl.formatMessage({ id: "actions.scan" })}
-            onClick={() => {
-              handleDismiss();
-              runScan();
-            }}
           >
             <Icon icon={faHardDrive} />
-          </Button>
-        </div>
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            <Dropdown.Item
+              onClick={() => {
+                handleDismiss();
+                runScan();
+              }}
+            >
+              <FormattedMessage id="actions.scan_all" defaultMessage="Scan All Libraries" />
+            </Dropdown.Item>
+            {stashes.length > 0 && <Dropdown.Divider />}
+            {stashes.map((stash) => (
+              <Dropdown.Item
+                key={stash.path}
+                onClick={() => {
+                  handleDismiss();
+                  runScan([stash.path]);
+                }}
+              >
+                {stash.path}
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
         <NavLink
           className="nav-utility"
           exact

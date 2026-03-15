@@ -205,3 +205,4 @@ Configured linters (`.golangci.yml`):
 3. Implement resolvers in `internal/api/resolver_*.go`
 4. Add frontend components in `ui/v2.5/src/components/`
 5. Run `make validate` before committing
+6. **Always rebuild and restart Docker containers after any code changes** (backend or frontend)

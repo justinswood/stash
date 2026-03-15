@@ -1153,6 +1153,18 @@ div.dropdown-menu {
     white-space: nowrap;
   }
 
+  .nav-scan-dropdown {
+    .dropdown-toggle::after {
+      display: none;
+    }
+
+    .dropdown-menu {
+      min-width: 200px;
+      right: 0;
+      left: auto;
+    }
+  }
+
   .navbar-performer-search {
     position: relative;
     width: 200px;
