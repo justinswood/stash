@@ -133,12 +133,12 @@ session_store_key: 94c8140934e8580e6018a7004ff6bcbe074e0c92f3cb81c7f8fb483131abc
 show_one_time_moved_notification: false
 sound_on_preview: false
 stash:
-    - path: /data/Library/Organized
+    - excludeimage: true
       excludevideo: false
-      excludeimage: true
-    - path: /data/Library/OF
+      path: /data/Library/Organized
+    - excludeimage: false
       excludevideo: false
-      excludeimage: false
+      path: /data/Library/OF
 stash_boxes:
     - apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiJjZThlYWIzOS04Y2QyLTQzZjUtODU5Mi1lODI5MjFjM2ZjZTciLCJzdWIiOiJBUElLZXkiLCJpYXQiOjE3MjA5MzE1MjR9.Bk9YtmpIYDr78yhx9uxYC6GxcuoAfgiZr8HoZZchHaA
       endpoint: https://stashdb.org/graphql
@@ -804,6 +804,27 @@ ui:
                 - "11220"
                 - "11210"
                 - "11270"
+                - "11300"
+                - "11296"
+                - "11291"
+                - "11288"
+                - "11289"
+                - "14001"
+                - "14008"
+                - "14007"
+                - "14009"
+                - "14043"
+                - "14042"
+                - "14037"
+                - "14039"
+                - "14036"
+                - "14034"
+                - "14031"
+                - "14029"
+                - "14027"
+                - "14025"
+                - "14024"
+                - "14022"
             https://theporndb.net/graphql:
                 - "37"
                 - "38"
@@ -1508,9 +1529,73 @@ ui:
                 - "11273"
                 - "11272"
                 - "11271"
+                - "11290"
+                - "13893"
+                - "13917"
+                - "13912"
+                - "13914"
+                - "13909"
+                - "13911"
+                - "13905"
+                - "13907"
+                - "13902"
+                - "13897"
+                - "13900"
+                - "13895"
+                - "13893"
+                - "13887"
+                - "14000"
+                - "14000"
+                - "13996"
+                - "13997"
+                - "13998"
+                - "13992"
+                - "13993"
+                - "13995"
+                - "13994"
+                - "13988"
+                - "13991"
+                - "13985"
+                - "13986"
+                - "13987"
+                - "13981"
+                - "13983"
+                - "13984"
+                - "13979"
+                - "13980"
+                - "13977"
+                - "13971"
+                - "13972"
+                - "13974"
+                - "13968"
+                - "13969"
+                - "13970"
+                - "13965"
+                - "13966"
+                - "13967"
+                - "13962"
+                - "13963"
+                - "13964"
+                - "13959"
+                - "14003"
+                - "14002"
+                - "14005"
+                - "14010"
+                - "14020"
+                - "14018"
+                - "14016"
+                - "14015"
+                - "14012"
+                - "14050"
+                - "14051"
+                - "14052"
+                - "14055"
+                - "14056"
+                - "14057"
+                - "14058"
         markSceneAsOrganizedOnSave: false
         mode: auto
-        selectedEndpoint: https://theporndb.net/graphql
+        selectedEndpoint: https://stashdb.org/graphql
         setCoverImage: true
         setTags: true
         tagOperation: merge

@@ -1,9 +1,12 @@
 import json
 import re
 import sys
+import os
+# Add parent directory to path so py_common can be found
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 from datetime import datetime # birthday formatting
 
-import cloudscraper
+from py_common.proxy import StashRequests
 from lxml import html
 
 # for image
@@ -13,10 +16,11 @@ import py_common.log as log
 from py_common.util import scraper_args
 from py_common.types import ScrapedPerformer, PerformerSearchResult, Ethnicity, EyeColor, HairColor
 
-scraper = cloudscraper.create_scraper()
+scraper = StashRequests(cloudflare=True)
 
 def fetch_as_base64(url: str) -> str | None:
-  return base64.b64encode(scraper.get(url).content).decode('utf-8')
+  data = base64.b64encode(scraper.get(url).content).decode('utf-8')
+  return f"data:image/jpg;base64,{data}"
 
 def biography_xpath_test(tree, html_name: str, selector: str) -> str | None:
   elem = tree.xpath(f'//span[contains(text(), "{html_name}")]/following-sibling::span{selector}/text()')
@@ -38,12 +42,26 @@ def sanitize_eye_color(str) -> EyeColor | None:
     return str
 
 def sanitize_hair_color(str) -> HairColor:
-    if str in ["Blonde","Brunette","Black","Red","Auburn","Grey","Bald","Various","Other"]:
-        return str
     # brown to brunette
     if str.lower() == "brown":
         return "Brunette" # type: ignore
-    return str # type: ignore
+    return str
+
+def sanitize_fake_tits(value: str) -> str | None:
+    # Maps Babepedia's breast type labels to Stash's valid fake_tits values:
+    # "Fake", "Natural", or "Na". We never return "Na" here — if Babepedia
+    # has no data, it's cleaner to leave the field unset than to store "Na".
+    mapping = {
+        "fake/enhanced": "Fake",    # observed on Babepedia
+        "real/natural":  "Natural", # observed on Babepedia
+        "fake":          "Fake",    # defensive
+        "enhanced":      "Fake",    # defensive
+        "augmented":     "Fake",    # defensive
+        "natural":       "Natural", # defensive
+        "real":          "Natural", # defensive
+    }
+    # Anything unrecognised returns None, which the caller treats as no data.
+    return mapping.get(value.lower().strip())
 
 def performer_from_url(url) -> ScrapedPerformer:
     scraped = scraper.get(url)
@@ -58,7 +76,7 @@ def performer_from_url(url) -> ScrapedPerformer:
     }
     aliases = tree.xpath('//h2[@id="aka"][1]/text()')
     if aliases:
-        performer['aliases'] = ", ".join(aliases[0].split(" - "))
+        performer['aliases'] = ", ".join(aliases[0].strip().split(" - "))
     # get birthdate
     birth_container = tree.xpath('//span[contains(text(), "Born:")]/following-sibling::span/a')
     if birth_container:
@@ -86,10 +104,12 @@ def performer_from_url(url) -> ScrapedPerformer:
             performer["career_length"] = f"{start}-"
         else:
             performer["career_length"] = f"{start} - {end}"
-    # get country
-    country = biography_xpath_test(tree, "Nationality", "")
-    if country:
-       performer['country'] = country.strip("() ")
+    # get country - extract ISO code from flag icon class (first nationality only)
+    nationality_flags = tree.xpath('//span[contains(text(), "Nationality")]/following-sibling::span//span[contains(@class, "fi-")]/@class')
+    if nationality_flags:
+        match = re.search(r'fi fi-([a-z]{2})', nationality_flags[0])
+        if match:
+            performer['country'] = match.group(1).upper()
     # get ethnicity
     ethnicity = biography_xpath_test(tree, "Ethnicity", "/a")
     if ethnicity:
@@ -127,8 +147,9 @@ def performer_from_url(url) -> ScrapedPerformer:
     # get fake/naturals
     breast_type = biography_xpath_test(tree, "Boobs", "/a")
     if breast_type:
-        real_breasts = breast_type == "Real/Natural"
-        performer['fake_tits'] = str(not real_breasts)
+        breast_type_str = "Natural" if "Real" in breast_type else "Fake" if "Fake" in breast_type else None
+        if breast_type_str:
+            performer['fake_tits'] = breast_type_str
     # get tattoos
     tattoos = biography_xpath_test(tree, "Tattoos", "")
     if tattoos and tattoos != "None":
@@ -141,23 +162,54 @@ def performer_from_url(url) -> ScrapedPerformer:
     bio = tree.xpath('//p[@id="biotext"]')
     if bio:
         performer["details"] = bio[0].text_content().strip()
-    # get images
-    img_url = tree.xpath('//div[@id="profimg"]/a/@href')
-    if img_url:
-        b64img = fetch_as_base64(f"https://www.babepedia.com/{img_url[0]}")
-        performer['images'] = [f"data:image/jpg;base64,{b64img}"]
+    # get social/website URLs
+    # Babepedia proxies some links as relative paths (e.g. /onlyfans/username)
+    # rather than linking to the external site directly. Map known patterns;
+    # log any unrecognised relative URLs so they can be added later.
+    # Babepedia proxies some links through their own domain, both as relative
+    # paths (/onlyfans/username) and absolute URLs
+    # (https://www.babepedia.com/onlyfans/username). Map both forms.
+    proxy_url_map = {
+        "https://www.babepedia.com/onlyfans/": "https://onlyfans.com/",
+        "/onlyfans/": "https://onlyfans.com/",
+    }
+    social_urls = tree.xpath('//div[@id="socialicons"]/a/@href')
+    for href in social_urls:
+        matched = False
+        for prefix, replacement in proxy_url_map.items():
+            if href.startswith(prefix):
+                performer["urls"].append(href.replace(prefix, replacement, 1))
+                matched = True
+                break
+        if not matched:
+            if href.startswith("http"):
+                performer["urls"].append(href)
+            else:
+                log.warning(f"Unrecognised relative URL skipped: {href}")
+    # get images - collect all from main gallery, then user uploads
+    # Returns URLs so Stash can present a picker when multiple images exist.
+    base_url = "https://www.babepedia.com"
+    main_imgs = tree.xpath('//div[@id="profbox2"]//a[@class="img"]/@href')
+    user_imgs = tree.xpath('//div[contains(@class,"useruploads2")]//a[@class="img"]/@href')
+    all_imgs = [
+        fetch_as_base64(href if href.startswith("http") else f"{base_url}{href}")
+        for href in main_imgs + user_imgs
+    ]
+    if all_imgs:
+        performer["images"] = all_imgs
     return performer
 
 def map_performer_search(performer) -> PerformerSearchResult:
     result: PerformerSearchResult = {
        "name": performer['label'],
-       "url": f"https://www.babepedia.com/babe/{performer['value']}"
+       "url": f"https://www.babepedia.com/babe/{performer['value'].replace(' ', '_')}"
     }
     return result
 
 def performer_by_name(name) -> list[PerformerSearchResult]:
-    url = f"https://www.babepedia.com/ajax-search.php?term={name}"
-    scraped = scraper.get(url)
+    # dashes stripped #2671
+    search_name = name.replace("-", " ")
+    scraped = scraper.get("https://www.babepedia.com/ajax-search.php", params={"term": search_name})
     scraped.raise_for_status()
     data = scraped.json()
     return list(map(map_performer_search,data))
