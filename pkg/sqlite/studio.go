@@ -299,6 +299,83 @@ func (qb *StudioStore) Destroy(ctx context.Context, id int) error {
 	return studioRepository.destroyExisting(ctx, []int{id})
 }
 
+func (qb *StudioStore) Merge(ctx context.Context, source []int, destination int) error {
+	if len(source) == 0 {
+		return nil
+	}
+
+	inBinding := getInBinding(len(source))
+
+	srcArgs := make([]interface{}, len(source))
+	for i, id := range source {
+		if id == destination {
+			return errors.New("cannot merge where source == destination")
+		}
+		srcArgs[i] = id
+	}
+
+	// Reassign scenes, images, galleries that reference source studios
+	for _, table := range []string{"scenes", "images", "galleries"} {
+		_, err := dbWrapper.Exec(ctx,
+			`UPDATE `+table+` SET studio_id = ? WHERE studio_id IN `+inBinding,
+			append([]interface{}{destination}, srcArgs...)...,
+		)
+		if err != nil {
+			return fmt.Errorf("updating %s studio_id: %w", table, err)
+		}
+	}
+
+	// Reassign child studios (parent_id) from source to destination
+	_, err := dbWrapper.Exec(ctx,
+		`UPDATE studios SET parent_id = ? WHERE parent_id IN `+inBinding,
+		append([]interface{}{destination}, srcArgs...)...,
+	)
+	if err != nil {
+		return fmt.Errorf("updating child studio parent_id: %w", err)
+	}
+
+	// Handle join tables: tags, aliases, urls, stash_ids
+	joinTables := map[string]string{
+		"studios_tags":      "tag_id",
+		"studio_aliases":    "alias",
+		"studio_urls":       "url",
+		"studio_stash_ids":  "endpoint",
+	}
+
+	for table, uniqueCol := range joinTables {
+		args := append([]interface{}{destination}, srcArgs...)
+		args = append(args, destination)
+
+		_, err := dbWrapper.Exec(ctx,
+			`UPDATE OR IGNORE `+table+`
+SET studio_id = ?
+WHERE studio_id IN `+inBinding+`
+AND NOT EXISTS(SELECT 1 FROM `+table+` o WHERE o.`+uniqueCol+` = `+table+`.`+uniqueCol+` AND o.studio_id = ?)`,
+			args...,
+		)
+		if err != nil {
+			return fmt.Errorf("updating %s: %w", table, err)
+		}
+
+		// Delete remaining source references that couldn't be moved (duplicates)
+		if _, err := dbWrapper.Exec(ctx,
+			`DELETE FROM `+table+` WHERE studio_id IN `+inBinding,
+			srcArgs...,
+		); err != nil {
+			return fmt.Errorf("cleaning %s: %w", table, err)
+		}
+	}
+
+	// Destroy source studios
+	for _, id := range source {
+		if err := qb.Destroy(ctx, id); err != nil {
+			return fmt.Errorf("destroying source studio %d: %w", id, err)
+		}
+	}
+
+	return nil
+}
+
 // returns nil, nil if not found
 func (qb *StudioStore) Find(ctx context.Context, id int) (*models.Studio, error) {
 	ret, err := qb.find(ctx, id)

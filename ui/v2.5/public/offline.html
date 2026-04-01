@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#394b59" />
+    <title>Stash - Offline</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        background: #202b33;
+        color: #f5f8fa;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        text-align: center;
+        padding: 2rem;
+      }
+      .container { max-width: 400px; }
+      .icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        opacity: 0.6;
+      }
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+      }
+      p {
+        color: #a7b6c2;
+        font-size: 1rem;
+        margin-bottom: 2rem;
+        line-height: 1.5;
+      }
+      button {
+        background: #137cbd;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 0.75rem 2rem;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      button:hover { background: #1a8fd1; }
+      button:active { background: #0e5f99; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#a7b6c2" stroke-width="1.5">
+        <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 12.55a10.94 10.94 0 015.17-2.39M10.71 5.05A16 16 0 0122.56 9M1.42 9a15.91 15.91 0 014.7-2.88M8.53 16.11a6 6 0 016.95 0M12 20h.01" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1>You're Offline</h1>
+      <p>Stash can't reach the server right now. Check your connection and try again.</p>
+      <button onclick="window.location.reload()">Retry</button>
+    </div>
+    <script>
+      window.addEventListener("online", function() { window.location.reload(); });
+    </script>
+  </body>
+</html>

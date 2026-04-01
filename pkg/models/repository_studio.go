@@ -84,11 +84,17 @@ type StudioReader interface {
 	HasImage(ctx context.Context, studioID int) (bool, error)
 }
 
+// StudioMerger provides methods to merge studios.
+type StudioMerger interface {
+	Merge(ctx context.Context, source []int, destination int) error
+}
+
 // StudioWriter provides all methods to modify studios.
 type StudioWriter interface {
 	StudioCreator
 	StudioUpdater
 	StudioDestroyer
+	StudioMerger
 }
 
 // StudioReaderWriter provides all studio methods.

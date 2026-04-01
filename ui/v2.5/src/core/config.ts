@@ -3,6 +3,7 @@ import { ITypename } from "src/utils/data";
 import { ImageWallOptions } from "src/utils/imageWall";
 import { RatingSystemOptions } from "src/utils/rating";
 import {
+  CriterionModifier,
   FilterMode,
   SavedFilterDataFragment,
   SortDirectionEnum,
@@ -29,6 +30,9 @@ export interface ICustomFilter extends ITypename {
   mode: FilterMode;
   sortBy: string;
   direction: SortDirectionEnum;
+  // Optional function to apply filter criteria to the ListFilterModel
+  // Uses generic type to avoid circular import with ListFilterModel
+  applyCriteria?: (filter: any) => void;
 }
 
 export type DefaultFilters = {
@@ -155,9 +159,40 @@ function recentlyAdded(
   };
 }
 
+function continueWatching(intl: IntlShape): ICustomFilter {
+  return {
+    __typename: "CustomFilter",
+    message: {
+      id: "continue_watching",
+      values: {},
+    },
+    mode: FilterMode.Scenes,
+    sortBy: "last_played_at",
+    direction: SortDirectionEnum.Desc,
+    applyCriteria: (filter: any) => {
+      // Import criterion types dynamically to avoid circular dependency
+      const resumeTimeCriterion = filter.criteria?.find?.(
+        (c: any) => c.criterionOption?.type === "resume_time"
+      );
+      // If not already present, create criteria for resume_time > 0
+      if (!resumeTimeCriterion) {
+        const { DurationCriterion, createDurationCriterionOption } =
+          require("src/models/list-filter/criteria/criterion");
+        const opt = createDurationCriterionOption("resume_time");
+        const criterion = new DurationCriterion(opt);
+        criterion.modifier = CriterionModifier.GreaterThan;
+        criterion.value = { value: 0, value2: undefined };
+        filter.criteria.push(criterion);
+      }
+    },
+  };
+}
+
 export function generateDefaultFrontPageContent(intl: IntlShape) {
   return [
+    continueWatching(intl),
     recentlyReleased(intl, FilterMode.Scenes, "scenes"),
+    recentlyAdded(intl, FilterMode.Scenes, "scenes"),
     recentlyAdded(intl, FilterMode.Studios, "studios"),
     recentlyReleased(intl, FilterMode.Groups, "groups"),
     recentlyAdded(intl, FilterMode.Performers, "performers"),
@@ -167,6 +202,7 @@ export function generateDefaultFrontPageContent(intl: IntlShape) {
 
 export function generatePremadeFrontPageContent(intl: IntlShape) {
   return [
+    continueWatching(intl),
     recentlyReleased(intl, FilterMode.Scenes, "scenes"),
     recentlyAdded(intl, FilterMode.Scenes, "scenes"),
     recentlyReleased(intl, FilterMode.Galleries, "galleries"),

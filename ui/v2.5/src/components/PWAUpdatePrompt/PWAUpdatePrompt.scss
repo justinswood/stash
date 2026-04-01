@@ -1,0 +1,16 @@
+.pwa-update-toast {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1050;
+  background: #1a2029;
+  border: 1px solid #137cbd;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #c0cdd8;
+  font-size: 0.875rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}

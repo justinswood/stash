@@ -381,6 +381,7 @@ type Mutation {
   studioUpdate(input: StudioUpdateInput!): Studio
   studioDestroy(input: StudioDestroyInput!): Boolean!
   studiosDestroy(ids: [ID!]!): Boolean!
+  studioMerge(input: StudioMergeInput!): Studio!
   bulkStudioUpdate(input: BulkStudioUpdateInput!): [Studio!]
 
   movieCreate(input: MovieCreateInput!): Movie

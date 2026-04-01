@@ -2,12 +2,15 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/plugin/hook"
+	"github.com/stashapp/stash/pkg/sliceutil"
 	"github.com/stashapp/stash/pkg/sliceutil/stringslice"
 	"github.com/stashapp/stash/pkg/studio"
 	"github.com/stashapp/stash/pkg/utils"
@@ -322,4 +325,113 @@ func (r *mutationResolver) StudiosDestroy(ctx context.Context, studioIDs []strin
 	}
 
 	return true, nil
+}
+
+func studioUpdateToPartial(input models.StudioUpdateInput, translator changesetTranslator) (*models.StudioPartial, error) {
+	s := models.NewStudioPartial()
+
+	s.Name = translator.optionalString(input.Name, "name")
+	s.Details = translator.optionalString(input.Details, "details")
+	s.Rating = translator.optionalInt(input.Rating100, "rating100")
+	s.Favorite = translator.optionalBool(input.Favorite, "favorite")
+	s.IgnoreAutoTag = translator.optionalBool(input.IgnoreAutoTag, "ignore_auto_tag")
+	s.Aliases = translator.updateStrings(input.Aliases, "aliases")
+	s.StashIDs = translator.updateStashIDs(input.StashIds, "stash_ids")
+
+	var err error
+	s.ParentID, err = translator.optionalIntFromString(input.ParentID, "parent_id")
+	if err != nil {
+		return nil, fmt.Errorf("converting parent id: %w", err)
+	}
+
+	s.TagIDs, err = translator.updateIds(input.TagIds, "tag_ids")
+	if err != nil {
+		return nil, fmt.Errorf("converting tag ids: %w", err)
+	}
+
+	if translator.hasField("urls") {
+		s.URLs = translator.updateStrings(input.Urls, "urls")
+	}
+
+	return &s, nil
+}
+
+func (r *mutationResolver) StudioMerge(ctx context.Context, input StudioMergeInput) (*models.Studio, error) {
+	srcIDs, err := stringslice.StringSliceToIntSlice(input.Source)
+	if err != nil {
+		return nil, fmt.Errorf("converting source ids: %w", err)
+	}
+
+	srcIDs = sliceutil.AppendUniques(nil, srcIDs)
+
+	destID, err := strconv.Atoi(input.Destination)
+	if err != nil {
+		return nil, fmt.Errorf("converting destination id: %w", err)
+	}
+
+	if slices.Contains(srcIDs, destID) {
+		return nil, errors.New("destination studio cannot be in source list")
+	}
+
+	var values *models.StudioPartial
+	var imageData []byte
+
+	if input.Values != nil {
+		translator := changesetTranslator{
+			inputMap: getNamedUpdateInputMap(ctx, "input.values"),
+		}
+
+		values, err = studioUpdateToPartial(*input.Values, translator)
+		if err != nil {
+			return nil, err
+		}
+
+		if input.Values.Image != nil {
+			imageData, err = utils.ProcessImageInput(ctx, *input.Values.Image)
+			if err != nil {
+				return nil, fmt.Errorf("processing studio image: %w", err)
+			}
+		}
+	} else {
+		v := models.NewStudioPartial()
+		values = &v
+	}
+
+	var dest *models.Studio
+	if err := r.withTxn(ctx, func(ctx context.Context) error {
+		qb := r.repository.Studio
+
+		dest, err = qb.Find(ctx, destID)
+		if err != nil {
+			return fmt.Errorf("finding destination studio ID %d: %w", destID, err)
+		}
+		if dest == nil {
+			return fmt.Errorf("destination studio %d not found", destID)
+		}
+
+		if _, err := qb.FindMany(ctx, srcIDs); err != nil {
+			return fmt.Errorf("finding source studios: %w", err)
+		}
+
+		values.ID = destID
+		if _, err := qb.UpdatePartial(ctx, *values); err != nil {
+			return fmt.Errorf("updating studio: %w", err)
+		}
+
+		if err := qb.Merge(ctx, srcIDs, destID); err != nil {
+			return fmt.Errorf("merging studios: %w", err)
+		}
+
+		if len(imageData) > 0 {
+			if err := qb.UpdateImage(ctx, destID, imageData); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return dest, nil
 }

@@ -1251,6 +1251,7 @@
   },
   "megabits_per_second": "{value} mbps",
   "metadata": "Metadata",
+  "more_like_this": "More Like This",
   "name": "Name",
   "sort_name": "Sort Name",
   "new": "New",
@@ -1367,6 +1368,7 @@
   "queue": "Queue",
   "random": "Random",
   "rating": "Rating",
+  "continue_watching": "Continue Watching",
   "recently_added_objects": "Recently Added {objects}",
   "recently_released_objects": "Recently Released {objects}",
   "release_notes": "Release Notes",
@@ -1510,7 +1512,11 @@
     "submission_successful": "Submission successful",
     "submit_update": "Already exists in {endpoint_name}"
   },
+  "no_watch_history": "No watch history yet. Start playing scenes to see them here.",
+  "scenes_watched": "scenes watched",
   "statistics": "Statistics",
+  "total_watch_time": "total watch time",
+  "watch_history": "Watch History",
   "stats": {
     "image_size": "Images size",
     "scenes_duration": "Scenes duration",

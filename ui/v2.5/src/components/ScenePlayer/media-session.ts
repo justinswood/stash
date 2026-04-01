@@ -16,6 +16,9 @@ class MediaSessionPlugin extends videojs.getPlugin("plugin") {
     player.on("pause", () => {
       this.updatePlaybackState();
     });
+    player.on("timeupdate", () => {
+      this.updatePlaybackState();
+    });
     this.updatePlaybackState();
   }
 
@@ -39,6 +42,20 @@ class MediaSessionPlugin extends videojs.getPlugin("plugin") {
     if ("mediaSession" in navigator) {
       const playbackState = this.player.paused() ? "paused" : "playing";
       navigator.mediaSession.playbackState = playbackState;
+
+      // Update position state for lock screen seek bar
+      const duration = this.player.duration();
+      if (duration && isFinite(duration) && "setPositionState" in navigator.mediaSession) {
+        try {
+          navigator.mediaSession.setPositionState({
+            duration,
+            playbackRate: this.player.playbackRate() || 1,
+            position: Math.min(this.player.currentTime() || 0, duration),
+          });
+        } catch {
+          // ignore errors from invalid state
+        }
+      }
     }
   }
 
@@ -55,6 +72,12 @@ class MediaSessionPlugin extends videojs.getPlugin("plugin") {
     });
     navigator.mediaSession.setActionHandler("previoustrack", () => {
       this.player.skipButtons()?.handleBackward();
+    });
+    navigator.mediaSession.setActionHandler("seekto", (details) => {
+      if (details.seekTime !== undefined) {
+        this.player.currentTime(details.seekTime);
+        this.updatePlaybackState();
+      }
     });
   }
 }

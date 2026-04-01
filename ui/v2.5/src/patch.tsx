@@ -113,7 +113,11 @@ export function PatchComponent<T>(
 
   // register with the plugin api
   RegisterComponent(component, ret);
-  return ret as React.FC<T>;
+
+  // wrap in React.memo to prevent unnecessary re-renders in list views
+  const memoized = React.memo(ret as React.FC<T>);
+  memoized.displayName = component;
+  return memoized;
 }
 
 // patches a component and registers it in the pluginapi components object

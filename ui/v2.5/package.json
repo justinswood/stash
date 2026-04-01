@@ -17,6 +17,8 @@
     "stylelint": "stylelint",
     "format": "prettier --write . ../../graphql",
     "format-check": "prettier --check . ../../graphql",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "gqlgen": "gql-gen --config codegen.ts",
     "extract": "NODE_ENV=development extract-messages -l=en,de -o src/locale -d en --flat false 'src/**/!(*.test).tsx'"
   },
@@ -82,6 +84,12 @@
     "videojs-seek-buttons": "^3.0.1",
     "videojs-vr": "1.8.0",
     "videojs-vtt.js": "^0.15.4",
+    "workbox-cacheable-response": "^7.4.0",
+    "workbox-expiration": "^7.4.0",
+    "workbox-precaching": "^7.4.0",
+    "workbox-routing": "^7.4.0",
+    "workbox-strategies": "^7.4.0",
+    "workbox-window": "^7.4.0",
     "yup": "^1.3.2"
   },
   "devDependencies": {
@@ -91,6 +99,9 @@
     "@graphql-codegen/typescript": "^4.0.1",
     "@graphql-codegen/typescript-operations": "^4.0.1",
     "@graphql-codegen/typescript-react-apollo": "^4.1.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/apollo-upload-client": "^18.0.0",
     "@types/crypto-js": "^4.2.2",
     "@types/dom-screen-wake-lock": "^1.0.3",
@@ -121,6 +132,7 @@
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "extract-react-intl-messages": "^4.1.1",
+    "jsdom": "^24.1.3",
     "postcss": "^8.4.31",
     "postcss-scss": "^4.0.6",
     "prettier": "^2.8.4",
@@ -132,6 +144,8 @@
     "typescript": "~4.8.4",
     "vite": "^5.4.21",
     "vite-plugin-compression": "^0.5.1",
-    "vite-tsconfig-paths": "^4.0.5"
+    "vite-plugin-pwa": "^1.2.0",
+    "vite-tsconfig-paths": "^4.0.5",
+    "vitest": "^2.1.9"
   }
 }

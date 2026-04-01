@@ -28,6 +28,7 @@ import (
 	"github.com/go-chi/httplog"
 	"github.com/gorilla/websocket"
 	"github.com/vearutop/statigz"
+	"golang.org/x/time/rate"
 	"github.com/vektah/gqlparser/v2/ast"
 
 	"github.com/stashapp/stash/internal/api/loaders"
@@ -193,7 +194,14 @@ func Initialize() (*Server, error) {
 
 	gqlSrv.SetErrorPresenter(gqlErrorHandler)
 
+	// Rate limit GraphQL endpoint: 60 requests/second with burst of 120
+	gqlLimiter := rate.NewLimiter(rate.Limit(60), 120)
+
 	gqlHandlerFunc := func(w http.ResponseWriter, r *http.Request) {
+		if !gqlLimiter.Allow() {
+			http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+			return
+		}
 		w.Header().Set("Cache-Control", "no-store")
 		gqlSrv.ServeHTTP(w, r)
 	}
@@ -617,7 +625,7 @@ func setPageSecurityHeaders(w http.ResponseWriter, r *http.Request, plugins []*p
 	styleSrc := strings.Join(styleSrcSlice, " ")
 
 	cspDirectives := fmt.Sprintf("default-src %s; connect-src %s; img-src %s; script-src %s; style-src %s; media-src %s;", defaultSrc, connectSrc, imageSrc, scriptSrc, styleSrc, mediaSrc)
-	cspDirectives += " worker-src blob:; child-src 'none'; object-src 'none'; form-action 'self';"
+	cspDirectives += " worker-src blob: 'self'; child-src 'none'; object-src 'none'; form-action 'self';"
 
 	w.Header().Set("Referrer-Policy", "same-origin")
 	w.Header().Set("Content-Security-Policy", cspDirectives)

@@ -24,6 +24,7 @@ import "./big-buttons";
 import "./track-activity";
 import "./vrmode";
 import "./media-session";
+import "./swipe-seek";
 import "./wake-sentinel";
 import cx from "classnames";
 import {
@@ -307,7 +308,7 @@ export const ScenePlayer: React.FC<IScenePlayerProps> = PatchComponent(
       }
 
       const onResize = () => {
-        const show = window.innerHeight >= 450 && !ScreenUtils.isMobile();
+        const show = window.innerHeight >= 450;
         setShowScrubber(show);
       };
       onResize();
@@ -338,7 +339,10 @@ export const ScenePlayer: React.FC<IScenePlayerProps> = PatchComponent(
         id: VIDEO_PLAYER_ID,
         controls: true,
         controlBar: {
-          pictureInPictureToggle: false,
+          pictureInPictureToggle:
+            "pictureInPictureEnabled" in document
+              ? (document as any).pictureInPictureEnabled
+              : false,
           volumePanel: {
             inline: false,
           },
@@ -603,12 +607,15 @@ export const ScenePlayer: React.FC<IScenePlayerProps> = PatchComponent(
             : isLandscape,
         },
         touchControls: {
-          disabled: true,
+          seekSeconds: 10,
+          tapTimeout: 300,
+          disableOnEnd: false,
         },
       };
       if (!isSafari) {
         player.mobileUi(mobileUiOptions);
       }
+      player.swipeSeek();
 
       function isDirect(src: URL) {
         return (

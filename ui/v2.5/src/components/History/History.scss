@@ -1,0 +1,41 @@
+.history-page {
+  padding: 0 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.history-header {
+  margin-bottom: 1.5rem;
+
+  h2 {
+    margin-bottom: 0.25rem;
+  }
+}
+
+.history-stats {
+  color: #8a9ba8;
+  font-size: 0.9rem;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #8a9ba8;
+}
+
+.history-group {
+  margin-bottom: 2rem;
+}
+
+.history-date {
+  color: #c0cdd8;
+  border-bottom: 1px solid #333;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.history-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}

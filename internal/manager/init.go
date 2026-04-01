@@ -247,6 +247,10 @@ func (s *Manager) postInit(ctx context.Context) error {
 	s.RefreshFFMpeg(ctx)
 	s.RefreshStreamManager()
 
+	// Start scheduled scan if configured
+	s.scanScheduler = newScanScheduler(s)
+	s.scanScheduler.Start(s.Config)
+
 	return nil
 }
 

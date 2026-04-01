@@ -49,6 +49,10 @@ import { PluginRoutes, PluginsLoader } from "./plugins";
 // import plugin_api to run code
 import "./pluginApi";
 import { ConnectionMonitor } from "./ConnectionMonitor";
+import { MobileBottomNav } from "./components/MobileBottomNav/MobileBottomNav";
+import { PWAInstallPrompt } from "./components/PWAInstallPrompt/PWAInstallPrompt";
+import { PWAUpdatePrompt } from "./components/PWAUpdatePrompt/PWAUpdatePrompt";
+import { CommandPalette } from "./components/CommandPalette/CommandPalette";
 import { PatchFunction } from "./patch";
 
 import moment from "moment/min/moment-with-locales";
@@ -64,6 +68,7 @@ const FrontPage = lazyComponent(
 const Scenes = lazyComponent(() => import("./components/Scenes/Scenes"));
 const Settings = lazyComponent(() => import("./components/Settings/Settings"));
 const Stats = lazyComponent(() => import("./components/Stats"));
+const History = lazyComponent(() => import("./components/History/History"));
 const Studios = lazyComponent(() => import("./components/Studios/Studios"));
 const Galleries = lazyComponent(
   () => import("./components/Galleries/Galleries")
@@ -138,6 +143,7 @@ function translateLanguageLocale(l: string) {
 export const App: React.FC = () => {
   const config = useConfiguration();
   const [saveUI] = useConfigureUI();
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
 
   const { data: systemStatusData } = useSystemStatus();
 
@@ -209,6 +215,17 @@ export const App: React.FC = () => {
     Event.dispatch("location", "", { location });
   }, [location]);
 
+  // Command palette keybinding (Ctrl+K / Cmd+K)
+  useEffect(() => {
+    Mousetrap.bind(["mod+k"], (e) => {
+      e.preventDefault();
+      setShowCommandPalette((v) => !v);
+    });
+    return () => {
+      Mousetrap.unbind(["mod+k"]);
+    };
+  }, []);
+
   // redirect to setup or migrate as needed
   useEffect(() => {
     if (!systemStatusData) {
@@ -259,6 +276,7 @@ export const App: React.FC = () => {
             <Route path="/studios" component={Studios} />
             <Route path="/groups" component={Groups} />
             <Route path="/stats" component={Stats} />
+            <Route path="/history" component={History} />
             <Route path="/settings" component={Settings} />
             <Route
               path="/sceneFilenameParser"
@@ -357,12 +375,19 @@ export const App: React.FC = () => {
               <ConfigurationProvider configuration={config.data!.configuration}>
                 {maybeRenderReleaseNotes()}
                 <ConnectionMonitor />
+                <PWAUpdatePrompt />
+                <CommandPalette
+                  show={showCommandPalette}
+                  onClose={() => setShowCommandPalette(false)}
+                />
                 <Suspense fallback={<LoadingIndicator />}>
                   <LightboxProvider>
                     <ManualProvider>
                       <InteractiveProvider>
                         <Helmet {...titleProps} />
                         {maybeRenderNavbar()}
+                        {!setupMatch && <MobileBottomNav />}
+                        <PWAInstallPrompt />
                         <MainContainer>{renderContent()}</MainContainer>
                       </InteractiveProvider>
                     </ManualProvider>

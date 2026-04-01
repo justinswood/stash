@@ -43,7 +43,8 @@ func authenticateHandler() func(http.Handler) http.Handler {
 			userID, err := manager.GetInstance().SessionStore.Authenticate(w, r)
 			if err != nil {
 				if !errors.Is(err, session.ErrUnauthorized) {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
+					logger.Errorf("Authentication error: %v", err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
 				}
 

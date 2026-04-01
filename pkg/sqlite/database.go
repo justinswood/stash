@@ -14,6 +14,10 @@ import (
 
 	"github.com/stashapp/stash/pkg/fsutil"
 	"github.com/stashapp/stash/pkg/logger"
+
+	"io/fs"
+	"regexp"
+	"strconv"
 )
 
 const (
@@ -38,6 +42,36 @@ var appSchemaVersion uint = 75
 
 //go:embed migrations/*.sql
 var migrationsBox embed.FS
+
+var migrationNumberRE = regexp.MustCompile(`^(\d+)_.*\.up\.sql$`)
+
+func init() {
+	// Validate that appSchemaVersion matches the highest migration file number.
+	// This catches cases where a migration was added but appSchemaVersion was not bumped.
+	entries, err := fs.ReadDir(migrationsBox, "migrations")
+	if err != nil {
+		return
+	}
+
+	var maxMigration uint
+	for _, e := range entries {
+		matches := migrationNumberRE.FindStringSubmatch(e.Name())
+		if len(matches) < 2 {
+			continue
+		}
+		n, err := strconv.ParseUint(matches[1], 10, 64)
+		if err != nil {
+			continue
+		}
+		if uint(n) > maxMigration {
+			maxMigration = uint(n)
+		}
+	}
+
+	if maxMigration != appSchemaVersion {
+		logger.Warnf("appSchemaVersion (%d) does not match highest migration (%d) — update appSchemaVersion in database.go", appSchemaVersion, maxMigration)
+	}
+}
 
 var (
 	// ErrDatabaseNotInitialized indicates that the database is not

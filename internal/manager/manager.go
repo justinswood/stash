@@ -68,7 +68,8 @@ type Manager struct {
 	GalleryService GalleryService
 	GroupService   GroupService
 
-	scanSubs *subscriptionManager
+	scanSubs      *subscriptionManager
+	scanScheduler *scanScheduler
 }
 
 var instance *Manager

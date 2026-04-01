@@ -157,6 +157,11 @@ const CustomFilterResults: React.FC<ICustomFilterProps> = ({
     ret.currentPage = 1;
     ret.randomSeed = -1;
 
+    // Apply custom filter criteria if provided
+    if (customFilter.applyCriteria) {
+      customFilter.applyCriteria(ret);
+    }
+
     if (
       !showMaleTransPerformers &&
       customFilter.mode === GQL.FilterMode.Performers

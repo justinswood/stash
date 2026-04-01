@@ -89,6 +89,10 @@ const (
 	SequentialScanning        = "sequential_scanning"
 	SequentialScanningDefault = false
 
+	// ScanSchedule is the cron-like interval for automatic scanning.
+	// Values: "", "hourly", "6h", "12h", "daily", "weekly"
+	ScanSchedule = "scan_schedule"
+
 	PreviewAudio        = "preview_audio"
 	previewAudioDefault = true
 
@@ -824,6 +828,10 @@ func (i *Config) GetSequentialScanning() bool {
 	return i.getBool(SequentialScanning)
 }
 
+func (i *Config) GetScanSchedule() string {
+	return i.getString(ScanSchedule)
+}
+
 func (i *Config) GetGalleryCoverRegex() string {
 	var regexString = i.getString(GalleryCoverRegex)
 
@@ -1099,7 +1107,7 @@ func (i *Config) HasCredentials() bool {
 }
 
 func hashPassword(password string) string {
-	hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	return string(hash)
 }

@@ -59,7 +59,7 @@ body {
 
   @include media-breakpoint-down(xs) {
     @media (orientation: portrait) {
-      padding: 0.5rem 0 $navbar-height;
+      padding: 0.5rem 0 56px; // mobile bottom nav height
     }
   }
 }
@@ -1068,8 +1068,7 @@ div.dropdown-menu {
     padding: 0.25rem 2rem;
 
     @media (orientation: portrait) {
-      bottom: 0;
-      top: auto;
+      display: none; // replaced by MobileBottomNav
     }
   }
   @include media-breakpoint-up(xl) {

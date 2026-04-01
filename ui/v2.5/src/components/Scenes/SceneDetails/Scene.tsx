@@ -22,6 +22,7 @@ import {
 } from "src/core/StashService";
 
 import { SceneEditPanel } from "./SceneEditPanel";
+import { MoreLikeThis } from "../MoreLikeThis";
 import { ErrorMessage } from "src/components/Shared/ErrorMessage";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { Icon } from "src/components/Shared/Icon";
@@ -690,6 +691,7 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
           </div>
         </div>
         {renderTabs()}
+        <MoreLikeThis scene={scene} />
       </div>
       <div className="scene-divider d-none d-xl-block">
         <Button onClick={() => setCollapsed(!collapsed)}>
