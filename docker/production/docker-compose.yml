@@ -4,6 +4,8 @@ services:
   stash:
     image: stash/build:latest
     container_name: stash
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
     restart: unless-stopped
     ## the container's port must be the same with the STASH_PORT in the environment section
     ports:
@@ -22,6 +24,8 @@ services:
       - STASH_CACHE=/cache/
       ## Adjust below to change default port (9999)
       - STASH_PORT=9999
+      ## FlareSolverr URL for Cloudflare-protected scrapers
+      - FLARESOLVERR_URL=http://flaresolverr:8191/v1
     volumes:
       - /etc/localtime:/etc/localtime:ro
       ## Adjust below paths (the left part) to your liking.
@@ -41,3 +45,12 @@ services:
       - ./blobs:/blobs
       ## Where to store generated content (screenshots,previews,transcodes,sprites)
       - ./generated:/generated
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    environment:
+      - LOG_LEVEL=info
+    ports:
+      - "8191:8191"
+    restart: unless-stopped

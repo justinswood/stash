@@ -46,7 +46,10 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 # Final Runnable Image
 FROM alpine:latest
-RUN apk add --no-cache ca-certificates vips-tools ffmpeg
+RUN apk add --no-cache ca-certificates vips-tools ffmpeg \
+  python3 py3-pip py3-lxml \
+  && pip3 install --break-system-packages requests cloudscraper \
+  && ln -sf /usr/bin/python3 /usr/bin/python
 COPY --from=backend /stash/stash /usr/bin/
 ENV STASH_CONFIG_FILE=/root/.stash/config.yml
 EXPOSE 9999
