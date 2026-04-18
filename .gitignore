@@ -72,3 +72,6 @@ docker/production/config/stash-go.sqlite
 docker/production/config/stash-go.sqlite-shm
 docker/production/config/stash-go.sqlite-wal
 docker/production/config/plugins/
+
+# Local Claude Code instructions
+CLAUDE.md
