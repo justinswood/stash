@@ -497,7 +497,21 @@ export const MainNavbar: React.FC = () => {
                     type="button"
                     onMouseDown={() => onPerformerResultSelect(performer.id)}
                   >
-                    {performer.name}
+                    {performer.image_path ? (
+                      <img
+                        className="navbar-performer-search-thumb"
+                        src={performer.image_path}
+                        alt=""
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="navbar-performer-search-thumb navbar-performer-search-thumb--placeholder">
+                        <Icon icon={faUser} />
+                      </span>
+                    )}
+                    <span className="navbar-performer-search-name">
+                      {performer.name}
+                    </span>
                   </button>
                 ))}
             </div>

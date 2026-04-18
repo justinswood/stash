@@ -1,5 +1,13 @@
 # Stash Development Guide
 
+> **⚠️ ALWAYS REBUILD AND RESTART DOCKER CONTAINERS AFTER ANY CODE CHANGE ⚠️**
+>
+> This project runs from the `stash/build:latest` image — source changes are not reflected in the running container until the image is rebuilt. After editing any backend or frontend code, you MUST:
+> 1. Run `make docker-build` (full frontend + backend compile)
+> 2. Restart the container: `cd docker/production && docker compose up -d --force-recreate stash`
+>
+> This applies to every change, no matter how small. Do not report a task as "done" before the container has been rebuilt and restarted.
+
 ## Project Overview
 
 Stash is a self-hosted web application for organizing, managing, and serving video/image content collections with metadata enrichment capabilities. This is a fork of [stashapp/stash](https://github.com/stashapp/stash).

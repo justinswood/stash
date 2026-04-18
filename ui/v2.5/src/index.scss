@@ -1205,13 +1205,38 @@ div.dropdown-menu {
   }
 
   .navbar-performer-search-item {
+    align-items: center;
     background: none;
     border: 0;
     color: #f0f0f0;
-    display: block;
+    display: flex;
+    gap: 0.5rem;
     padding: 0.4rem 0.6rem;
     text-align: left;
     width: 100%;
+  }
+
+  .navbar-performer-search-thumb {
+    background-color: #2a2a2a;
+    border-radius: 4px;
+    flex-shrink: 0;
+    height: 36px;
+    object-fit: cover;
+    object-position: top;
+    width: 36px;
+  }
+
+  .navbar-performer-search-thumb--placeholder {
+    align-items: center;
+    color: #666;
+    display: inline-flex;
+    justify-content: center;
+  }
+
+  .navbar-performer-search-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .navbar-performer-search-item:hover,
