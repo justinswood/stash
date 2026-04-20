@@ -72,6 +72,15 @@ export const ScenePreview: React.FC<IScenePreviewProps> = ({
 
   return (
     <div className={cx("scene-card-preview", { portrait: isPortrait })}>
+      {isPortrait && image && (
+        <img
+          className="scene-card-preview-backdrop"
+          src={image}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+        />
+      )}
       <img
         className="scene-card-preview-image"
         loading="lazy"

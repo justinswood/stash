@@ -225,6 +225,7 @@ textarea.scene-description {
     display: flex;
     justify-content: center;
     margin-bottom: 5px;
+    overflow: hidden;
     position: relative;
 
     &-image,
@@ -242,10 +243,30 @@ textarea.scene-description {
       transition-delay: 0s;
     }
 
+    &-backdrop {
+      filter: blur(24px) brightness(0.55) saturate(1.1);
+      height: 100%;
+      left: 0;
+      object-fit: cover;
+      object-position: center;
+      pointer-events: none;
+      position: absolute;
+      top: 0;
+      transform: scale(1.15);
+      width: 100%;
+      z-index: 0;
+    }
+
     &.portrait {
-      .scene-card-preview-image,
+      .scene-card-preview-image {
+        object-fit: contain;
+        position: relative;
+        z-index: 1;
+      }
+
       .scene-card-preview-video {
         object-fit: contain;
+        z-index: 1;
       }
     }
   }
