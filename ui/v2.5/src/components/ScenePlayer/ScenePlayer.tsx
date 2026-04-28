@@ -26,6 +26,7 @@ import "./vrmode";
 import "./media-session";
 import "./swipe-seek";
 import "./wake-sentinel";
+import "./airplay-sync";
 import cx from "classnames";
 import {
   useSceneSaveActivity,
@@ -411,6 +412,7 @@ export const ScenePlayer: React.FC<IScenePlayerProps> = PatchComponent(
           },
           mediaSession: {},
           wakeSentinel: {},
+          airPlaySync: {},
         },
       };
 
