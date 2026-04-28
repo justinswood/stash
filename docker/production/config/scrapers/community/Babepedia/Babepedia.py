@@ -1,9 +1,6 @@
 import json
 import re
 import sys
-import os
-# Add parent directory to path so py_common can be found
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 from datetime import datetime # birthday formatting
 
 from py_common.proxy import StashRequests
