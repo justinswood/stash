@@ -310,3 +310,34 @@
     font-family: "Courier New", Courier, monospace;
   }
 }
+
+// PWA standalone or mobile portrait: shrink performer image 30% and center
+// the picture and info as a column. .detail-header-image defaults to
+// float:left and flex-direction:column on #performer-page; column flex
+// means justify-content centers vertically, so we need align-items:center
+// to actually center the img horizontally.
+@media (display-mode: standalone),
+  (max-width: 575.98px) and (orientation: portrait) {
+  #performer-page {
+    .detail-header-image {
+      align-items: center;
+      float: none;
+      padding: 0;
+      width: 100%;
+    }
+
+    .detail-header-image img {
+      display: block;
+      margin: 0 auto;
+      max-width: 9.8rem; // 14rem * 0.7
+    }
+
+    .performer-image-cropper {
+      width: 100%;
+    }
+
+    .detail-header .performer-head {
+      text-align: center;
+    }
+  }
+}

@@ -15,6 +15,7 @@ import {
   faChartColumn,
   faCog,
   faTimes,
+  faHouse,
 } from "@fortawesome/free-solid-svg-icons";
 import { useConfigurationContext } from "src/hooks/Config";
 import "./MobileBottomNav.scss";
@@ -28,6 +29,13 @@ interface BottomTab {
 }
 
 const primaryTabs: BottomTab[] = [
+  {
+    id: "home",
+    messageId: "home",
+    defaultMessage: "Home",
+    href: "/",
+    icon: faHouse,
+  },
   {
     id: "scenes",
     messageId: "scenes",
@@ -102,8 +110,10 @@ export const MobileBottomNav: React.FC = () => {
   const { configuration } = useConfigurationContext();
   const cfgMenuItems = configuration?.interface.menuItems;
 
-  // Filter tabs based on user config
+  // Filter tabs based on user config; "home" is a navigation shortcut,
+  // not a content menu item, so it's always shown.
   const filterTab = (tab: BottomTab) => {
+    if (tab.id === "home") return true;
     if (!cfgMenuItems) return true;
     return cfgMenuItems.includes(tab.id);
   };
@@ -111,7 +121,10 @@ export const MobileBottomNav: React.FC = () => {
   const visiblePrimary = primaryTabs.filter(filterTab);
   const visibleMore = moreTabs.filter(filterTab);
 
-  const isActive = (href: string) => location.pathname.startsWith(href);
+  const isActive = (href: string) =>
+    href === "/"
+      ? location.pathname === "/"
+      : location.pathname.startsWith(href);
 
   return (
     <>
