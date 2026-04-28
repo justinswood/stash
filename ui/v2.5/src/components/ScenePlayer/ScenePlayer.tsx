@@ -379,7 +379,7 @@ export const ScenePlayer: React.FC<IScenePlayerProps> = PatchComponent(
         },
         plugins: {
           airPlay: {
-            addButtonToControlBar: uiConfig?.enableChromecast ?? false,
+            addButtonToControlBar: true,
           },
           chromecast: {},
           vttThumbnails: {
@@ -417,6 +417,7 @@ export const ScenePlayer: React.FC<IScenePlayerProps> = PatchComponent(
       const videoEl = document.createElement("video-js");
       videoEl.setAttribute("data-vjs-player", "true");
       videoEl.setAttribute("crossorigin", "anonymous");
+      videoEl.setAttribute("x-webkit-airplay", "allow");
       videoEl.classList.add("vjs-big-play-centered");
       videoRef.current!.appendChild(videoEl);
 

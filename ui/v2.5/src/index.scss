@@ -59,7 +59,8 @@ body {
 
   @include media-breakpoint-down(xs) {
     @media (orientation: portrait) {
-      padding: 0.5rem 0 56px; // mobile bottom nav height
+      padding: calc(0.5rem + env(safe-area-inset-top, 0)) 0
+        calc(56px + env(safe-area-inset-bottom, 0)); // mobile bottom nav height + iOS home indicator
     }
   }
 }
