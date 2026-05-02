@@ -3,6 +3,11 @@ type Query {
   # Filters
   findSavedFilter(id: ID!): SavedFilter
   findSavedFilters(mode: FilterMode): [SavedFilter!]!
+
+  "Find all share links owned by the user. Tokens are NOT returned."
+  findShareLinks: [ShareLink!]!
+  "Find a single share link by ID. Token is NOT returned."
+  findShareLink(id: ID!): ShareLink
   findDefaultFilter(mode: FilterMode!): SavedFilter
     @deprecated(reason: "default filter now stored in UI config")
 
@@ -433,6 +438,15 @@ type Mutation {
   destroySavedFilter(input: DestroyFilterInput!): Boolean!
   setDefaultFilter(input: SetDefaultFilterInput!): Boolean!
     @deprecated(reason: "now uses UI config")
+
+  "Create a share link. The returned ShareLink contains the plaintext token and URL — these are NOT retrievable later."
+  shareLinkCreate(input: ShareLinkCreateInput!): ShareLink!
+  "Update share link properties (expiry, view limit, note, revoked)."
+  shareLinkUpdate(input: ShareLinkUpdateInput!): ShareLink!
+  "Revoke a share link. Same as shareLinkUpdate with revoked=true; provided for clarity."
+  shareLinkRevoke(id: ID!): ShareLink!
+  "Permanently delete a share link record."
+  shareLinkDestroy(id: ID!): Boolean!
 
   "Change general configuration options"
   configureGeneral(input: ConfigGeneralInput!): ConfigGeneralResult!

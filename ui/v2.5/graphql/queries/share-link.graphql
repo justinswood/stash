@@ -1,0 +1,11 @@
+query FindShareLinks {
+  findShareLinks {
+    ...ShareLinkData
+  }
+}
+
+query FindShareLink($id: ID!) {
+  findShareLink(id: $id) {
+    ...ShareLinkData
+  }
+}

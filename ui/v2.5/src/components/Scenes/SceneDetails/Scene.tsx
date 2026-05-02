@@ -31,6 +31,8 @@ import SceneQueue, { QueuedScene } from "src/models/sceneQueue";
 import { ListFilterModel } from "src/models/list-filter/filter";
 import Mousetrap from "mousetrap";
 import { OrganizedButton } from "./OrganizedButton";
+import { ShareButton } from "src/components/ShareLinks/ShareButton";
+import { ShareType } from "src/core/generated-graphql";
 import { useConfigurationContext } from "src/hooks/Config";
 import { getPlayerPosition } from "src/components/ScenePlayer/util";
 import {
@@ -440,6 +442,12 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
             <FormattedMessage id="actions.submit_stash_box" />
           </Dropdown.Item>
         )}
+        <ShareButton
+          shareType={ShareType.Scene}
+          sceneId={scene.id}
+          asDropdownItem
+          label="Share…"
+        />
         <Dropdown.Item
           key="merge-scene"
           className="bg-secondary text-white"

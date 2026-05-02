@@ -203,7 +203,9 @@ func Initialize() (*Server, error) {
 			return
 		}
 		w.Header().Set("Cache-Control", "no-store")
-		gqlSrv.ServeHTTP(w, r)
+		// install per-request stores
+		ctx := withShareLinkPlaintextStore(r.Context())
+		gqlSrv.ServeHTTP(w, r.WithContext(ctx))
 	}
 
 	// register GQL handler with plugin cache
@@ -228,6 +230,7 @@ func Initialize() (*Server, error) {
 	r.Mount("/tag", server.getTagRoutes())
 	r.Mount("/downloads", server.getDownloadsRoutes())
 	r.Mount("/plugin", server.getPluginRoutes())
+	r.Mount("/share", server.getShareRoutes())
 
 	r.HandleFunc("/css", cssHandler(cfg))
 	r.HandleFunc("/javascript", javascriptHandler(cfg))
@@ -425,6 +428,24 @@ func (s *Server) getDownloadsRoutes() chi.Router {
 func (s *Server) getPluginRoutes() chi.Router {
 	return pluginRoutes{
 		pluginCache: s.manager.PluginCache,
+	}.Routes()
+}
+
+func (s *Server) getShareRoutes() chi.Router {
+	repo := s.manager.Repository
+	return shareRoutes{
+		routes:            routes{txnManager: repo.TxnManager},
+		shareLinkFinder:   repo.ShareLink,
+		sceneFinder:       repo.Scene,
+		imageFinder:       repo.Image,
+		performerFinder:   repo.Performer,
+		sfwConfig:         s.manager.Config,
+		fileGetter:        repo.File,
+		captionFinder:     repo.File,
+		sceneMarkerFinder: repo.SceneMarker,
+		tagFinder:         repo.Tag,
+		scenePerformerIDs: repo.Scene,
+		imagePerformerIDs: repo.Image,
 	}.Routes()
 }
 

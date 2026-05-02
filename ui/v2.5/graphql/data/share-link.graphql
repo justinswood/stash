@@ -1,0 +1,20 @@
+fragment ShareLinkData on ShareLink {
+  id
+  share_type
+  scene_id
+  image_id
+  performer_id
+  expires_at
+  view_limit
+  view_count
+  revoked
+  note
+  created_at
+  updated_at
+}
+
+fragment ShareLinkCreatedData on ShareLink {
+  ...ShareLinkData
+  token
+  url
+}

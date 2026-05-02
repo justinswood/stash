@@ -311,11 +311,15 @@
   }
 }
 
-// PWA standalone or mobile portrait: shrink performer image 30% and center
-// the picture and info as a column. .detail-header-image defaults to
-// float:left and flex-direction:column on #performer-page; column flex
-// means justify-content centers vertically, so we need align-items:center
-// to actually center the img horizontally.
+// PWA standalone or mobile portrait: enlarged + centered hero image, name
+// stacked under it with social links on a new line, and trimmed detail
+// rows so the small-screen profile reads as a focused column. Desktop is
+// untouched (neither media condition matches).
+//
+// Why align-items: center is required: #performer-page .detail-header-image
+// is flex-direction: column, so justify-content centers along the vertical
+// (main) axis only. Horizontal centering needs align-items: center on the
+// flex container.
 @media (display-mode: standalone),
   (max-width: 575.98px) and (orientation: portrait) {
   #performer-page {
@@ -329,15 +333,36 @@
     .detail-header-image img {
       display: block;
       margin: 0 auto;
-      max-width: 9.8rem; // 14rem * 0.7
+      max-width: 18.2rem; // 14rem * 1.3
     }
 
+    // Crop image control isn't useful on mobile and steals vertical space
+    // under the now-larger photo.
     .performer-image-cropper {
-      width: 100%;
+      display: none;
     }
 
     .detail-header .performer-head {
       text-align: center;
+
+      // Push the favorite icon + external link buttons onto their own
+      // line under the name. The original 10px left margin (set in
+      // index.scss) skews centering, so reset it here.
+      .name-icons {
+        display: block;
+        margin-left: 0;
+        margin-top: 0.25rem;
+      }
+    }
+
+    // Hide detail rows that are noisy on a phone screen.
+    .detail-item.stash_ids,
+    .detail-item.appears-most-with-male,
+    .detail-item.appears-most-with-female,
+    .detail-item.total-content-time,
+    .detail-item.scenes-organized-percent,
+    .detail-item.scenes-timespan {
+      display: none;
     }
   }
 }

@@ -1,0 +1,21 @@
+mutation ShareLinkCreate($input: ShareLinkCreateInput!) {
+  shareLinkCreate(input: $input) {
+    ...ShareLinkCreatedData
+  }
+}
+
+mutation ShareLinkUpdate($input: ShareLinkUpdateInput!) {
+  shareLinkUpdate(input: $input) {
+    ...ShareLinkData
+  }
+}
+
+mutation ShareLinkRevoke($id: ID!) {
+  shareLinkRevoke(id: $id) {
+    ...ShareLinkData
+  }
+}
+
+mutation ShareLinkDestroy($id: ID!) {
+  shareLinkDestroy(id: $id)
+}

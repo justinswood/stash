@@ -17,6 +17,7 @@ import { SettingsServicesPanel } from "./SettingsServicesPanel";
 import { SettingsContext, useSettings } from "./context";
 import { SettingsLibraryPanel } from "./SettingsLibraryPanel";
 import { SettingsSecurityPanel } from "./SettingsSecurityPanel";
+import { SettingsShareLinksPanel } from "./SettingsShareLinksPanel";
 import Changelog from "../Changelog/Changelog";
 
 const validTabs = [
@@ -24,6 +25,7 @@ const validTabs = [
   "library",
   "interface",
   "security",
+  "share-links",
   "metadata-providers",
   "services",
   "system",
@@ -78,6 +80,11 @@ const SettingTabs: React.FC<{ tab: TabKey }> = ({ tab }) => {
                 <Nav.Link eventKey="security">
                   <FormattedMessage id="config.categories.security" />
                 </Nav.Link>
+              </LinkContainer>
+            </Nav.Item>
+            <Nav.Item>
+              <LinkContainer to="/settings?tab=share-links">
+                <Nav.Link eventKey="share-links">Share Links</Nav.Link>
               </LinkContainer>
             </Nav.Item>
             <Nav.Item>
@@ -166,6 +173,9 @@ const SettingTabs: React.FC<{ tab: TabKey }> = ({ tab }) => {
             </Tab.Pane>
             <Tab.Pane eventKey="security">
               <SettingsSecurityPanel />
+            </Tab.Pane>
+            <Tab.Pane eventKey="share-links" unmountOnExit>
+              <SettingsShareLinksPanel />
             </Tab.Pane>
             <Tab.Pane eventKey="tasks">
               <SettingsTasksPanel />

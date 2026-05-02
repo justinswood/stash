@@ -30,6 +30,8 @@ import { PerformerAppearsWithPanel } from "./performerAppearsWithPanel";
 import { PerformerEditPanel } from "./PerformerEditPanel";
 import { PerformerMergeModal } from "../PerformerMergeDialog";
 import { PerformerSubmitButton } from "./PerformerSubmitButton";
+import { ShareButton } from "src/components/ShareLinks/ShareButton";
+import { ShareType } from "src/core/generated-graphql";
 import { useRatingKeybinds } from "src/hooks/keybinds";
 import { DetailImage } from "src/components/Shared/DetailImage";
 import { useLoadStickyHeader } from "src/hooks/detailsPanel";
@@ -531,6 +533,13 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
                             {renderMergeButton()}
                             <div>
                               <PerformerSubmitButton performer={performer} />
+                            </div>
+                            <div>
+                              <ShareButton
+                                shareType={ShareType.Performer}
+                                performerId={performer.id}
+                                label="Share…"
+                              />
                             </div>
                           </>
                         }

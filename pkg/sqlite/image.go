@@ -613,6 +613,32 @@ var defaultGalleryOrder = []exp.OrderedExpression{
 	goqu.L("COALESCE(images.title, images.id) COLLATE NATURAL_CI").Asc(),
 }
 
+func (qb *ImageStore) FindByPerformerID(ctx context.Context, performerID int) ([]*models.Image, error) {
+	table := qb.table()
+
+	sq := dialect.From(table).
+		InnerJoin(
+			performersImagesJoinTable,
+			goqu.On(table.Col(idColumn).Eq(performersImagesJoinTable.Col(imageIDColumn))),
+		).
+		Select(table.Col(idColumn)).Where(
+		performersImagesJoinTable.Col("performer_id").Eq(performerID),
+	)
+
+	q := qb.selectDataset().Prepared(true).Where(
+		table.Col(idColumn).Eq(
+			sq,
+		),
+	).Order(table.Col("created_at").Desc())
+
+	ret, err := qb.getMany(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("getting images for performer %d: %w", performerID, err)
+	}
+
+	return ret, nil
+}
+
 func (qb *ImageStore) FindByGalleryID(ctx context.Context, galleryID int) ([]*models.Image, error) {
 	table := qb.table()
 

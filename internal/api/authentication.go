@@ -26,13 +26,29 @@ const (
 
 func allowUnauthenticated(r *http.Request) bool {
 	// #2715 - allow access to UI files
-	return strings.HasPrefix(r.URL.Path, loginEndpoint) || r.URL.Path == logoutEndpoint || r.URL.Path == "/css" || strings.HasPrefix(r.URL.Path, "/assets")
+	if strings.HasPrefix(r.URL.Path, loginEndpoint) || r.URL.Path == logoutEndpoint || r.URL.Path == "/css" || strings.HasPrefix(r.URL.Path, "/assets") {
+		return true
+	}
+	// Share links use their own per-token auth (see routes_share.go).
+	// They are public by design — the token is the credential.
+	if IsShareTokenPath(r.URL.Path) {
+		return true
+	}
+	return false
 }
 
 func authenticateHandler() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			c := config.GetInstance()
+
+			// Share links are public by design (the token is the credential)
+			// and must bypass tripwire / public-access enforcement so that
+			// recipients on the open internet can use them.
+			if IsShareTokenPath(r.URL.Path) {
+				next.ServeHTTP(w, r)
+				return
+			}
 
 			// error if external access tripwire activated
 			if accessErr := session.CheckExternalAccessTripwire(c); accessErr != nil {

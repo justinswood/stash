@@ -19,6 +19,7 @@ type ImageFinder interface {
 	FindByZipFileID(ctx context.Context, zipFileID FileID) ([]*Image, error)
 	FindByGalleryID(ctx context.Context, galleryID int) ([]*Image, error)
 	FindByGalleryIDIndex(ctx context.Context, galleryID int, index uint) (*Image, error)
+	FindByPerformerID(ctx context.Context, performerID int) ([]*Image, error)
 }
 
 // ImageQueryer provides methods to query images.

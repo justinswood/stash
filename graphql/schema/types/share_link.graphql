@@ -1,0 +1,42 @@
+enum ShareType {
+  SCENE
+  IMAGE
+  PERFORMER
+}
+
+type ShareLink {
+  id: ID!
+  "Plain-text token. Returned only at creation time, never on subsequent reads."
+  token: String
+  "Full URL the owner can copy and share. Returned only at creation time."
+  url: String
+  share_type: ShareType!
+  scene_id: ID
+  image_id: ID
+  performer_id: ID
+  expires_at: Time
+  view_limit: Int
+  view_count: Int!
+  revoked: Boolean!
+  note: String
+  created_at: Time!
+  updated_at: Time!
+}
+
+input ShareLinkCreateInput {
+  share_type: ShareType!
+  scene_id: ID
+  image_id: ID
+  performer_id: ID
+  expires_at: Time
+  view_limit: Int
+  note: String
+}
+
+input ShareLinkUpdateInput {
+  id: ID!
+  expires_at: Time
+  view_limit: Int
+  revoked: Boolean
+  note: String
+}

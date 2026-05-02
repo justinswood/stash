@@ -82,6 +82,21 @@ export class ListFilterModel {
       }
     }
     this.displayMode = displayModeOptions[0];
+
+    // Mobile/PWA: default scene lists to Wall view — much better thumbnail
+    // density on small screens. URL `disp` param and saved UI options still
+    // override this in configureFromDecodedParams / configureFromSavedUI.
+    if (
+      mode === FilterMode.Scenes &&
+      typeof window !== "undefined" &&
+      displayModeOptions.includes(DisplayMode.Wall) &&
+      window.matchMedia(
+        "(display-mode: standalone), (max-width: 575.98px) and (orientation: portrait)"
+      ).matches
+    ) {
+      this.displayMode = DisplayMode.Wall;
+    }
+
     if (options?.defaultZoomIndex !== undefined) {
       this.defaultZoomIndex = options.defaultZoomIndex;
       this.zoomIndex = options.defaultZoomIndex;
