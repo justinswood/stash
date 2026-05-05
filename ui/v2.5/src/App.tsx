@@ -67,7 +67,7 @@ const FrontPage = lazyComponent(
 );
 const Scenes = lazyComponent(() => import("./components/Scenes/Scenes"));
 const Settings = lazyComponent(() => import("./components/Settings/Settings"));
-const Stats = lazyComponent(() => import("./components/Stats"));
+const Stats = lazyComponent(() => import("./components/Dashboard/Dashboard"));
 const History = lazyComponent(() => import("./components/History/History"));
 const Studios = lazyComponent(() => import("./components/Studios/Studios"));
 const Galleries = lazyComponent(
