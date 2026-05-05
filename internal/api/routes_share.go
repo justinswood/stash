@@ -497,6 +497,43 @@ func (rs shareRoutes) lookupPerformerCatalog(r *http.Request, performerID int) (
 	return performer, scenes, images
 }
 
+// formatAgeWithBirthdate returns "48 (1977-05-31)" when both age and birthdate are known,
+// just the age number when birthdate is absent, or "" when neither is available.
+func formatAgeWithBirthdate(p *models.Performer) string {
+	age := computePerformerAge(p)
+	if p.Birthdate == nil {
+		if age == nil {
+			return ""
+		}
+		return strconv.Itoa(*age)
+	}
+	bd := p.Birthdate.Time.Format("2006-01-02")
+	if age == nil {
+		return bd
+	}
+	return fmt.Sprintf("%d (%s)", *age, bd)
+}
+
+// titleCaseEnum converts an uppercase enum string like "NON_BINARY" to "Non Binary".
+func titleCaseEnum(s string) string {
+	words := strings.Split(strings.ReplaceAll(s, "_", " "), " ")
+	for i, w := range words {
+		if w == "" {
+			continue
+		}
+		words[i] = strings.ToUpper(w[:1]) + strings.ToLower(w[1:])
+	}
+	return strings.Join(words, " ")
+}
+
+// formatHeightCmFt returns a height string like "173 cm (5′8″)".
+func formatHeightCmFt(cm int) string {
+	totalInches := int(float64(cm)/2.54 + 0.5)
+	feet := totalInches / 12
+	inches := totalInches % 12
+	return fmt.Sprintf("%d cm (%d′%d″)", cm, feet, inches)
+}
+
 // formatDuration renders a duration in seconds as MM:SS or H:MM:SS.
 func formatDuration(secs float64) string {
 	if secs <= 0 {
@@ -640,6 +677,38 @@ func (rs shareRoutes) renderPerformerViewer(w http.ResponseWriter, r *http.Reque
 			Duration:      formatDuration(sceneDuration(s)),
 		})
 	}
+	// Load performer names for each scene tile in one transaction.
+	_ = rs.withReadTxn(r, func(ctx context.Context) error {
+		tilePerformerIDs := make([][]int, len(scenesOut))
+		idSet := make(map[int]struct{})
+		for i, t := range scenesOut {
+			ids, err := rs.scenePerformerIDs.GetPerformerIDs(ctx, t.ID)
+			if err != nil {
+				continue
+			}
+			tilePerformerIDs[i] = ids
+			for _, id := range ids {
+				idSet[id] = struct{}{}
+			}
+		}
+		nameByID := make(map[int]string, len(idSet))
+		for id := range idSet {
+			if p, err := rs.performerFinder.Find(ctx, id); err == nil && p != nil {
+				nameByID[id] = p.Name
+			}
+		}
+		for i, ids := range tilePerformerIDs {
+			names := make([]string, 0, len(ids))
+			for _, id := range ids {
+				if name, ok := nameByID[id]; ok {
+					names = append(names, name)
+				}
+			}
+			scenesOut[i].Performers = strings.Join(names, ", ")
+		}
+		return nil
+	})
+
 	imagesOut := make([]imageTile, 0, len(images))
 	for _, im := range images {
 		imagesOut = append(imagesOut, imageTile{
@@ -652,37 +721,27 @@ func (rs shareRoutes) renderPerformerViewer(w http.ResponseWriter, r *http.Reque
 
 	gender := ""
 	if performer.Gender != nil {
-		gender = string(*performer.Gender)
+		gender = titleCaseEnum(string(*performer.Gender))
 	}
 	heightStr := ""
 	if performer.Height != nil {
-		// e.g. 165 cm (5′5″)
-		feet := *performer.Height / 30
-		inches := int(float64(*performer.Height)/2.54) % 12
-		_ = feet
-		_ = inches
-		heightStr = fmt.Sprintf("%d cm", *performer.Height)
+		heightStr = formatHeightCmFt(*performer.Height)
 	}
-	age := computePerformerAge(performer)
-	ageStr := ""
-	if age != nil {
-		ageStr = strconv.Itoa(*age)
-	}
-
 	data := performerViewerData{
 		Title:        performer.Name,
 		Name:         performer.Name,
 		Aliases:      strings.Join(performer.Aliases.List(), ", "),
 		ImageURL:     fmt.Sprintf("/share/%s/performer/image", token),
 		Gender:       gender,
-		Age:          ageStr,
+		Age:          formatAgeWithBirthdate(performer),
+		Country:      performer.Country,
 		Ethnicity:    performer.Ethnicity,
 		HairColor:    performer.HairColor,
 		EyeColor:     performer.EyeColor,
 		Height:       heightStr,
+		Measurements: performer.Measurements,
 		FakeTits:     performer.FakeTits,
 		CareerLength: performer.CareerLength,
-		Country:      performer.Country,
 		Scenes:       scenesOut,
 		Images:       imagesOut,
 		HasScenes:    len(scenesOut) > 0,
@@ -713,6 +772,7 @@ type imageViewerData struct {
 type sceneTile struct {
 	ID            int
 	Title         string
+	Performers    string
 	ScreenshotURL string
 	PreviewURL    string
 	ViewerURL     string
@@ -940,6 +1000,15 @@ section h2 .count { color: #8a9ba8; font-weight: 400; font-size: 0.9rem; }
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.tile .performers {
+  font-size: 0.75rem;
+  color: #bfccd6;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
 .tile .duration {
   position: absolute; right: 8px; top: 8px;
   background: rgba(0,0,0,0.65);
@@ -986,13 +1055,14 @@ footer { padding: 16px; text-align: center; color: #5c7080; font-size: 0.78rem; 
     <dl>
       {{if .Gender}}<dt>Gender</dt><dd>{{.Gender}}</dd>{{end}}
       {{if .Age}}<dt>Age</dt><dd>{{.Age}}</dd>{{end}}
+      {{if .Country}}<dt>Country</dt><dd>{{.Country}}</dd>{{end}}
       {{if .Ethnicity}}<dt>Ethnicity</dt><dd>{{.Ethnicity}}</dd>{{end}}
       {{if .HairColor}}<dt>Hair Color</dt><dd>{{.HairColor}}</dd>{{end}}
       {{if .EyeColor}}<dt>Eye Color</dt><dd>{{.EyeColor}}</dd>{{end}}
       {{if .Height}}<dt>Height</dt><dd>{{.Height}}</dd>{{end}}
+      {{if .Measurements}}<dt>Measurements</dt><dd>{{.Measurements}}</dd>{{end}}
       {{if .FakeTits}}<dt>Fake Tits</dt><dd>{{.FakeTits}}</dd>{{end}}
       {{if .CareerLength}}<dt>Career</dt><dd>{{.CareerLength}}</dd>{{end}}
-      {{if .Country}}<dt>Country</dt><dd>{{.Country}}</dd>{{end}}
     </dl>
   </div>
 </header>
@@ -1006,7 +1076,7 @@ footer { padding: 16px; text-align: center; color: #5c7080; font-size: 0.78rem; 
       <div class="preview" style="background-image: url('{{.PreviewURL}}')"></div>
       {{if .Duration}}<div class="duration">{{.Duration}}</div>{{end}}
       <div class="gradient"></div>
-      <div class="meta"><div class="title">{{.Title}}</div></div>
+      <div class="meta"><div class="title">{{.Title}}</div>{{if .Performers}}<div class="performers">{{.Performers}}</div>{{end}}</div>
     </a>
     {{end}}
   </div>
