@@ -65,7 +65,7 @@ export const SceneDuplicateChecker: React.FC = () => {
   const [isMultiDelete, setIsMultiDelete] = useState(false);
   const [deletingScenes, setDeletingScenes] = useState(false);
   const [editingScenes, setEditingScenes] = useState(false);
-  const [chkSafeSelect, setChkSafeSelect] = useState(true);
+  const [chkSafeSelect, setChkSafeSelect] = useState(false);
 
   const [checkedScenes, setCheckedScenes] = useState<Record<string, boolean>>(
     {}
@@ -163,13 +163,7 @@ export const SceneDuplicateChecker: React.FC = () => {
   };
 
   const resetCheckboxSelection = () => {
-    const updatedScenes: Record<string, boolean> = {};
-
-    Object.keys(checkedScenes).forEach((sceneKey) => {
-      updatedScenes[sceneKey] = false;
-    });
-
-    setCheckedScenes(updatedScenes);
+    setCheckedScenes({});
   };
 
   function onDeleteDialogClosed(deleted: boolean) {
@@ -261,7 +255,7 @@ export const SceneDuplicateChecker: React.FC = () => {
     setSelectedScenes([]);
     const checkedArray: Record<string, boolean> = {};
 
-    filteredScenes.forEach((group) => {
+    scenes.forEach((group) => {
       if (chkSafeSelect && !checkSameCodec(group)) {
         return;
       }
@@ -281,7 +275,7 @@ export const SceneDuplicateChecker: React.FC = () => {
     setSelectedScenes([]);
     const checkedArray: Record<string, boolean> = {};
 
-    filteredScenes.forEach((group) => {
+    scenes.forEach((group) => {
       if (chkSafeSelect && !checkSameCodec(group)) {
         return;
       }
@@ -306,7 +300,7 @@ export const SceneDuplicateChecker: React.FC = () => {
 
     const checkedArray: Record<string, boolean> = {};
 
-    filteredScenes.forEach((group) => {
+    scenes.forEach((group) => {
       if (chkSafeSelect && !checkSameCodec(group)) {
         return;
       }
