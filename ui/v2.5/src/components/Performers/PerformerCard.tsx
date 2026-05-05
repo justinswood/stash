@@ -363,7 +363,9 @@ export const PerformerCard: React.FC<IPerformerCardProps> = PatchComponent(
     return (
       <GridCard
         className={`performer-card zoom-${zoomIndex}`}
-        url={`/performers/${performer.id}`}
+        url={props.extraCriteria?.performer
+          ? NavUtils.makePerformerScenesUrl(performer, props.extraCriteria.performer)
+          : `/performers/${performer.id}`}
         width={cardWidth}
         pretitleIcon={
           <GenderIcon className="gender-icon" gender={performer.gender} />
