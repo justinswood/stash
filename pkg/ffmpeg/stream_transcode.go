@@ -178,7 +178,13 @@ func (o TranscodeOptions) FileGetCodec(sm *StreamManager, maxTranscodeSize int) 
 			codec = *hwcodec
 		}
 	case MimeMkvVideo:
-		codec = VideoCodecCopy
+		if !needsResize && (o.VideoFile.VideoCodec == H264 || o.VideoFile.VideoCodec == Vp9) {
+			return VideoCodecCopy
+		}
+		codec = VideoCodecLibX264
+		if hwcodec := sm.encoder.hwCodecMP4Compatible(); hwcodec != nil && sm.config.GetTranscodeHardwareAcceleration() {
+			codec = *hwcodec
+		}
 	}
 
 	return codec

@@ -11,7 +11,7 @@ COPY Makefile /stash/
 COPY ./graphql /stash/graphql/
 COPY ./ui /stash/ui/
 # pnpm install with npm
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 ENV PNPM_STORE_PATH=/root/.pnpm-store
 RUN --mount=type=cache,target=/root/.pnpm-store \
   make pre-ui
