@@ -1,0 +1,40 @@
+"A local user account with its own login and role."
+type User {
+  id: ID!
+  username: String!
+  role: UserRole!
+  disabled: Boolean!
+  created_at: Time!
+  updated_at: Time!
+}
+
+enum UserRole {
+  "Full control: settings, library tasks, user management, and deletes."
+  ADMIN
+  "Browse and edit metadata and manage own history. No settings/deletes/user-mgmt."
+  USER
+  "Browse and record own view history only."
+  READ_ONLY
+}
+
+input UserCreateInput {
+  username: String!
+  password: String!
+  role: UserRole!
+  disabled: Boolean
+}
+
+input UserUpdateInput {
+  id: ID!
+  username: String
+  "New password. Omit to leave the password unchanged."
+  password: String
+  role: UserRole
+  disabled: Boolean
+}
+
+input ChangePasswordInput {
+  "The current password. Required when a user changes their own password."
+  current_password: String
+  new_password: String!
+}

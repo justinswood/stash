@@ -44,9 +44,16 @@ func (e InvalidCredentialsError) Error() string {
 
 var ErrUnauthorized = errors.New("unauthorized")
 
+// UserValidator validates a username/password against stored user accounts.
+// found reports whether a user account with that username exists; valid reports
+// whether the password matched. When found is false the caller falls back to the
+// single config credential (break-glass admin).
+type UserValidator func(username, password string) (found bool, valid bool)
+
 type Store struct {
 	sessionStore *sessions.CookieStore
 	config       SessionConfig
+	validateUser UserValidator
 }
 
 func NewStore(c SessionConfig) *Store {
@@ -61,6 +68,13 @@ func NewStore(c SessionConfig) *Store {
 	return ret
 }
 
+// SetUserValidator wires in a validator backed by the users table. Set by the
+// manager once the database is available. When unset, only the config credential
+// is used (preserving single-user behaviour).
+func (s *Store) SetUserValidator(v UserValidator) {
+	s.validateUser = v
+}
+
 func (s *Store) Login(w http.ResponseWriter, r *http.Request) error {
 	// ignore error - we want a new session regardless
 	newSession, _ := s.sessionStore.Get(r, cookieName)
@@ -68,13 +82,25 @@ func (s *Store) Login(w http.ResponseWriter, r *http.Request) error {
 	username := r.FormValue(usernameFormKey)
 	password := r.FormValue(passwordFormKey)
 
-	// authenticate the user
-	if !s.config.ValidateCredentials(username, password) {
+	// authenticate against the users table first; fall back to the config
+	// credential (break-glass admin) when no such user account exists.
+	authed := false
+	if s.validateUser != nil {
+		found, valid := s.validateUser(username, password)
+		if found {
+			authed = valid
+		} else {
+			authed = s.config.ValidateCredentials(username, password)
+		}
+	} else {
+		authed = s.config.ValidateCredentials(username, password)
+	}
+
+	if !authed {
 		return &InvalidCredentialsError{Username: username}
 	}
 
-	// since we only have one user, don't leak the name
-	logger.Info("User logged in")
+	logger.Infof("User logged in")
 
 	newSession.Values[userIDKey] = username
 

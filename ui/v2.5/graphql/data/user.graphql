@@ -1,0 +1,8 @@
+fragment UserData on User {
+  id
+  username
+  role
+  disabled
+  created_at
+  updated_at
+}

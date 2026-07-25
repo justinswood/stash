@@ -18,6 +18,9 @@ import { SettingsContext, useSettings } from "./context";
 import { SettingsLibraryPanel } from "./SettingsLibraryPanel";
 import { SettingsSecurityPanel } from "./SettingsSecurityPanel";
 import { SettingsShareLinksPanel } from "./SettingsShareLinksPanel";
+import { SettingsUsersPanel } from "./SettingsUsersPanel";
+import { SettingsAccountPanel } from "./SettingsAccountPanel";
+import { UserRole, useMeQuery } from "src/core/generated-graphql";
 import Changelog from "../Changelog/Changelog";
 
 const validTabs = [
@@ -26,6 +29,8 @@ const validTabs = [
   "interface",
   "security",
   "share-links",
+  "users",
+  "account",
   "metadata-providers",
   "services",
   "system",
@@ -45,6 +50,9 @@ function isTabKey(tab: string | null): tab is TabKey {
 
 const SettingTabs: React.FC<{ tab: TabKey }> = ({ tab }) => {
   const { advancedMode, setAdvancedMode } = useSettings();
+
+  const { data: meData } = useMeQuery();
+  const isAdmin = !meData?.me || meData.me.role === UserRole.Admin;
 
   const titleProps = useTitleProps({ id: "settings" });
 
@@ -85,6 +93,18 @@ const SettingTabs: React.FC<{ tab: TabKey }> = ({ tab }) => {
             <Nav.Item>
               <LinkContainer to="/settings?tab=share-links">
                 <Nav.Link eventKey="share-links">Share Links</Nav.Link>
+              </LinkContainer>
+            </Nav.Item>
+            {isAdmin && (
+              <Nav.Item>
+                <LinkContainer to="/settings?tab=users">
+                  <Nav.Link eventKey="users">Users</Nav.Link>
+                </LinkContainer>
+              </Nav.Item>
+            )}
+            <Nav.Item>
+              <LinkContainer to="/settings?tab=account">
+                <Nav.Link eventKey="account">Account</Nav.Link>
               </LinkContainer>
             </Nav.Item>
             <Nav.Item>
@@ -176,6 +196,12 @@ const SettingTabs: React.FC<{ tab: TabKey }> = ({ tab }) => {
             </Tab.Pane>
             <Tab.Pane eventKey="share-links" unmountOnExit>
               <SettingsShareLinksPanel />
+            </Tab.Pane>
+            <Tab.Pane eventKey="users" unmountOnExit>
+              <SettingsUsersPanel />
+            </Tab.Pane>
+            <Tab.Pane eventKey="account" unmountOnExit>
+              <SettingsAccountPanel />
             </Tab.Pane>
             <Tab.Pane eventKey="tasks">
               <SettingsTasksPanel />

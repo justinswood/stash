@@ -8,6 +8,13 @@ type Query {
   findShareLinks: [ShareLink!]!
   "Find a single share link by ID. Token is NOT returned."
   findShareLink(id: ID!): ShareLink
+
+  "The currently authenticated user (null if not logged in)."
+  me: User
+  "All user accounts. Admin only."
+  findUsers: [User!]!
+  "A single user account by id. Admin only."
+  findUser(id: ID!): User
   findDefaultFilter(mode: FilterMode!): SavedFilter
     @deprecated(reason: "default filter now stored in UI config")
 
@@ -447,6 +454,15 @@ type Mutation {
   shareLinkRevoke(id: ID!): ShareLink!
   "Permanently delete a share link record."
   shareLinkDestroy(id: ID!): Boolean!
+
+  "Create a user account. Admin only."
+  userCreate(input: UserCreateInput!): User!
+  "Update a user account (username, password, role, disabled). Admin only."
+  userUpdate(input: UserUpdateInput!): User!
+  "Delete a user account. Admin only. Cannot delete the last admin."
+  userDestroy(id: ID!): Boolean!
+  "Change the current user's own password (or, for admins, requires re-auth via current_password)."
+  changePassword(input: ChangePasswordInput!): Boolean!
 
   "Change general configuration options"
   configureGeneral(input: ConfigGeneralInput!): ConfigGeneralResult!

@@ -30,6 +30,7 @@ import {
   faImage,
   faImages,
   faClock,
+  faLayerGroup,
   faSearch,
   faMapMarkerAlt,
   faPlayCircle,
@@ -43,11 +44,13 @@ import {
 import { baseURL } from "src/core/createClient";
 import { PatchComponent } from "src/patch";
 import { mutateMetadataScan } from "src/core/StashService";
+import { useFindSavedFilters } from "src/core/StashService";
 import { useToast } from "src/hooks/Toast";
 import { withoutTypename } from "src/utils/data";
 import * as GQL from "src/core/generated-graphql";
 import { queryFindPerformersForSelect } from "src/core/StashService";
 import { ListFilterModel } from "src/models/list-filter/filter";
+import NavUtils from "src/utils/navigation";
 import { useDebounce } from "src/hooks/debounce";
 import PerformerStashBoxModal, {
   IStashBox,
@@ -86,6 +89,14 @@ const messages = defineMessages({
   studios: {
     id: "studios",
     defaultMessage: "Studios",
+  },
+  categories: {
+    id: "categories",
+    defaultMessage: "Categories",
+  },
+  browseCategories: {
+    id: "categories.browse",
+    defaultMessage: "Browse Categories",
   },
   tags: {
     id: "tags",
@@ -191,10 +202,101 @@ const MainNavbarUtilityItems = PatchComponent(
   }
 );
 
+// Categories navbar dropdown: "Browse Categories" opens the /categories hub;
+// below it, quick links to each category tag (child of the "Categories" tag)
+// go to that tag's scenes, then quick links apply each scene-mode Saved Filter.
+const CategoriesNavItem: React.FC = () => {
+  const intl = useIntl();
+  const { configuration } = useConfigurationContext();
+  const { data } = useFindSavedFilters(GQL.FilterMode.Scenes);
+
+  const savedFilters = data?.findSavedFilters ?? [];
+
+  // Resolve the parent "Categories" tag, then list its children.
+  const { data: parentData } = GQL.useFindTagsQuery({
+    variables: {
+      filter: { per_page: 1 },
+      tag_filter: {
+        name: { value: "Categories", modifier: GQL.CriterionModifier.Equals },
+      },
+    },
+  });
+  const parentId = parentData?.findTags.tags[0]?.id;
+
+  const { data: childData } = GQL.useFindTagsQuery({
+    skip: !parentId,
+    variables: {
+      filter: {
+        per_page: -1,
+        sort: "name",
+        direction: GQL.SortDirectionEnum.Asc,
+      },
+      tag_filter: {
+        parents: {
+          value: parentId ? [parentId] : [],
+          modifier: GQL.CriterionModifier.Includes,
+          depth: 0,
+        },
+      },
+    },
+  });
+  const categoryTags = childData?.findTags.tags ?? [];
+
+  function savedFilterUrl(f: GQL.SavedFilterDataFragment) {
+    const lfm = new ListFilterModel(GQL.FilterMode.Scenes, configuration ?? undefined);
+    lfm.currentPage = 1;
+    lfm.searchTerm = "";
+    lfm.configureFromSavedFilter(f);
+    lfm.randomSeed = -1;
+    return `/scenes?${lfm.makeQueryParameters()}`;
+  }
+
+  return (
+    <Nav.Link
+      as="div"
+      eventKey="/categories"
+      className="col-4 col-sm-3 col-md-2 col-lg-auto"
+    >
+      <Dropdown className="categories-nav-dropdown">
+        <Dropdown.Toggle
+          variant="secondary"
+          className="minimal p-4 p-xl-2 d-flex d-xl-inline-block flex-column justify-content-between align-items-center"
+        >
+          <Icon
+            icon={faLayerGroup}
+            className="nav-menu-icon d-block d-xl-inline mb-2 mb-xl-0"
+          />
+          <span>{intl.formatMessage(messages.categories)}</span>
+        </Dropdown.Toggle>
+        <Dropdown.Menu>
+          <LinkContainer exact to="/categories">
+            <Dropdown.Item>
+              {intl.formatMessage(messages.browseCategories)}
+            </Dropdown.Item>
+          </LinkContainer>
+          {categoryTags.length > 0 && <Dropdown.Divider />}
+          {categoryTags.map((t) => (
+            <LinkContainer key={t.id} to={NavUtils.makeTagScenesUrl(t)}>
+              <Dropdown.Item>{t.name}</Dropdown.Item>
+            </LinkContainer>
+          ))}
+          {savedFilters.length > 0 && <Dropdown.Divider />}
+          {savedFilters.map((f) => (
+            <LinkContainer key={f.id} to={savedFilterUrl(f)}>
+              <Dropdown.Item>{f.name}</Dropdown.Item>
+            </LinkContainer>
+          ))}
+        </Dropdown.Menu>
+      </Dropdown>
+    </Nav.Link>
+  );
+};
+
 export const MainNavbar: React.FC = () => {
   const history = useHistory();
   const location = useLocation();
   const { configuration } = useConfigurationContext();
+  const { data: meData } = GQL.useMeQuery();
   const { openManual } = React.useContext(ManualStateContext);
   const Toast = useToast();
 
@@ -293,11 +395,16 @@ export const MainNavbar: React.FC = () => {
 
   function maybeRenderLogout() {
     if (SessionUtils.isLoggedIn()) {
+      const username = meData?.me?.username;
       return (
         <Button
           className="minimal logout-button d-flex align-items-center"
           href={`${baseURL}logout`}
-          title={intl.formatMessage({ id: "actions.logout" })}
+          title={
+            username
+              ? `${intl.formatMessage({ id: "actions.logout" })} (${username})`
+              : intl.formatMessage({ id: "actions.logout" })
+          }
         >
           <Icon icon={faSignOutAlt} />
         </Button>
@@ -620,23 +727,25 @@ export const MainNavbar: React.FC = () => {
       >
         <Navbar.Collapse className="bg-dark order-sm-1">
           <MainNavbarMenuItems>
-            {menuItems.map(({ href, icon, message }) => (
-              <Nav.Link
-                eventKey={href}
-                as="div"
-                key={href}
-                className="col-4 col-sm-3 col-md-2 col-lg-auto"
-              >
-                <LinkContainer activeClassName="active" exact to={href}>
-                  <Button className="minimal p-4 p-xl-2 d-flex d-xl-inline-block flex-column justify-content-between align-items-center">
-                    <Icon
-                      {...{ icon }}
-                      className="nav-menu-icon d-block d-xl-inline mb-2 mb-xl-0"
-                    />
-                    <span>{intl.formatMessage(message)}</span>
-                  </Button>
-                </LinkContainer>
-              </Nav.Link>
+            {menuItems.map(({ name, href, icon, message }) => (
+              <React.Fragment key={href}>
+                <Nav.Link
+                  eventKey={href}
+                  as="div"
+                  className="col-4 col-sm-3 col-md-2 col-lg-auto"
+                >
+                  <LinkContainer activeClassName="active" exact to={href}>
+                    <Button className="minimal p-4 p-xl-2 d-flex d-xl-inline-block flex-column justify-content-between align-items-center">
+                      <Icon
+                        {...{ icon }}
+                        className="nav-menu-icon d-block d-xl-inline mb-2 mb-xl-0"
+                      />
+                      <span>{intl.formatMessage(message)}</span>
+                    </Button>
+                  </LinkContainer>
+                </Nav.Link>
+                {name === "studios" && <CategoriesNavItem />}
+              </React.Fragment>
             ))}
           </MainNavbarMenuItems>
           <Nav>

@@ -190,6 +190,7 @@ func (s *Manager) postInit(ctx context.Context) error {
 	s.RefreshConfig()
 
 	s.SessionStore = session.NewStore(s.Config)
+	s.SessionStore.SetUserValidator(s.ValidateUserCredentials)
 	s.PluginCache.RegisterSessionStore(s.SessionStore)
 
 	s.RefreshPluginCache()
@@ -234,6 +235,13 @@ func (s *Manager) postInit(ctx context.Context) error {
 		} else {
 			return err
 		}
+	}
+
+	// seed the bootstrap admin account from the config credential once the
+	// database schema is current (no-op when migration is still pending or an
+	// account already exists)
+	if err := s.EnsureBootstrapAdmin(ctx); err != nil {
+		logger.Errorf("error ensuring bootstrap admin account: %v", err)
 	}
 
 	// Set the proxy if defined in config

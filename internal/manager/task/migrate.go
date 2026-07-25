@@ -21,6 +21,9 @@ type MigrateJob struct {
 	BackupPath string
 	Config     migrateJobConfig
 	Database   *sqlite.Database
+	// PostMigrate runs after a successful migration once the database has been
+	// reinitialised (e.g. to seed the bootstrap admin account). Optional.
+	PostMigrate func(ctx context.Context) error
 }
 
 type databaseSchemaInfo struct {
@@ -101,6 +104,12 @@ func (s *MigrateJob) Execute(ctx context.Context, progress *job.Progress) error 
 	}
 
 	logger.Infof("Database migration complete")
+
+	if s.PostMigrate != nil {
+		if err := s.PostMigrate(ctx); err != nil {
+			logger.Errorf("error running post-migration hook: %v", err)
+		}
+	}
 
 	return nil
 }

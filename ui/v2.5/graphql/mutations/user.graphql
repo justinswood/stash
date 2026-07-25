@@ -1,0 +1,19 @@
+mutation UserCreate($input: UserCreateInput!) {
+  userCreate(input: $input) {
+    ...UserData
+  }
+}
+
+mutation UserUpdate($input: UserUpdateInput!) {
+  userUpdate(input: $input) {
+    ...UserData
+  }
+}
+
+mutation UserDestroy($id: ID!) {
+  userDestroy(id: $id)
+}
+
+mutation ChangePassword($input: ChangePasswordInput!) {
+  changePassword(input: $input)
+}

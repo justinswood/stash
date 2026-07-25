@@ -1,0 +1,17 @@
+query Me {
+  me {
+    ...UserData
+  }
+}
+
+query FindUsers {
+  findUsers {
+    ...UserData
+  }
+}
+
+query FindUser($id: ID!) {
+  findUser(id: $id) {
+    ...UserData
+  }
+}
