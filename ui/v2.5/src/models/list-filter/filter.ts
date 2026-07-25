@@ -97,6 +97,15 @@ export class ListFilterModel {
       this.displayMode = DisplayMode.Wall;
     }
 
+    // Scenes: default the thumbnail-size slider to the 3rd notch (index 2 of
+    // 0–3) so scene cards are bigger by default — covers the scenes page and
+    // the performer/studio scenes tabs (all FilterMode.Scenes). An explicit
+    // defaultZoomIndex option below, the URL `z` param, or saved UI still win.
+    if (mode === FilterMode.Scenes) {
+      this.defaultZoomIndex = 2;
+      this.zoomIndex = 2;
+    }
+
     if (options?.defaultZoomIndex !== undefined) {
       this.defaultZoomIndex = options.defaultZoomIndex;
       this.zoomIndex = options.defaultZoomIndex;

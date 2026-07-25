@@ -136,6 +136,12 @@ export const SceneCardPerformerList: React.FC<{
     const calculateVisible = () => {
       if (!containerRef.current) return;
       const containerWidth = containerRef.current.offsetWidth;
+      // If the container hasn't been laid out yet (0 width — e.g. measured
+      // before Refract's overlay resolves), keep showing all names rather than
+      // collapsing to just "+N". Collapsing to 0 removes the name children from
+      // the DOM, leaving the ResizeObserver nothing to re-measure — a state it
+      // can never recover from. Bail until a real width is available.
+      if (!containerWidth) return;
       const elements = Array.from(
         containerRef.current.children
       ) as HTMLElement[];
@@ -159,6 +165,10 @@ export const SceneCardPerformerList: React.FC<{
           }
         }
       }
+      // Never hide the only/first name: if nothing "fit" (e.g. a wide display
+      // font vs a narrow measured container), still show one — overflow:hidden
+      // clips it gracefully instead of the whole list vanishing into "+N".
+      if (count === 0 && performers.length > 0) count = 1;
       setVisibleCount(count);
     };
 
