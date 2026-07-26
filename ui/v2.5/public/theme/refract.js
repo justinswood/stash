@@ -2948,7 +2948,11 @@
     }
 
     function watchForReinjection() {
-        var observer = new MutationObserver(function () {
+        var observer;
+        var scheduled = false;
+
+        function processAll() {
+            scheduled = false;
             /* Disconnect while mutating so our DOM updates do not synchronously re-trigger this observer
                (can freeze the tab / block Stash from finishing load). */
             observer.disconnect();
@@ -2989,6 +2993,20 @@
             } finally {
                 observer.observe(document.body, { childList: true, subtree: true });
             }
+        }
+
+        /* Coalesce mutation bursts into a single pass per animation frame.
+           Previously the full initializer set ran synchronously on EVERY
+           mutation batch — navigating to a card-dense page (e.g. the home page)
+           renders in many batches, so the whole document was reprocessed dozens
+           of times, freezing the tab for seconds. The initializers are
+           idempotent (data-attr guards), so one debounced pass after the burst
+           settles is equivalent and vastly cheaper. */
+        var raf = window.requestAnimationFrame || function (f) { return setTimeout(f, 16); };
+        observer = new MutationObserver(function () {
+            if (scheduled) { return; }
+            scheduled = true;
+            raf(processAll);
         });
         observer.observe(document.body, { childList: true, subtree: true });
     }
