@@ -130,3 +130,78 @@ button, input {
         width: 100%;
     }
 }
+
+/* ── Refract glass theme for the sign-in page ───────────────────────────
+   The login page is served before the SPA, so it can't use the bundled
+   theme CSS. This is a self-contained glass restyle matching the app.
+   --login-accent is set from localStorage by an inline script in the page,
+   so login follows the user's chosen accent. */
+@font-face {
+    font-family: "Albert Sans";
+    src: url("/theme/fonts/AlbertSans-Variable.woff2") format("woff2");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --login-accent: #f97316;
+    --login-accent-rgb: 249, 115, 22;
+}
+
+body.login.stash-liquid-glass {
+    background: radial-gradient(1200px 800px at 50% -10%, #17110b 0%, #0a0a0a 55%, #060606 100%);
+    color: rgba(255, 255, 255, 0.92);
+    font-family: "Albert Sans", system-ui, -apple-system, sans-serif;
+    overflow-y: auto;
+}
+
+body.login.stash-liquid-glass .card {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(140%);
+    padding: 30px 28px;
+    min-width: 310px;
+}
+
+body.login.stash-liquid-glass h6 {
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+body.login.stash-liquid-glass .text-input,
+body.login.stash-liquid-glass .form-control {
+    background: rgba(0, 0, 0, 0.35) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    box-shadow: none;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+body.login.stash-liquid-glass .text-input:focus,
+body.login.stash-liquid-glass .form-control:focus {
+    outline: none;
+    border-color: var(--login-accent);
+    box-shadow: 0 0 0 3px rgba(var(--login-accent-rgb), 0.35);
+}
+
+body.login.stash-liquid-glass .btn-primary {
+    background: var(--login-accent);
+    border: 1px solid var(--login-accent);
+    border-radius: 12px;
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(var(--login-accent-rgb), 0.35);
+    transition: filter 0.15s ease, transform 0.05s ease;
+}
+
+body.login.stash-liquid-glass .btn-primary:hover {
+    filter: brightness(1.08);
+}
+
+body.login.stash-liquid-glass .btn-primary:active {
+    transform: translateY(1px);
+}

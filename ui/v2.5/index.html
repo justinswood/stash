@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="stash-liquid-glass">
   <head>
     <base href="/" />
     <meta charset="utf-8" />
@@ -16,9 +16,12 @@
     <link rel="manifest" crossorigin="use-credentials" href="manifest.json" />
     <title>Stash</title>
   </head>
-  <body>
+  <body class="stash-liquid-glass">
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
+    <!-- Refract theme behaviour (bundled default UI). Plain JS; polls for
+         window.PluginApi so load order is self-healing. -->
+    <script defer src="/theme/refract.js"></script>
   </body>
 </html>

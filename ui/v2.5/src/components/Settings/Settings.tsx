@@ -20,6 +20,7 @@ import { SettingsSecurityPanel } from "./SettingsSecurityPanel";
 import { SettingsShareLinksPanel } from "./SettingsShareLinksPanel";
 import { SettingsUsersPanel } from "./SettingsUsersPanel";
 import { SettingsAccountPanel } from "./SettingsAccountPanel";
+import { SettingsThemePanel } from "./SettingsThemePanel";
 import { UserRole, useMeQuery } from "src/core/generated-graphql";
 import Changelog from "../Changelog/Changelog";
 
@@ -31,6 +32,7 @@ const validTabs = [
   "share-links",
   "users",
   "account",
+  "theme",
   "metadata-providers",
   "services",
   "system",
@@ -105,6 +107,11 @@ const SettingTabs: React.FC<{ tab: TabKey }> = ({ tab }) => {
             <Nav.Item>
               <LinkContainer to="/settings?tab=account">
                 <Nav.Link eventKey="account">Account</Nav.Link>
+              </LinkContainer>
+            </Nav.Item>
+            <Nav.Item>
+              <LinkContainer to="/settings?tab=theme">
+                <Nav.Link eventKey="theme">Theme</Nav.Link>
               </LinkContainer>
             </Nav.Item>
             <Nav.Item>
@@ -202,6 +209,9 @@ const SettingTabs: React.FC<{ tab: TabKey }> = ({ tab }) => {
             </Tab.Pane>
             <Tab.Pane eventKey="account" unmountOnExit>
               <SettingsAccountPanel />
+            </Tab.Pane>
+            <Tab.Pane eventKey="theme" unmountOnExit>
+              <SettingsThemePanel />
             </Tab.Pane>
             <Tab.Pane eventKey="tasks">
               <SettingsTasksPanel />

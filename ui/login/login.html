@@ -10,6 +10,23 @@
     <link rel="stylesheet" href="login/login.css">
     <link rel="stylesheet" href="css">
 
+    <!-- follow the theme accent chosen in the app (stored in localStorage) -->
+    <script>
+        (function () {
+            var map = {
+                orange: ["#f97316", "249,115,22"], blue: ["#3b82f6", "59,130,246"],
+                pink: ["#ec4899", "236,72,153"], red: ["#ef4444", "239,68,68"],
+                yellow: ["#eab308", "234,179,8"], purple: ["#a855f7", "168,85,247"],
+                green: ["#22c55e", "34,197,94"], teal: ["#14b8a6", "20,184,166"]
+            };
+            var a = null;
+            try { a = localStorage.getItem("refract.accent"); } catch (e) { /* ignore */ }
+            var c = map[a] || map.orange;
+            document.documentElement.style.setProperty("--login-accent", c[0]);
+            document.documentElement.style.setProperty("--login-accent-rgb", c[1]);
+        })();
+    </script>
+
     <!-- load locale -->
     <script>
         var localeStrings = {
@@ -49,7 +66,7 @@
     }
 </script>
 
-<body class="login">
+<body class="login stash-liquid-glass">
     <div class="dialog">
         <div class="card">
             <form action="login" method="POST" onsubmit="event.preventDefault(); login();">

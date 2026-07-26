@@ -5,6 +5,8 @@ import { App } from "./App";
 import { getClient } from "./core/StashService";
 import { baseURL, getPlatformURL } from "./core/createClient";
 import "./index.scss";
+// Refract theme (bundled default UI) — layered over the base styles.
+import "./theme";
 import * as serviceWorker from "./serviceWorker";
 
 ReactDOM.render(

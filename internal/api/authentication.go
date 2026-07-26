@@ -27,7 +27,9 @@ const (
 
 func allowUnauthenticated(r *http.Request) bool {
 	// #2715 - allow access to UI files
-	if strings.HasPrefix(r.URL.Path, loginEndpoint) || r.URL.Path == logoutEndpoint || r.URL.Path == "/css" || strings.HasPrefix(r.URL.Path, "/assets") {
+	// /theme is the bundled default theme's static assets (fonts, images) — the
+	// login page (served pre-auth) needs the theme fonts to render.
+	if strings.HasPrefix(r.URL.Path, loginEndpoint) || r.URL.Path == logoutEndpoint || r.URL.Path == "/css" || strings.HasPrefix(r.URL.Path, "/assets") || strings.HasPrefix(r.URL.Path, "/theme") {
 		return true
 	}
 	// Share links use their own per-token auth (see routes_share.go).

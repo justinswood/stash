@@ -673,3 +673,34 @@
   font-size: 12px;
   padding: 12px 0;
 }
+
+// ── Refract glass theme integration ──────────────────────────────────────
+// When the Refract theme is active (the default UI), remap the Dashboard's
+// local design tokens onto the theme tokens so the analytics page reads as
+// part of the glass aesthetic. Every existing .db-* rule uses var(--db-*), so
+// remapping the tokens themes the whole page; we only add frosted blur on top.
+body.stash-liquid-glass .dashboard-page {
+  --db-bg:        var(--bg-0, #0a0a0a);
+  --db-surface:   var(--glass-bg, rgba(255, 255, 255, 0.06));
+  --db-raised:    var(--glass-bg-strong, rgba(255, 255, 255, 0.1));
+  --db-border:    var(--glass-border, rgba(255, 255, 255, 0.12));
+  --db-border-2:  var(--glass-border-bright, rgba(255, 255, 255, 0.22));
+  --db-fg:        var(--text, rgba(255, 255, 255, 0.92));
+  --db-fg-2:      var(--text-muted, rgba(255, 255, 255, 0.7));
+  --db-accent:    var(--accent, #f97316);
+  --db-accent-2:  var(--accent-bright, #fb923c);
+  --db-accent-bg: rgba(var(--accent-rgb, 249, 115, 22), 0.12);
+  --db-shadow:    var(--shadow-lg, 0 8px 26px rgba(0, 0, 0, 0.32));
+  --db-r-sm:      10px;
+  --db-r:         14px;
+  --db-r-lg:      18px;
+
+  background: var(--bg-0, #0a0a0a);
+  font-family: var(--theme-font-stack, "Albert Sans", system-ui, sans-serif);
+}
+
+body.stash-liquid-glass .dashboard-page .db-card,
+body.stash-liquid-glass .dashboard-page .db-stat {
+  -webkit-backdrop-filter: var(--glass-blur-lg, blur(20px)) saturate(140%);
+  backdrop-filter: var(--glass-blur-lg, blur(20px)) saturate(140%);
+}
