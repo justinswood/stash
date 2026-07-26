@@ -174,6 +174,8 @@ func Initialize() (*Server, error) {
 
 	gqlSrv := gqlHandler.New(NewExecutableSchema(Config{Resolvers: resolver}))
 	gqlSrv.SetRecoverFunc(recoverFunc)
+	// enforce role-based permissions on root Mutation fields
+	gqlSrv.AroundFields(resolver.mutationPermissionMiddleware())
 	gqlSrv.AddTransport(gqlTransport.Websocket{
 		Upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {

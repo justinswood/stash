@@ -13,7 +13,26 @@ import (
 )
 
 func (r *queryResolver) Configuration(ctx context.Context) (*ConfigResult, error) {
-	return makeConfigResult(), nil
+	result := makeConfigResult()
+
+	// redact auth/API secrets from non-admins so a standard or read-only user
+	// cannot read the admin credential, API key, or stash-box keys via GraphQL
+	role, err := r.currentRole(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !role.AtLeast(models.UserRoleAdmin) && result.General != nil {
+		result.General.APIKey = ""
+		result.General.Username = ""
+		result.General.Password = ""
+		for _, sb := range result.General.StashBoxes {
+			if sb != nil {
+				sb.APIKey = ""
+			}
+		}
+	}
+
+	return result, nil
 }
 
 func (r *queryResolver) Directory(ctx context.Context, path, locale *string) (*Directory, error) {
