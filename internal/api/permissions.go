@@ -22,6 +22,13 @@ func (r *Resolver) getCurrentUser(ctx context.Context) (*models.User, error) {
 		return nil, nil
 	}
 
+	// if the database isn't open yet (e.g. a migration is pending) we can't look
+	// up the account — treat the authenticated session as the break-glass admin
+	// so that admin-only operations like `migrate` can still run.
+	if db := manager.GetInstance().Database; db == nil || db.Ready() != nil {
+		return &models.User{Username: *uid, Role: models.UserRoleAdmin}, nil
+	}
+
 	var u *models.User
 	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
 		var err error

@@ -12,6 +12,7 @@ import (
 	"github.com/stashapp/stash/internal/manager/config"
 	"github.com/stashapp/stash/pkg/logger"
 	"github.com/stashapp/stash/pkg/session"
+	"github.com/stashapp/stash/pkg/sqlite"
 )
 
 const (
@@ -120,6 +121,16 @@ func authenticateHandler() func(http.Handler) http.Handler {
 			}
 
 			ctx = session.SetCurrentUserID(ctx, userID)
+
+			// resolve the account id and attach it so per-user view/o history
+			// and resume position are scoped to this user. Done here (before the
+			// dataloaders middleware) so the request-scoped loaders capture it.
+			// Only for the GraphQL endpoint to avoid a lookup on every asset.
+			if userID != "" && r.URL.Path == gqlEndpoint {
+				if u, uErr := manager.GetInstance().GetUserByUsername(ctx, userID); uErr == nil && u != nil {
+					ctx = sqlite.WithHistoryUser(ctx, u.ID)
+				}
+			}
 
 			r = r.WithContext(ctx)
 

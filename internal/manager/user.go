@@ -92,6 +92,10 @@ func (s *Manager) ValidateUserCredentials(username, password string) (found bool
 
 // GetUserByUsername returns the user account for a username, or nil if none.
 func (s *Manager) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+	if s.Database == nil || s.Database.Ready() != nil {
+		// database not open yet (e.g. migration pending) — avoid a nil-DB txn
+		return nil, nil
+	}
 	var ret *models.User
 	err := s.Repository.WithReadTxn(ctx, func(ctx context.Context) error {
 		u, err := s.Repository.User.FindByUsername(ctx, username)

@@ -229,6 +229,7 @@ var (
 			idColumn: goqu.T(scenesViewDatesTable).Col(sceneIDColumn),
 		},
 		dateColumn: goqu.T(scenesViewDatesTable).Col(sceneViewDateColumn),
+		userColumn: goqu.T(scenesViewDatesTable).Col("user_id"),
 	}
 
 	scenesOTableMgr = &viewHistoryTable{
@@ -237,6 +238,7 @@ var (
 			idColumn: goqu.T(scenesODatesTable).Col(sceneIDColumn),
 		},
 		dateColumn: goqu.T(scenesODatesTable).Col(sceneODateColumn),
+		userColumn: goqu.T(scenesODatesTable).Col("user_id"),
 	}
 )
 

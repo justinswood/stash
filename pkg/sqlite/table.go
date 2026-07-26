@@ -861,6 +861,21 @@ func (t *relatedFilesTable) setPrimary(ctx context.Context, id int, fileID model
 type viewHistoryTable struct {
 	table
 	dateColumn exp.IdentifierExpression
+	// userColumn, when set, scopes reads/writes to the current user (per-user
+	// history). nil for tables that are not user-scoped.
+	userColumn exp.IdentifierExpression
+}
+
+// scoped appends the per-user predicate to base when this table is user-scoped
+// and a user id is present in context. A zero user id (background tasks, legacy
+// callers) leaves the query unscoped, aggregating across all users.
+func (t *viewHistoryTable) scoped(ctx context.Context, base ...exp.Expression) []exp.Expression {
+	if t.userColumn != nil {
+		if uid := historyUserID(ctx); uid > 0 {
+			base = append(base, t.userColumn.Eq(uid))
+		}
+	}
+	return base
 }
 
 func (t *viewHistoryTable) getDates(ctx context.Context, id int) ([]time.Time, error) {
@@ -869,7 +884,7 @@ func (t *viewHistoryTable) getDates(ctx context.Context, id int) ([]time.Time, e
 	q := dialect.Select(
 		t.dateColumn,
 	).From(table).Where(
-		t.idColumn.Eq(id),
+		t.scoped(ctx, t.idColumn.Eq(id))...,
 	).Order(t.dateColumn.Desc())
 
 	const single = false
@@ -895,7 +910,7 @@ func (t *viewHistoryTable) getManyDates(ctx context.Context, ids []int) ([][]tim
 		t.idColumn,
 		t.dateColumn,
 	).From(table).Where(
-		t.idColumn.In(ids),
+		t.scoped(ctx, t.idColumn.In(ids))...,
 	).Order(t.dateColumn.Desc())
 
 	ret := make([][]time.Time, len(ids))
@@ -922,7 +937,7 @@ func (t *viewHistoryTable) getManyDates(ctx context.Context, ids []int) ([][]tim
 func (t *viewHistoryTable) getLastDate(ctx context.Context, id int) (*time.Time, error) {
 	table := t.table.table
 	q := dialect.Select(t.dateColumn).From(table).Where(
-		t.idColumn.Eq(id),
+		t.scoped(ctx, t.idColumn.Eq(id))...,
 	).Order(t.dateColumn.Desc()).Limit(1)
 
 	var date NullTimestamp
@@ -940,7 +955,7 @@ func (t *viewHistoryTable) getManyLastDate(ctx context.Context, ids []int) ([]*t
 		t.idColumn,
 		goqu.MAX(t.dateColumn),
 	).From(table).Where(
-		t.idColumn.In(ids),
+		t.scoped(ctx, t.idColumn.In(ids))...,
 	).GroupBy(t.idColumn)
 
 	ret := make([]*time.Time, len(ids))
@@ -974,7 +989,7 @@ func (t *viewHistoryTable) getManyLastDate(ctx context.Context, ids []int) ([]*t
 
 func (t *viewHistoryTable) getCount(ctx context.Context, id int) (int, error) {
 	table := t.table.table
-	q := dialect.Select(goqu.COUNT("*")).From(table).Where(t.idColumn.Eq(id))
+	q := dialect.Select(goqu.COUNT("*")).From(table).Where(t.scoped(ctx, t.idColumn.Eq(id))...)
 
 	const single = true
 	var ret int
@@ -997,7 +1012,7 @@ func (t *viewHistoryTable) getManyCount(ctx context.Context, ids []int) ([]int, 
 		t.idColumn,
 		goqu.COUNT(t.dateColumn),
 	).From(table).Where(
-		t.idColumn.In(ids),
+		t.scoped(ctx, t.idColumn.In(ids))...,
 	).GroupBy(t.idColumn)
 
 	ret := make([]int, len(ids))
@@ -1023,7 +1038,7 @@ func (t *viewHistoryTable) getManyCount(ctx context.Context, ids []int) ([]int, 
 
 func (t *viewHistoryTable) getAllCount(ctx context.Context) (int, error) {
 	table := t.table.table
-	q := dialect.Select(goqu.COUNT("*")).From(table)
+	q := dialect.Select(goqu.COUNT("*")).From(table).Where(t.scoped(ctx)...)
 
 	const single = true
 	var ret int
@@ -1041,7 +1056,7 @@ func (t *viewHistoryTable) getAllCount(ctx context.Context) (int, error) {
 
 func (t *viewHistoryTable) getUniqueCount(ctx context.Context) (int, error) {
 	table := t.table.table
-	q := dialect.Select(goqu.COUNT(goqu.DISTINCT(t.idColumn))).From(table)
+	q := dialect.Select(goqu.COUNT(goqu.DISTINCT(t.idColumn))).From(table).Where(t.scoped(ctx)...)
 
 	const single = true
 	var ret int
@@ -1064,11 +1079,18 @@ func (t *viewHistoryTable) addDates(ctx context.Context, id int, dates []time.Ti
 		dates = []time.Time{time.Now()}
 	}
 
+	scopeUser := t.userColumn != nil && historyUserID(ctx) > 0
 	for _, d := range dates {
-		q := dialect.Insert(table).Cols(t.idColumn.GetCol(), t.dateColumn.GetCol()).Vals(
-			// convert all dates to UTC
-			goqu.Vals{id, UTCTimestamp{Timestamp{d}}},
-		)
+		var q *goqu.InsertDataset
+		if scopeUser {
+			q = dialect.Insert(table).
+				Cols(t.idColumn.GetCol(), t.dateColumn.GetCol(), t.userColumn.GetCol()).
+				Vals(goqu.Vals{id, UTCTimestamp{Timestamp{d}}, historyUserID(ctx)})
+		} else {
+			q = dialect.Insert(table).
+				Cols(t.idColumn.GetCol(), t.dateColumn.GetCol()).
+				Vals(goqu.Vals{id, UTCTimestamp{Timestamp{d}}})
+		}
 
 		if _, err := exec(ctx, q); err != nil {
 			return nil, fmt.Errorf("inserting into %s: %w", table.GetTable(), err)
@@ -1092,12 +1114,11 @@ func (t *viewHistoryTable) deleteDates(ctx context.Context, id int, dates []time
 		if mostRecent {
 			// delete the most recent
 			subquery = dialect.Select("rowid").From(table).Where(
-				t.idColumn.Eq(id),
+				t.scoped(ctx, t.idColumn.Eq(id))...,
 			).Order(t.dateColumn.Desc()).Limit(1)
 		} else {
 			subquery = dialect.Select("rowid").From(table).Where(
-				t.idColumn.Eq(id),
-				t.dateColumn.Eq(UTCTimestamp{Timestamp{date}}),
+				t.scoped(ctx, t.idColumn.Eq(id), t.dateColumn.Eq(UTCTimestamp{Timestamp{date}}))...,
 			).Limit(1)
 		}
 
@@ -1113,7 +1134,7 @@ func (t *viewHistoryTable) deleteDates(ctx context.Context, id int, dates []time
 
 func (t *viewHistoryTable) deleteAllDates(ctx context.Context, id int) (int, error) {
 	table := t.table.table
-	q := dialect.Delete(table).Where(t.idColumn.Eq(id))
+	q := dialect.Delete(table).Where(t.scoped(ctx, t.idColumn.Eq(id))...)
 
 	if _, err := exec(ctx, q); err != nil {
 		return 0, fmt.Errorf("resetting dates for id %v: %w", id, err)
