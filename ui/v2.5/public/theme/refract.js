@@ -2995,18 +2995,26 @@
             }
         }
 
-        /* Coalesce mutation bursts into a single pass per animation frame.
-           Previously the full initializer set ran synchronously on EVERY
-           mutation batch — navigating to a card-dense page (e.g. the home page)
-           renders in many batches, so the whole document was reprocessed dozens
-           of times, freezing the tab for seconds. The initializers are
-           idempotent (data-attr guards), so one debounced pass after the burst
-           settles is equivalent and vastly cheaper. */
-        var raf = window.requestAnimationFrame || function (f) { return setTimeout(f, 16); };
+        /* Coalesce mutation bursts into a single pass, and run it during idle
+           time (after paint) rather than before it. Previously the full
+           initializer set ran synchronously on EVERY mutation batch —
+           navigating to a card-dense page (e.g. the home page) renders in many
+           batches, so the whole document was reprocessed dozens of times,
+           freezing the tab for seconds before it could even paint. Coalescing
+           makes it one pass; scheduling via requestIdleCallback lets the new
+           page paint and become interactive immediately, with Refract's
+           enhancements (rating frames, pills, popovers) filling in a moment
+           later. The initializers are idempotent (data-attr guards), so this is
+           equivalent work, just off the navigation critical path. A short
+           timeout keeps it prompt under load; rAF/setTimeout are the fallback
+           for engines without requestIdleCallback (Safari). */
+        var schedule = window.requestIdleCallback
+            ? function (f) { return window.requestIdleCallback(f, { timeout: 250 }); }
+            : (window.requestAnimationFrame || function (f) { return setTimeout(f, 16); });
         observer = new MutationObserver(function () {
             if (scheduled) { return; }
             scheduled = true;
-            raf(processAll);
+            schedule(processAll);
         });
         observer.observe(document.body, { childList: true, subtree: true });
     }
