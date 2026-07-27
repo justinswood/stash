@@ -528,6 +528,20 @@ body.stash-liquid-glass.refract-rating-style-playing-card .performer-card .stash
     white-space: nowrap !important;
 }
 
+/* The caption now holds a clone of the native country flag (refract.js)
+   rather than the country name. Size it up from the caption's 0.7rem
+   text scale and round + shadow it to match the grid-view flag treatment
+   (03_cards.css). Explicit width AND height override the flag-icons
+   aspect defaults. */
+body.stash-liquid-glass.refract-rating-style-playing-card .performer-card .stash-perf-country .fi {
+    display: inline-block !important;
+    width: 1.6rem !important;
+    height: 1.15rem !important;
+    border-radius: 2px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+    vertical-align: middle !important;
+}
+
 /* With an Ascension rank read-out appended (refract.js adds the marker
    class), the caption becomes a full-width row: nationality on the left,
    rank pinned to the RIGHT edge of the card. `overflow: visible` (the

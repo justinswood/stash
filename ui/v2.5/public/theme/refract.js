@@ -807,6 +807,17 @@
         if (!document.body) { return; }
         document.body.classList.toggle("refract-lite", !!on);
     }
+    /* Default Lite mode ON for Firefox/Gecko (incl. Zen) when the user hasn't
+       chosen yet. Gecko rasterizes backdrop-filter far less efficiently than
+       Chromium, so the full glass blur is sluggish there. Only defaults when
+       the key is unset — an explicit "0" (user turned it off) is respected,
+       and Chromium/Safari are untouched. */
+    try {
+        if (localStorage.getItem(LITE_MODE_STORAGE_KEY) === null &&
+            /Firefox\//.test(navigator.userAgent || "")) {
+            localStorage.setItem(LITE_MODE_STORAGE_KEY, "1");
+        }
+    } catch (e) { /* ignore */ }
     applyLiteModeClass(isLiteModeEnabled());
 
     /* Engine flag — true for Blink/Chromium (Chrome/Edge/Opera/Brave), false
@@ -3898,26 +3909,23 @@
                back to the raw uppercase code if DisplayNames isn't
                available or doesn't know the region. */
             if (flagEl) {
-                var codeMatch = (flagEl.className || "").match(/\bfi-([a-z]{2})\b/i);
-                if (codeMatch) {
-                    var code = codeMatch[1].toUpperCase();
-                    var countryName = code;
-                    try {
-                        var names = new Intl.DisplayNames(["en"], { type: "region" });
-                        countryName = names.of(code) || code;
-                    } catch (e) { /* fall back to the raw code */ }
-                    var countryWrap = document.createElement("span");
-                    countryWrap.className = "stash-perf-country";
-                    /* Name lives in an inner span so the Ascension rank
-                       read-out can sit on the SAME line, pushed to the
-                       right edge, while the name still ellipsis-truncates
-                       if it's long (see integrateAscensionBadges). */
-                    var countryNameSpan = document.createElement("span");
-                    countryNameSpan.className = "stash-perf-country-name";
-                    countryNameSpan.textContent = countryName;
-                    countryWrap.appendChild(countryNameSpan);
-                    section.insertBefore(countryWrap, row);
-                }
+                var countryWrap = document.createElement("span");
+                countryWrap.className = "stash-perf-country";
+                /* Show the country FLAG (not its name) in the caption
+                   slot — clone the native flag-icons span here. Mark the
+                   clone `stash-perf-country` so the playing-card "hide
+                   native flag" rule (:not(.stash-perf-country)) keeps
+                   this copy visible. The flag stays wrapped in the inner
+                   `.stash-perf-country-name` span so the Ascension rank
+                   read-out still rides the same line and truncates
+                   against it (see integrateAscensionBadges). */
+                var countryNameSpan = document.createElement("span");
+                countryNameSpan.className = "stash-perf-country-name";
+                var flagClone = flagEl.cloneNode(true);
+                flagClone.classList.add("stash-perf-country");
+                countryNameSpan.appendChild(flagClone);
+                countryWrap.appendChild(countryNameSpan);
+                section.insertBefore(countryWrap, row);
             }
 
             if (titleEl) {
