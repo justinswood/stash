@@ -43,7 +43,12 @@ registerRoute(
     cacheName: "stash-images",
     plugins: [
       new ExpirationPlugin({
-        maxEntries: 500,
+        // 500 was small for large libraries — browsing a big grid evicts and
+        // refetches thumbnails mid-scroll. Thumbnails are tiny, so keep more.
+        // (The Go backend already sends immutable Cache-Control on versioned
+        // media URLs, so even an evicted entry is served from the HTTP cache
+        // without a network round-trip; this mainly smooths the SW layer.)
+        maxEntries: 2000,
         maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
       }),
       new CacheableResponsePlugin({ statuses: [0, 200] }),

@@ -15,4 +15,5 @@ const (
 	imageKey
 	pluginKey
 	shareKey
+	currentUserKey
 )

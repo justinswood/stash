@@ -1411,6 +1411,40 @@ func (qb *SceneStore) GetPerformerIDs(ctx context.Context, id int) ([]int, error
 	return sceneRepository.performers.getIDs(ctx, id)
 }
 
+// GetPerformerIDsForScenes returns performer IDs grouped by scene ID for the
+// given scenes in a single query. This is a batched alternative to calling
+// GetPerformerIDs once per scene (an N+1); used by the share viewer's performer
+// catalog page where a whole catalog of scenes is rendered at once.
+func (qb *SceneStore) GetPerformerIDsForScenes(ctx context.Context, sceneIDs []int) (map[int][]int, error) {
+	result := make(map[int][]int, len(sceneIDs))
+	if len(sceneIDs) == 0 {
+		return result, nil
+	}
+
+	q := dialect.From(scenesPerformersJoinTable).Select(
+		scenesPerformersJoinTable.Col(sceneIDColumn),
+		scenesPerformersJoinTable.Col(performerIDColumn),
+	).Where(scenesPerformersJoinTable.Col(sceneIDColumn).In(sceneIDs))
+
+	sql, args, err := q.ToSQL()
+	if err != nil {
+		return nil, err
+	}
+
+	var rows []struct {
+		SceneID     int `db:"scene_id"`
+		PerformerID int `db:"performer_id"`
+	}
+	if err := dbWrapper.Select(ctx, &rows, sql, args...); err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows {
+		result[row.SceneID] = append(result[row.SceneID], row.PerformerID)
+	}
+	return result, nil
+}
+
 func (qb *SceneStore) GetTagIDs(ctx context.Context, id int) ([]int, error) {
 	return sceneRepository.tags.getIDs(ctx, id)
 }

@@ -681,10 +681,30 @@ func (rs shareRoutes) renderPerformerViewer(w http.ResponseWriter, r *http.Reque
 	_ = rs.withReadTxn(r, func(ctx context.Context) error {
 		tilePerformerIDs := make([][]int, len(scenesOut))
 		idSet := make(map[int]struct{})
+
+		// Prefer a single batched lookup (avoids an N+1 over the catalog); fall
+		// back to per-scene if the store doesn't expose the batch method.
+		var batched map[int][]int
+		if b, ok := rs.scenePerformerIDs.(interface {
+			GetPerformerIDsForScenes(context.Context, []int) (map[int][]int, error)
+		}); ok {
+			sceneIDs := make([]int, len(scenesOut))
+			for i, t := range scenesOut {
+				sceneIDs[i] = t.ID
+			}
+			batched, _ = b.GetPerformerIDsForScenes(ctx, sceneIDs)
+		}
+
 		for i, t := range scenesOut {
-			ids, err := rs.scenePerformerIDs.GetPerformerIDs(ctx, t.ID)
-			if err != nil {
-				continue
+			var ids []int
+			if batched != nil {
+				ids = batched[t.ID]
+			} else {
+				var err error
+				ids, err = rs.scenePerformerIDs.GetPerformerIDs(ctx, t.ID)
+				if err != nil {
+					continue
+				}
 			}
 			tilePerformerIDs[i] = ids
 			for _, id := range ids {

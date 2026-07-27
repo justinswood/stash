@@ -12,6 +12,14 @@ import (
 // ErrPermission is returned when the current user lacks the required role.
 var ErrPermission = errors.New("insufficient permissions")
 
+// withCurrentUser stashes the already-resolved account on the context so
+// getCurrentUser can reuse it instead of re-querying. authenticateHandler
+// resolves the user once per request (to scope history); this lets the
+// permission checks share that lookup rather than hitting the DB again.
+func withCurrentUser(ctx context.Context, u *models.User) context.Context {
+	return context.WithValue(ctx, currentUserKey, u)
+}
+
 // getCurrentUser resolves the authenticated user's account, or nil when no user
 // is logged in. When the session user matches the config credential but has no
 // account row yet (break-glass admin, pre-bootstrap), a synthetic admin is
@@ -20,6 +28,11 @@ func (r *Resolver) getCurrentUser(ctx context.Context) (*models.User, error) {
 	uid := session.GetCurrentUserID(ctx)
 	if uid == nil || *uid == "" {
 		return nil, nil
+	}
+
+	// reuse the account resolved by authenticateHandler for this request, if any.
+	if cached, ok := ctx.Value(currentUserKey).(*models.User); ok && cached != nil {
+		return cached, nil
 	}
 
 	// if the database isn't open yet (e.g. a migration is pending) we can't look

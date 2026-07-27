@@ -131,6 +131,9 @@ func authenticateHandler() func(http.Handler) http.Handler {
 			if userID != "" && r.URL.Path == gqlEndpoint {
 				if u, uErr := manager.GetInstance().GetUserByUsername(ctx, userID); uErr == nil && u != nil {
 					ctx = sqlite.WithHistoryUser(ctx, u.ID)
+					// share this lookup with the permission checks (getCurrentUser)
+					// so they don't re-query the same account per request.
+					ctx = withCurrentUser(ctx, u)
 				}
 			}
 
