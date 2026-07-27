@@ -26,3 +26,6 @@ yarn-error.log*
 
 .eslintcache
 .stylelintcache
+
+# stray local pnpm store (belongs in ~/.pnpm-store)
+.pnpm-store

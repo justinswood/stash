@@ -154,13 +154,12 @@ export const createClient = () => {
   const errorLink = onError(({ networkError }) => {
     // handle graphql unauthorized error
     if (networkError && (networkError as ServerError).statusCode === 401) {
-      if (import.meta.env.DEV) {
-        alert(`\
-GraphQL server error: 401 Unauthorized
-Authentication cannot be used with the dev server, since the session authorization cookie cannot be sent cross-origin.
-Please disable it on the server and refresh the page.`);
-        return;
-      }
+      // Fork: our Vite dev server reverse-proxies to the backend (same-origin,
+      // see vite.config.js + VITE_APP_PLATFORM_PORT), so the session cookie DOES
+      // flow and auth works in dev. Redirect to the login page like production
+      // instead of upstream's dead-end "auth can't be used with the dev server"
+      // alert. (In a production build this branch is dead — import.meta.env.DEV
+      // is false — so nothing changes for the deployed :9999 image.)
       // redirect to login page
       const newURL = new URL(
         getPlatformURL("login"),
