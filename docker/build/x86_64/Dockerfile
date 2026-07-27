@@ -46,11 +46,19 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 # Final Runnable Image
 FROM alpine:latest
+# libva + intel-media-driver (iHD) enable VAAPI/QSV hardware transcode on Intel
+# iGPUs (this host is Alder Lake-N / i915). ffmpeg in this image already advertises
+# vaapi/qsv; the driver is what lets it actually talk to the GPU. Requires the
+# host's /dev/dri mapped into the container (see docker-compose.yml) and
+# transcode_hardware_acceleration enabled in config. Without any of these, Stash
+# falls back to software libx264, so it is safe if the GPU is unavailable.
 RUN apk add --no-cache ca-certificates vips-tools ffmpeg \
+  libva intel-media-driver \
   python3 py3-pip py3-lxml \
   && pip3 install --break-system-packages requests cloudscraper \
   && ln -sf /usr/bin/python3 /usr/bin/python
 COPY --from=backend /stash/stash /usr/bin/
+ENV LIBVA_DRIVER_NAME=iHD
 ENV STASH_CONFIG_FILE=/root/.stash/config.yml
 EXPOSE 9999
 ENTRYPOINT ["stash"]

@@ -7,6 +7,14 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=false"
     restart: unless-stopped
+    ## Intel iGPU (Alder Lake-N) passthrough for hardware transcoding (VAAPI/QSV).
+    ## group_add is the host's `render` group GID (ls -n /dev/dri) so the
+    ## container user can open the render node. Pair with
+    ## transcode_hardware_acceleration: true in config.yml.
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "992"
     ## the container's port must be the same with the STASH_PORT in the environment section
     ports:
       - "9999:9999"
