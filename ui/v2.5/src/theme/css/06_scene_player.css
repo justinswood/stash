@@ -65,7 +65,7 @@ body.stash-liquid-glass div.video-wrapper {
     max-height: 100% !important;
     box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.35),
-        0 0 60px -10px rgba(var(--accent-rgb), 0.28),
+        0 0 60px -10px rgba(var(--accent-rgb), calc(0.28 * var(--glow, 1))),
         inset 0 0 0 1px rgba(255, 255, 255, 0.04) !important;
     position: relative !important;
 }
@@ -197,7 +197,7 @@ body.refract-hide-center-controls .st-player-overlay {
     color: #fff !important;
     transform: scale(1.08) !important;
     box-shadow:
-        0 0 26px rgba(var(--accent-rgb), 0.45),
+        0 0 26px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1))),
         inset 0 0 0 1px rgba(var(--accent-rgb), 0.2) !important;
 }
 .st-overlay-btn:active {
@@ -458,7 +458,7 @@ body.stash-liquid-glass .video-js .vjs-load-progress div {
 body.stash-liquid-glass .video-js .vjs-play-progress {
     background: var(--accent) !important;
     border-radius: 2px !important;
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.5) !important;
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.5 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass .video-js .vjs-play-progress::before {
     display: none !important;
@@ -506,12 +506,12 @@ body.stash-liquid-glass .video-js .vjs-marker {
     width: 5px;
     border-radius: 3px;
     box-shadow:
-        0 0 4px rgba(var(--accent-rgb), 0.55),
+        0 0 4px rgba(var(--accent-rgb), calc(0.55 * var(--glow, 1))),
         0 0 1px rgba(0, 0, 0, 0.6);
 }
 body.stash-liquid-glass .video-js .vjs-marker:hover {
     box-shadow:
-        0 0 8px rgba(var(--accent-rgb), 0.85),
+        0 0 8px rgba(var(--accent-rgb), calc(0.85 * var(--glow, 1))),
         0 0 2px rgba(0, 0, 0, 0.7);
 }
 /* Marker name tooltip on the scrubber. Stash's player shows this on hover
@@ -553,7 +553,7 @@ body.stash-liquid-glass .video-js .vjs-volume-bar {
 }
 body.stash-liquid-glass .video-js .vjs-volume-level {
     background: var(--accent) !important;
-    box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.5) !important;
+    box-shadow: 0 0 6px rgba(var(--accent-rgb), calc(0.5 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass .video-js .vjs-volume-level::before {
     color: var(--accent-bright) !important;
@@ -632,7 +632,7 @@ body.stash-liquid-glass .scrubber-wrapper {
     flex: 0 0 auto !important;
     box-shadow:
         0 6px 24px rgba(0, 0, 0, 0.35),
-        0 0 50px -10px rgba(var(--accent-rgb), 0.25),
+        0 0 50px -10px rgba(var(--accent-rgb), calc(0.25 * var(--glow, 1))),
         inset 0 0 0 1px rgba(255, 255, 255, 0.04) !important;
 }
 
@@ -676,7 +676,7 @@ body.stash-liquid-glass .scrubber-wrapper > .scrubber-button:hover {
     border-color: var(--accent-glow) !important;
     transform: translateY(-50%) scale(1.08) !important;
     box-shadow:
-        0 0 20px rgba(var(--accent-rgb), 0.4),
+        0 0 20px rgba(var(--accent-rgb), calc(0.4 * var(--glow, 1))),
         inset 0 0 0 1px rgba(var(--accent-rgb), 0.2) !important;
 }
 body.stash-liquid-glass #scrubber-back svg,
@@ -707,7 +707,7 @@ body.stash-liquid-glass .scrubber-item:hover {
 body.stash-liquid-glass #scrubber-position-indicator {
     background: var(--accent) !important;
     width: 2px !important;
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.7) !important;
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.7 * var(--glow, 1))) !important;
     z-index: 4 !important;
 }
 
@@ -917,14 +917,14 @@ body.stash-liquid-glass .scene-video-filter input[type="range"].filter-slider::-
     border: none;
     box-shadow:
         -100vw 0 0 calc(100vw - 6px) rgba(var(--accent-rgb), 0.45),
-        0 0 8px rgba(var(--accent-rgb), 0.4);
+        0 0 8px rgba(var(--accent-rgb), calc(0.4 * var(--glow, 1)));
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 body.stash-liquid-glass .scene-video-filter input[type="range"].filter-slider:hover::-webkit-slider-thumb {
     transform: scale(1.15);
     box-shadow:
         -100vw 0 0 calc(100vw - 6px) rgba(var(--accent-rgb), 0.6),
-        0 0 12px rgba(var(--accent-rgb), 0.55);
+        0 0 12px rgba(var(--accent-rgb), calc(0.55 * var(--glow, 1)));
 }
 body.stash-liquid-glass .scene-video-filter input[type="range"].filter-slider::-moz-range-track {
     height: 4px;
@@ -937,7 +937,7 @@ body.stash-liquid-glass .scene-video-filter input[type="range"].filter-slider::-
     height: 4px;
     border-radius: 999px;
     background: rgba(var(--accent-rgb), 0.45);
-    box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.25);
+    box-shadow: 0 0 6px rgba(var(--accent-rgb), calc(0.25 * var(--glow, 1)));
 }
 body.stash-liquid-glass .scene-video-filter input[type="range"].filter-slider::-moz-range-thumb {
     width: 12px;
@@ -945,12 +945,12 @@ body.stash-liquid-glass .scene-video-filter input[type="range"].filter-slider::-
     border-radius: 50%;
     background: rgba(var(--accent-rgb), 0.78);
     border: none;
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4);
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.4 * var(--glow, 1)));
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 body.stash-liquid-glass .scene-video-filter input[type="range"].filter-slider:hover::-moz-range-thumb {
     transform: scale(1.15);
-    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.55);
+    box-shadow: 0 0 12px rgba(var(--accent-rgb), calc(0.55 * var(--glow, 1)));
 }
 
 /* Action buttons row — slightly tighter than default Refract buttons */

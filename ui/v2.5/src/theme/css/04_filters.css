@@ -210,14 +210,14 @@ body.stash-liquid-glass .modal .modal-footer button.btn-primary {
     background: var(--accent-tint) !important;
     border: 1px solid var(--accent-glow) !important;
     color: var(--accent-bright) !important;
-    box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.24) !important;
+    box-shadow: 0 0 10px rgba(var(--accent-rgb), calc(0.24 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass .modal .modal-footer .btn.btn-primary:hover,
 body.stash-liquid-glass .modal .modal-footer button.btn-primary:hover {
     background: rgba(var(--accent-rgb), 0.2) !important;
     border-color: rgba(var(--accent-rgb), 0.55) !important;
     color: var(--accent-light) !important;
-    box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.32) !important;
+    box-shadow: 0 0 14px rgba(var(--accent-rgb), calc(0.32 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass .modal .modal-footer .btn:focus-visible,
 body.stash-liquid-glass .modal .modal-footer button:focus-visible {
@@ -509,7 +509,7 @@ body.stash-liquid-glass .modifier-option.selected {
     background: var(--accent-tint) !important;
     border-color: var(--accent-glow) !important;
     color: var(--accent-bright) !important;
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.28) !important;
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.28 * var(--glow, 1))) !important;
     font-weight: 500 !important;
 }
 
@@ -781,11 +781,11 @@ body.stash-liquid-glass .filtered-list-toolbar .btn-secondary.btn-primary {
     background: var(--accent-tint) !important;
     border-color: var(--accent-glow) !important;
     color: var(--accent-bright) !important;
-    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.30) !important;
+    box-shadow: 0 0 12px rgba(var(--accent-rgb), calc(0.30 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass .filtered-list-toolbar .btn-secondary.active svg,
 body.stash-liquid-glass .filtered-list-toolbar .btn-secondary.btn-primary svg {
-    filter: drop-shadow(0 0 5px rgba(var(--accent-rgb), 0.55));
+    filter: drop-shadow(0 0 5px rgba(var(--accent-rgb), calc(0.55 * var(--glow, 1))));
 }
 body.stash-liquid-glass .filtered-list-toolbar .btn-secondary svg {
     width: 0.95rem;
@@ -906,7 +906,7 @@ body.stash-liquid-glass .filtered-list-toolbar .selected-items-info {
     background: var(--accent-tint) !important;
     border: 1px solid var(--accent-glow) !important;
     border-radius: var(--radius-sm);
-    box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.18);
+    box-shadow: 0 0 10px rgba(var(--accent-rgb), calc(0.18 * var(--glow, 1)));
 }
 body.stash-liquid-glass .filtered-list-toolbar .selected-items-info .selected-count {
     color: var(--accent-bright);
@@ -958,7 +958,7 @@ body.stash-liquid-glass .filtered-list-toolbar select.form-control {
 body.stash-liquid-glass .filtered-list-toolbar .filter-button .badge {
     background: var(--accent) !important;
     color: #fff !important;
-    box-shadow: 0 0 6px var(--accent-glow);
+    box-shadow: 0 0 6px rgba(var(--accent-rgb), calc(0.28 * var(--glow, 1)));
 }
 
 /* Zoom slider — match toolbar control height (2.2rem), longer track, thumb orange “flow” */
@@ -1037,14 +1037,14 @@ body.stash-liquid-glass input[type="range"].zoom-slider::-webkit-slider-thumb {
         /* fill the track to the left of the thumb */
         -100vw 0 0 calc(100vw - 6px) rgba(var(--accent-rgb), 0.45),
         /* outer accent glow */
-        0 0 10px rgba(var(--accent-rgb), 0.45);
+        0 0 10px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1)));
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 body.stash-liquid-glass input[type="range"].zoom-slider:hover::-webkit-slider-thumb {
     transform: scale(1.15);
     box-shadow:
         -100vw 0 0 calc(100vw - 6px) rgba(var(--accent-rgb), 0.6),
-        0 0 14px rgba(var(--accent-rgb), 0.6);
+        0 0 14px rgba(var(--accent-rgb), calc(0.6 * var(--glow, 1)));
 }
 body.stash-liquid-glass input[type="range"].zoom-slider:active::-webkit-slider-thumb {
     transform: scale(1.04);
@@ -1062,7 +1062,7 @@ body.stash-liquid-glass input[type="range"].zoom-slider::-moz-range-progress {
     height: 5px;
     border-radius: 999px;
     background: rgba(var(--accent-rgb), 0.45);
-    box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.25);
+    box-shadow: 0 0 6px rgba(var(--accent-rgb), calc(0.25 * var(--glow, 1)));
 }
 body.stash-liquid-glass input[type="range"].zoom-slider::-moz-range-thumb {
     width: 12px;
@@ -1071,13 +1071,13 @@ body.stash-liquid-glass input[type="range"].zoom-slider::-moz-range-thumb {
     background: rgba(var(--accent-rgb), 0.78);
     border: none;
     box-shadow:
-        0 0 10px rgba(var(--accent-rgb), 0.45);
+        0 0 10px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1)));
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 body.stash-liquid-glass input[type="range"].zoom-slider:hover::-moz-range-thumb {
     transform: scale(1.15);
     box-shadow:
-        0 0 14px rgba(var(--accent-rgb), 0.6);
+        0 0 14px rgba(var(--accent-rgb), calc(0.6 * var(--glow, 1)));
 }
 
 /* ───────────────────────────────────────────────────────────────────

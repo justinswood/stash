@@ -118,8 +118,8 @@ body.stash-liquid-glass.refract-rating-style-playing-card .performer-card .favor
        proper backdrop emblem rather than a corner-stuck icon. */
     top: 0.75rem !important;
     right: 1.1rem !important;
-    width: 3.6rem !important;
-    height: 3.6rem !important;
+    width: 2.52rem !important;
+    height: 2.52rem !important;
     /* Below the tier ribbon (z 7) and the name banner (z 6), above the
        image. */
     z-index: 3 !important;
@@ -239,8 +239,8 @@ body.stash-liquid-glass.refract-rating-style-playing-card .performer-card .refra
     filter:
         drop-shadow(0 1px 2px rgba(0, 0, 0, 0.95))
         drop-shadow(0 0 2px rgba(255, 255, 255, 1))
-        drop-shadow(0 0 6px rgba(var(--badge-color-bright), 1))
-        drop-shadow(0 0 14px rgba(var(--badge-color), 0.6));
+        drop-shadow(0 0 6px rgba(var(--badge-color-bright), calc(1 * var(--glow, 1))))
+        drop-shadow(0 0 14px rgba(var(--badge-color), calc(0.6 * var(--glow, 1))));
 }
 
 /* ── Hide elements that conflict with the playing-card layout ────── */
@@ -444,9 +444,9 @@ body.stash-liquid-glass.refract-rating-style-playing-card .performer-card .stash
     box-shadow:
         0 0 0 1px rgba(255, 255, 255, 0.35) inset,
         0 0 10px rgba(255, 255, 255, 0.18) inset,
-        0 0 14px rgba(var(--badge-color), 1),
-        0 0 32px rgba(var(--badge-color), 0.6),
-        0 0 64px rgba(var(--badge-color), 0.28),
+        0 0 14px rgba(var(--badge-color), calc(1 * var(--glow, 1))),
+        0 0 32px rgba(var(--badge-color), calc(0.6 * var(--glow, 1))),
+        0 0 64px rgba(var(--badge-color), calc(0.28 * var(--glow, 1))),
         0 6px 16px rgba(0, 0, 0, 0.6) !important;
     text-decoration: none !important;
     backdrop-filter: var(--glass-blur-xs) !important;
@@ -468,7 +468,7 @@ body.stash-liquid-glass.refract-rating-style-playing-card .performer-card .stash
     -webkit-text-fill-color: transparent;
     filter:
         drop-shadow(0 1px 2px rgba(0, 0, 0, 0.85))
-        drop-shadow(0 0 4px rgba(var(--badge-color), 0.85));
+        drop-shadow(0 0 4px rgba(var(--badge-color), calc(0.85 * var(--glow, 1))));
 }
 body.stash-liquid-glass.refract-rating-style-playing-card .performer-card .stash-perf-stats > *:hover {
     background:
@@ -481,9 +481,9 @@ body.stash-liquid-glass.refract-rating-style-playing-card .performer-card .stash
     box-shadow:
         0 0 0 1px rgba(255, 255, 255, 0.5) inset,
         0 0 16px rgba(255, 255, 255, 0.25) inset,
-        0 0 22px rgba(var(--badge-color), 1),
-        0 0 50px rgba(var(--badge-color), 0.7),
-        0 0 90px rgba(var(--badge-color), 0.35),
+        0 0 22px rgba(var(--badge-color), calc(1 * var(--glow, 1))),
+        0 0 50px rgba(var(--badge-color), calc(0.7 * var(--glow, 1))),
+        0 0 90px rgba(var(--badge-color), calc(0.35 * var(--glow, 1))),
         0 8px 22px rgba(0, 0, 0, 0.6) !important;
     transform: translateY(-2px);
 }
@@ -498,7 +498,7 @@ body.stash-liquid-glass.refract-rating-style-playing-card .performer-card .stash
     fill: rgba(var(--badge-color-bright), 1) !important;
     filter:
         drop-shadow(0 0 2px rgba(255, 255, 255, 0.95))
-        drop-shadow(0 0 8px rgba(var(--badge-color), 0.95)) !important;
+        drop-shadow(0 0 8px rgba(var(--badge-color), calc(0.95 * var(--glow, 1)))) !important;
 }
 
 /* Country name — plain text, left-aligned, in-flow above the stat
@@ -613,8 +613,8 @@ body.stash-liquid-glass.refract-rating-style-playing-card :is(.performer-card, .
     border-top: 1px solid rgba(var(--tier-color-bright, var(--tier-color)), 0.85);
     border-bottom: 1px solid rgba(var(--tier-color-bright, var(--tier-color)), 0.85);
     box-shadow:
-        0 0 12px rgba(var(--tier-color), 0.85),
-        0 0 28px rgba(var(--tier-color), 0.4),
+        0 0 12px rgba(var(--tier-color), calc(0.85 * var(--glow, 1))),
+        0 0 28px rgba(var(--tier-color), calc(0.4 * var(--glow, 1))),
         0 4px 10px rgba(0, 0, 0, 0.45);
     backdrop-filter: var(--glass-blur-xs);
     -webkit-backdrop-filter: var(--glass-blur-xs);
@@ -640,7 +640,7 @@ body.stash-liquid-glass.refract-rating-style-playing-card :is(.performer-card, .
     -webkit-text-fill-color: transparent;
     filter:
         drop-shadow(0 1px 2px rgba(0, 0, 0, 0.95))
-        drop-shadow(0 0 5px rgba(var(--tier-color), 0.85));
+        drop-shadow(0 0 5px rgba(var(--tier-color), calc(0.85 * var(--glow, 1))));
 }
 
 /* Fade out the tier ribbon:
@@ -684,9 +684,9 @@ body.stash-liquid-glass.refract-rating-style-playing-card :is(.performer-card, .
     border-top-color: rgba(var(--tier-color-bright, var(--tier-color)), 0.95);
     border-bottom-color: rgba(var(--tier-color-bright, var(--tier-color)), 0.95);
     box-shadow:
-        0 0 14px rgba(var(--tier-color), 0.85),
-        0 0 30px rgba(var(--tier-color-2), 0.55),
-        0 0 56px rgba(var(--tier-color-3, var(--tier-color-2)), 0.4),
+        0 0 14px rgba(var(--tier-color), calc(0.85 * var(--glow, 1))),
+        0 0 30px rgba(var(--tier-color-2), calc(0.55 * var(--glow, 1))),
+        0 0 56px rgba(var(--tier-color-3, var(--tier-color-2)), calc(0.4 * var(--glow, 1))),
         0 4px 10px rgba(0, 0, 0, 0.5);
 }
 body.stash-liquid-glass.refract-rating-style-playing-card :is(.performer-card, .scene-card).refract-card-tier-legendary .refract-pc-tier-label::after {
@@ -775,8 +775,8 @@ body.stash-liquid-glass.refract-rating-style-playing-card .performer-card.refrac
     filter:
         drop-shadow(0 1px 2px rgba(0, 0, 0, 0.95))
         drop-shadow(0 0 2px rgba(255, 255, 255, 1))
-        drop-shadow(0 0 6px rgba(var(--badge-color-bright), 1))
-        drop-shadow(0 0 14px rgba(var(--badge-color), 0.6));
+        drop-shadow(0 0 6px rgba(var(--badge-color-bright), calc(1 * var(--glow, 1))))
+        drop-shadow(0 0 14px rgba(var(--badge-color), calc(0.6 * var(--glow, 1))));
 }
 
 /* Perfect — pastel rainbow text gradient + slow hue-cycle. The
@@ -800,8 +800,8 @@ body.stash-liquid-glass.refract-rating-style-playing-card .performer-card.refrac
     filter:
         drop-shadow(0 1px 2px rgba(0, 0, 0, 0.95))
         drop-shadow(0 0 2px rgba(255, 255, 255, 1))
-        drop-shadow(0 0 6px rgba(var(--badge-color-bright), 1))
-        drop-shadow(0 0 14px rgba(var(--badge-color), 0.6));
+        drop-shadow(0 0 6px rgba(var(--badge-color-bright), calc(1 * var(--glow, 1))))
+        drop-shadow(0 0 14px rgba(var(--badge-color), calc(0.6 * var(--glow, 1))));
 }
 
 /* Hue-cycle for the Perfect tier ribbon label (the name no longer uses it). */
@@ -1100,8 +1100,8 @@ body.stash-liquid-glass .refract-cb-name {
     text-shadow:
         0 1px 2px rgba(0, 0, 0, 0.92),
         0 0 3px rgba(255, 255, 255, 0.55),
-        0 0 8px rgba(var(--seal-rgb), 0.7),
-        0 0 16px rgba(var(--seal-rgb), 0.4);
+        0 0 8px rgba(var(--seal-rgb), calc(0.7 * var(--glow, 1))),
+        0 0 16px rgba(var(--seal-rgb), calc(0.4 * var(--glow, 1)));
 }
 /* Gender "type" glyph before the name (cloned from the card's native icon).
    Sized up to sit next to the headline name. NO filter override: the base
@@ -1174,7 +1174,7 @@ body.stash-liquid-glass .refract-cb-score-num {
     -webkit-text-fill-color: transparent;
     color: transparent;
     filter:
-        drop-shadow(0 0 10px rgba(var(--seal-rgb), 0.55))
+        drop-shadow(0 0 10px rgba(var(--seal-rgb), calc(0.55 * var(--glow, 1))))
         drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
     animation: refract-foil-sheen 5s ease-in-out infinite;
 }
@@ -1249,7 +1249,7 @@ body.stash-liquid-glass .refract-cb-score-lbl {
     letter-spacing: 0.26em;
     text-transform: uppercase;
     color: var(--seal);
-    text-shadow: 0 0 8px rgba(var(--seal-rgb), 0.4);
+    text-shadow: 0 0 8px rgba(var(--seal-rgb), calc(0.4 * var(--glow, 1)));
 }
 body.stash-liquid-glass .refract-cb-score-lbl::before,
 body.stash-liquid-glass .refract-cb-score-lbl::after {

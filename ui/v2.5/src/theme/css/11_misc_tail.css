@@ -211,12 +211,12 @@ body.stash-liquid-glass .search-result .btn.btn-primary:not(.btn-group .btn):not
     font-weight: 600 !important;
     letter-spacing: 0.04em !important;
     margin-top: 0.5rem;
-    box-shadow: 0 2px 12px rgba(var(--accent-rgb), 0.22) !important;
+    box-shadow: 0 2px 12px rgba(var(--accent-rgb), calc(0.22 * var(--glow, 1))) !important;
     transition: background 0.15s, box-shadow 0.15s !important;
 }
 body.stash-liquid-glass .search-result .btn.btn-primary:not(.btn-group .btn):not(.tag-item .btn):hover {
     background: var(--accent-bright) !important;
-    box-shadow: 0 2px 18px rgba(var(--accent-rgb), 0.4) !important;
+    box-shadow: 0 2px 18px rgba(var(--accent-rgb), calc(0.4 * var(--glow, 1))) !important;
 }
 
 /* Create / Link icon buttons inside an unmatched tag pill — small inline glyphs
@@ -641,7 +641,7 @@ body.stash-liquid-glass:has(.Lightbox) .popover.show .form-check-input[type="che
 body.stash-liquid-glass:has(.Lightbox) .popover.show .form-check-input[type="checkbox"]:checked {
     background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 8'%3E%3Cpath d='M1 4l2.5 2.5L9 1' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") center / 58% no-repeat !important;
     border-color: var(--accent-bright) !important;
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.45) !important;
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass:has(.Lightbox) .popover.show .form-check-label {
     color: var(--text) !important;
@@ -929,7 +929,7 @@ body.stash-liquid-glass .refract-accent-swatch:hover {
 }
 body.stash-liquid-glass .refract-accent-swatch.is-active {
     border-color: #fff !important;
-    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 0 14px rgba(var(--accent-rgb), 0.6) !important;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 0 14px rgba(var(--accent-rgb), calc(0.6 * var(--glow, 1))) !important;
 }
 
 /* Light/dark mode toggle — sun (light on) / moon (light off) icon
@@ -1004,6 +1004,7 @@ body.stash-liquid-glass .setting#plugin-refract-view-minimiser > .refract-settin
 body.stash-liquid-glass .setting#plugin-refract-custom-logo > .refract-setting-control,
 body.stash-liquid-glass .setting#plugin-refract-studio-banner > .refract-setting-control,
 body.stash-liquid-glass .setting#plugin-refract-perf-card-hover > .refract-setting-control,
+body.stash-liquid-glass .setting#plugin-refract-glow > .refract-setting-control,
 body.stash-liquid-glass .setting#plugin-refract-rating-style > .refract-setting-control {
     display: flex !important;
     justify-content: flex-end !important;
@@ -1042,7 +1043,87 @@ body.stash-liquid-glass .refract-segmented-btn:hover {
 body.stash-liquid-glass .refract-segmented-btn.is-active {
     background: var(--accent-tint) !important;
     color: var(--accent-bright) !important;
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.25);
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.25 * var(--glow, 1)));
+}
+
+/* ── Glow intensity slider ──────────────────────────────────────────
+   Range input + live percentage readout + reset. The track fills with
+   accent up to the thumb via a background-gradient driven inline by
+   the browser's own value — we can't read the value in CSS, so the
+   track is a static accent-tinted groove and the thumb carries the
+   accent. Deliberately understated: this control lives next to the
+   accent swatches and shouldn't out-shout them. */
+body.stash-liquid-glass .refract-glow-control {
+    gap: 0.75rem !important;
+}
+body.stash-liquid-glass .refract-glow-slider {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 11rem;
+    height: 4px;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(
+        to right,
+        rgba(var(--accent-rgb), 0.55),
+        rgba(255, 255, 255, 0.10));
+    outline: none;
+    cursor: pointer;
+}
+body.stash-liquid-glass .refract-glow-slider::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent-bright);
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    transition: transform 0.12s;
+}
+body.stash-liquid-glass .refract-glow-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent-bright);
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    transition: transform 0.12s;
+}
+body.stash-liquid-glass .refract-glow-slider:hover::-webkit-slider-thumb,
+body.stash-liquid-glass .refract-glow-slider:active::-webkit-slider-thumb {
+    transform: scale(1.15);
+}
+body.stash-liquid-glass .refract-glow-slider:hover::-moz-range-thumb,
+body.stash-liquid-glass .refract-glow-slider:active::-moz-range-thumb {
+    transform: scale(1.15);
+}
+body.stash-liquid-glass .refract-glow-value {
+    min-width: 3.1rem;
+    text-align: right;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-bright);
+}
+body.stash-liquid-glass .refract-glow-reset {
+    appearance: none;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--glass-border) !important;
+    color: var(--text-muted) !important;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.22rem 0.6rem;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, opacity 0.15s;
+}
+body.stash-liquid-glass .refract-glow-reset:hover:not(:disabled) {
+    color: var(--accent-bright) !important;
+    border-color: var(--accent-glow) !important;
+}
+body.stash-liquid-glass .refract-glow-reset:disabled {
+    opacity: 0.35;
+    cursor: default;
 }
 
 /* Custom-logo URL input — glass styling matching Refract's other text
@@ -1178,12 +1259,12 @@ body.stash-liquid-glass .refract-toggle-thumb {
 body.stash-liquid-glass .refract-toggle.is-on .refract-toggle-track {
     background: rgba(var(--accent-rgb), 0.32) !important;
     border-color: rgba(var(--accent-rgb), 0.55) !important;
-    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.35) !important;
+    box-shadow: 0 0 12px rgba(var(--accent-rgb), calc(0.35 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass .refract-toggle.is-on .refract-toggle-thumb {
     left: 22px !important;
     background: linear-gradient(180deg, var(--accent-bright) 0%, var(--accent) 100%) !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 0 8px rgba(var(--accent-rgb), 0.5) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 0 8px rgba(var(--accent-rgb), calc(0.5 * var(--glow, 1))) !important;
 }
 
 /* Help modal — markdown content (blockquotes, code blocks). Scoped to

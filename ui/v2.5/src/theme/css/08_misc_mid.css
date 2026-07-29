@@ -11,8 +11,8 @@ body.stash-liquid-glass .wall-item:hover {
         0 0 0 2px var(--accent),
         var(--shadow-2xl),
         0 0 0 1px rgba(var(--accent-rgb), 0.14),
-        0 0 40px 6px rgba(var(--accent-rgb), 0.22),
-        0 0 90px 18px rgba(var(--accent-rgb), 0.09);
+        0 0 40px 6px rgba(var(--accent-rgb), calc(0.22 * var(--glow, 1))),
+        0 0 90px 18px rgba(var(--accent-rgb), calc(0.09 * var(--glow, 1)));
     z-index: 2;
 }
 
@@ -115,7 +115,7 @@ body.stash-liquid-glass .wall-item .wall-item-check:checked {
 body.stash-liquid-glass .wall-item .wall-item-check:checked {
     background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 8'%3E%3Cpath d='M1 4l2.5 2.5L9 1' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") center / 58% no-repeat !important;
     border-color: var(--accent-bright) !important;
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.55) !important;
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.55 * var(--glow, 1))) !important;
 }
 
 body.stash-liquid-glass :is(.scene-tabs, .image-tabs) .btn-group .btn.active,
@@ -1247,7 +1247,7 @@ body.stash-liquid-glass .details-edit .btn.btn-primary {
     background: var(--accent-tint) !important;
     border: 1px solid var(--accent-glow) !important;
     color: var(--accent-bright) !important;
-    box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.2) !important;
+    box-shadow: 0 0 10px rgba(var(--accent-rgb), calc(0.2 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass .details-edit .btn.btn-primary:hover {
     background: rgba(var(--accent-rgb), 0.2) !important;
@@ -1260,7 +1260,7 @@ body.stash-liquid-glass .details-edit .btn.btn-danger {
     background: var(--accent-tint) !important;
     border: 1px solid var(--accent-glow) !important;
     color: var(--accent-bright) !important;
-    box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.2) !important;
+    box-shadow: 0 0 10px rgba(var(--accent-rgb), calc(0.2 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass .details-edit .btn.btn-danger:hover {
     background: rgba(var(--accent-rgb), 0.2) !important;
@@ -2153,7 +2153,7 @@ body.stash-liquid-glass .form-check input[type="checkbox"]:not(.form-switch inpu
     background-size: 58% !important;
     background-repeat: no-repeat !important;
     border-color: var(--accent-bright) !important;
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.45) !important;
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1))) !important;
 }
 
 /* Liquid-glass toggles — larger, more tactile (Bootstrap custom-switch + form-switch). */
@@ -2199,7 +2199,7 @@ body.stash-liquid-glass .custom-switch .custom-control-input:checked ~ .custom-c
     border-color: rgba(255, 255, 255, 0.32) !important;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        0 0 18px rgba(var(--accent-rgb), 0.42),
+        0 0 18px rgba(var(--accent-rgb), calc(0.42 * var(--glow, 1))),
         0 0 0 1px rgba(var(--accent-rgb), 0.22) !important;
 }
 body.stash-liquid-glass .custom-switch .custom-control-input:checked ~ .custom-control-label::after {
@@ -2207,7 +2207,7 @@ body.stash-liquid-glass .custom-switch .custom-control-input:checked ~ .custom-c
     background: linear-gradient(180deg, var(--accent-bright) 0%, var(--accent) 100%) !important;
     box-shadow:
         0 2px 8px rgba(0, 0, 0, 0.35),
-        0 0 14px rgba(var(--accent-rgb), 0.5),
+        0 0 14px rgba(var(--accent-rgb), calc(0.5 * var(--glow, 1))),
         0 0 0 1px rgba(255, 255, 255, 0.35) inset !important;
 }
 
@@ -2237,7 +2237,7 @@ body.stash-liquid-glass .form-switch .form-check-input:checked {
     background-image: radial-gradient(circle at calc(100% - 0.72rem) 50%, #ffd1ad 0 0.56rem, transparent 0.57rem) !important;
     box-shadow:
         inset 0 1px 0 rgba(255, 220, 190, 0.28),
-        0 0 18px rgba(var(--accent-rgb), 0.4),
+        0 0 18px rgba(var(--accent-rgb), calc(0.4 * var(--glow, 1))),
         0 0 0 1px rgba(var(--accent-rgb), 0.2) !important;
 }
 
@@ -2461,7 +2461,7 @@ body.stash-liquid-glass #select_page_popover .btn.btn-primary:hover {
     background: rgba(var(--accent-rgb), 0.22) !important;
     color: var(--accent-light) !important;
     border-color: rgba(var(--accent-rgb), 0.55) !important;
-    box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.3) !important;
+    box-shadow: 0 0 10px rgba(var(--accent-rgb), calc(0.3 * var(--glow, 1))) !important;
 }
 
 /* ── Rating stars (global) ─────────────────────────────────────────────
@@ -2605,8 +2605,8 @@ body.stash-liquid-glass #tasks-panel .tasks-panel-queue:hover {
     box-shadow:
         var(--shadow-2xl),
         0 0 0 1px rgba(var(--accent-rgb), 0.14),
-        0 0 40px 6px rgba(var(--accent-rgb), 0.22),
-        0 0 90px 18px rgba(var(--accent-rgb), 0.09) !important;
+        0 0 40px 6px rgba(var(--accent-rgb), calc(0.22 * var(--glow, 1))),
+        0 0 90px 18px rgba(var(--accent-rgb), calc(0.09 * var(--glow, 1))) !important;
 }
 /* The inner .job-table.card has the .card class so it inherits .card:hover's
    orange glow — suppress it; only the outer .tasks-panel-queue should glow. */
@@ -2781,7 +2781,7 @@ body.stash-liquid-glass .package-manager-table-container input[type="checkbox"].
 body.stash-liquid-glass .package-manager-table-container .form-check input[type="checkbox"]:checked {
     background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 8'%3E%3Cpath d='M1 4l2.5 2.5L9 1' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") center / 58% no-repeat !important;
     border-color: var(--accent-bright) !important;
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.45) !important;
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass .package-manager-table-container .form-check {
     padding: 0 !important;
@@ -3136,12 +3136,12 @@ body.stash-liquid-glass.refract-minimal-cards .scene-card .stash-o-count {
     font-size: 0.72rem !important;
     font-weight: 600 !important;
     line-height: 1 !important;
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.2) !important;
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.2 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass.refract-minimal-cards .scene-card .stash-o-count:hover {
     background: rgba(var(--accent-rgb), 0.22) !important;
     color: var(--accent-bright) !important;
-    box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.4) !important;
+    box-shadow: 0 0 14px rgba(var(--accent-rgb), calc(0.4 * var(--glow, 1))) !important;
 }
 
 /* Force pill icons AND numbers to white in minimal mode. Background +
@@ -3307,7 +3307,7 @@ body.stash-liquid-glass.refract-minimal-cards .scene-card .stash-performer-pill:
     background: rgba(var(--accent-rgb), 0.22);
     border-color: var(--accent-bright);
     color: var(--accent-bright);
-    box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.4);
+    box-shadow: 0 0 14px rgba(var(--accent-rgb), calc(0.4 * var(--glow, 1)));
 }
 body.stash-liquid-glass.refract-minimal-cards .scene-card .stash-performer-pill .stash-performer-icon {
     width: 0.95em;
@@ -3542,13 +3542,13 @@ body.stash-liquid-glass .stash-performer-avatar {
     object-position: center 25% !important;
     border: 1.5px solid rgba(var(--accent-rgb), 0.45);
     background: var(--glass-bg-strong);
-    box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.22);
+    box-shadow: 0 0 10px rgba(var(--accent-rgb), calc(0.22 * var(--glow, 1)));
     display: block !important;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 body.stash-liquid-glass .stash-performer-link:hover .stash-performer-avatar {
     border-color: var(--accent);
-    box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.45);
+    box-shadow: 0 0 16px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1)));
 }
 body.stash-liquid-glass .stash-performer-more {
     width: 32px !important;
@@ -3581,7 +3581,7 @@ body.stash-liquid-glass .stash-tag-count {
     border-radius: var(--radius-pill);
     padding: 0.18em 0.6em;
     line-height: 1;
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.2);
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.2 * var(--glow, 1)));
     flex-shrink: 0;
     white-space: nowrap;
     text-decoration: none !important;
@@ -3589,7 +3589,7 @@ body.stash-liquid-glass .stash-tag-count {
 }
 body.stash-liquid-glass .stash-tag-count:hover {
     background: rgba(var(--accent-rgb), 0.22) !important;
-    box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.38) !important;
+    box-shadow: 0 0 14px rgba(var(--accent-rgb), calc(0.38 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass .stash-tag-count .stash-tag-icon {
     width: 0.85em;
@@ -4080,7 +4080,7 @@ body.stash-liquid-glass a.st-view-all.st-view-all:hover,
 body.stash-liquid-glass a[href*="?sortby="][href*="perPage=25"]:not([href*="page="]):hover {
     background: var(--accent-tint) !important;
     border-color: var(--accent-glow) !important;
-    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.30);
+    box-shadow: 0 0 12px rgba(var(--accent-rgb), calc(0.30 * var(--glow, 1)));
 }
 body.stash-liquid-glass a.st-view-all.st-view-all:hover::after,
 body.stash-liquid-glass a[href*="?sortby="][href*="perPage=25"]:not([href*="page="]):hover::after {
@@ -4124,7 +4124,7 @@ body.stash-liquid-glass .stash-carousel-fill {
     width: 0%;
     border-radius: 2px;
     background: linear-gradient(90deg, var(--accent-glow, var(--accent)), var(--accent-bright, var(--accent-bright)));
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.7);
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.7 * var(--glow, 1)));
     transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -4215,7 +4215,7 @@ body.stash-liquid-glass .slick-arrow:hover {
     background: rgba(var(--accent-rgb), 0.18) !important;
     border-color: rgba(var(--accent-rgb), 0.55) !important;
     transform: translateY(-50%) scale(1.08);
-    box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.35) !important;
+    box-shadow: 0 0 14px rgba(var(--accent-rgb), calc(0.35 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass .slick-arrow.slick-disabled {
     opacity: 0.25 !important;
@@ -4280,7 +4280,7 @@ body.stash-liquid-glass .recommendation-row-head a {
 }
 body.stash-liquid-glass .recommendation-row-head a:hover {
     background: rgba(var(--accent-rgb), 0.2) !important;
-    box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.3) !important;
+    box-shadow: 0 0 10px rgba(var(--accent-rgb), calc(0.3 * var(--glow, 1))) !important;
 }
 
 /* ── Recommendations edit mode (Customise home page) ──────────────── */
@@ -4582,7 +4582,7 @@ body.stash-liquid-glass .stats-element:hover {
     border-color: rgba(var(--accent-rgb), 0.45) !important;
     box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.32),
-        0 0 32px rgba(var(--accent-rgb), 0.18),
+        0 0 32px rgba(var(--accent-rgb), calc(0.18 * var(--glow, 1))),
         inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
     transform: translateY(-3px);
 }
@@ -4701,7 +4701,7 @@ body.stash-liquid-glass .custom-stats-row button[style*="rgb(40, 167, 69)"] {
     background-color: var(--accent-tint) !important;
     border: 1px solid rgba(var(--accent-rgb), 0.45) !important;
     color: var(--accent-bright) !important;
-    box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.22);
+    box-shadow: 0 0 10px rgba(var(--accent-rgb), calc(0.22 * var(--glow, 1)));
     font-weight: 600;
     border-radius: var(--radius-pill) !important;
 }
@@ -4723,12 +4723,12 @@ body.stash-liquid-glass .custom-stats-row button[style*="rgb(85, 85, 85)"]:hover
 body.stash-liquid-glass .custom-stats-row div[style*="background-color: rgb(0, 123, 255)"] {
     background-color: var(--accent) !important;
     background: linear-gradient(180deg, var(--accent-bright) 0%, var(--accent) 100%) !important;
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.35);
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.35 * var(--glow, 1)));
 }
 body.stash-liquid-glass .custom-stats-row div[style*="background-color: rgb(40, 167, 69)"] {
     background-color: rgba(var(--accent-rgb), 0.65) !important;
     background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.85) 0%, rgba(var(--accent-rgb), 0.55) 100%) !important;
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.22);
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.22 * var(--glow, 1)));
 }
 
 /* "On This Day" section */
@@ -5060,7 +5060,7 @@ body.stash-liquid-glass.stash-route-sceneduplicatechecker .duplicate-checker > f
 }
 body.stash-liquid-glass.stash-route-sceneduplicatechecker .duplicate-checker > form .dropdown .dropdown-toggle:hover {
     background: rgba(var(--accent-rgb), 0.2) !important;
-    box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.32);
+    box-shadow: 0 0 18px rgba(var(--accent-rgb), calc(0.32 * var(--glow, 1)));
 }
 body.stash-liquid-glass.stash-route-sceneduplicatechecker .duplicate-checker > form .dropdown-menu {
     background: rgba(20, 22, 28, 0.92) !important;
@@ -5357,7 +5357,7 @@ body.stash-liquid-glass.stash-route-sceneduplicatechecker .refract-dup-toolbar-s
 body.stash-liquid-glass.stash-route-sceneduplicatechecker .refract-dup-toolbar-select:hover {
     background: rgba(var(--accent-rgb), 0.26);
     border-color: rgba(var(--accent-rgb), 0.7);
-    box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.4);
+    box-shadow: 0 0 14px rgba(var(--accent-rgb), calc(0.4 * var(--glow, 1)));
 }
 body.stash-liquid-glass.stash-route-sceneduplicatechecker .refract-dup-toolbar-select:active {
     transform: scale(0.97);
@@ -5460,7 +5460,7 @@ body.stash-liquid-glass.stash-route-sceneduplicatechecker .refract-dup-card:hove
     box-shadow:
         var(--shadow-lg),
         0 0 0 1px rgba(var(--accent-rgb), 0.14),
-        0 0 36px 6px rgba(var(--accent-rgb), 0.18);
+        0 0 36px 6px rgba(var(--accent-rgb), calc(0.18 * var(--glow, 1)));
 }
 
 body.stash-liquid-glass.stash-route-sceneduplicatechecker .refract-dup-card__sprite {
@@ -5588,7 +5588,7 @@ body.stash-liquid-glass.stash-route-sceneduplicatechecker .refract-dup-spec--win
     background: var(--accent-tint);
     border-color: rgba(var(--accent-rgb), 0.4);
     color: var(--accent-bright);
-    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.22);
+    box-shadow: 0 0 12px rgba(var(--accent-rgb), calc(0.22 * var(--glow, 1)));
 }
 body.stash-liquid-glass.stash-route-sceneduplicatechecker .refract-dup-spec--winner .refract-dup-spec__icon {
     opacity: 1;
@@ -5621,14 +5621,14 @@ body.stash-liquid-glass.stash-route-sceneduplicatechecker .refract-dup-card--sug
     box-shadow:
         var(--shadow-md),
         0 0 0 1px rgba(var(--accent-rgb), 0.2),
-        0 0 24px 2px rgba(var(--accent-rgb), 0.18);
+        0 0 24px 2px rgba(var(--accent-rgb), calc(0.18 * var(--glow, 1)));
 }
 body.stash-liquid-glass.stash-route-sceneduplicatechecker .refract-dup-card--suggested:hover {
     border-color: rgba(var(--accent-rgb), 0.85);
     box-shadow:
         var(--shadow-lg),
         0 0 0 1px rgba(var(--accent-rgb), 0.32),
-        0 0 36px 6px rgba(var(--accent-rgb), 0.28);
+        0 0 36px 6px rgba(var(--accent-rgb), calc(0.28 * var(--glow, 1)));
 }
 
 /* Checked-for-delete state — red danger ring + strike title */
@@ -5711,7 +5711,7 @@ body.stash-liquid-glass.stash-route-sceneduplicatechecker .refract-dup-card__mer
 body.stash-liquid-glass.stash-route-sceneduplicatechecker .refract-dup-card__merge:hover {
     background: rgba(var(--accent-rgb), 0.22);
     border-color: rgba(var(--accent-rgb), 0.55);
-    box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.32);
+    box-shadow: 0 0 14px rgba(var(--accent-rgb), calc(0.32 * var(--glow, 1)));
 }
 body.stash-liquid-glass.stash-route-sceneduplicatechecker .refract-dup-card__delete {
     background: rgba(239, 68, 68, 0.1);
@@ -5757,7 +5757,7 @@ body.stash-liquid-glass.stash-route-sceneduplicatechecker .refract-dup-empty__ic
     border: 1px solid rgba(var(--accent-rgb), 0.32);
     border-radius: 50%;
     margin-bottom: 0.9rem;
-    box-shadow: 0 0 24px rgba(var(--accent-rgb), 0.25);
+    box-shadow: 0 0 24px rgba(var(--accent-rgb), calc(0.25 * var(--glow, 1)));
 }
 body.stash-liquid-glass.stash-route-sceneduplicatechecker .refract-dup-empty__title {
     font-size: 1.15rem;
@@ -6074,7 +6074,7 @@ body.stash-liquid-glass .modal-content:has(> .modal-body > .dialog-container) [d
 }
 body.stash-liquid-glass .modal-content:has(> .modal-body > .dialog-container) [data-field="image"] .image-selection > .select-buttons > .btn.btn-primary:hover {
     background: rgba(var(--accent-rgb), 0.22) !important;
-    box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.32) !important;
+    box-shadow: 0 0 10px rgba(var(--accent-rgb), calc(0.32 * var(--glow, 1))) !important;
     color: var(--text) !important;
     border-color: var(--accent-bright) !important;
 }
@@ -6590,7 +6590,7 @@ body.stash-liquid-glass .job-table.card .job .progress {
 }
 body.stash-liquid-glass .job-table.card .job .progress > .progress-bar {
     background: linear-gradient(90deg, var(--accent) 0%, var(--accent-bright) 100%) !important;
-    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4) !important;
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.4 * var(--glow, 1))) !important;
     transition: width 0.35s ease !important;
     /* Hide Bootstrap's inline percentage label. At our 4px bar height
        the text overflows vertically as a faded blur. refract.js

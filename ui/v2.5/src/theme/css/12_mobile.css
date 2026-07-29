@@ -108,7 +108,7 @@ body.stash-liquid-glass .refract-mobile-drawer {
         background: var(--accent-tint);
         border-color: var(--accent-glow);
         box-shadow:
-            0 0 18px rgba(var(--accent-rgb), 0.45),
+            0 0 18px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1))),
             inset 0 0 0 1px rgba(var(--accent-rgb), 0.18);
     }
 
@@ -326,7 +326,7 @@ body.stash-liquid-glass .refract-mobile-drawer {
         transform: scale(0.94);
         box-shadow:
             inset 0 1px 0 rgba(255, 255, 255, 0.08),
-            0 0 18px rgba(var(--accent-rgb), 0.3),
+            0 0 18px rgba(var(--accent-rgb), calc(0.3 * var(--glow, 1))),
             inset 0 0 0 1px rgba(var(--accent-rgb), 0.18);
     }
     /* Active route halo */
@@ -336,13 +336,13 @@ body.stash-liquid-glass .refract-mobile-drawer {
         color: var(--accent);
         box-shadow:
             inset 0 1px 0 rgba(255, 255, 255, 0.06),
-            0 0 16px rgba(var(--accent-rgb), 0.32),
+            0 0 16px rgba(var(--accent-rgb), calc(0.32 * var(--glow, 1))),
             inset 0 0 0 1px rgba(var(--accent-rgb), 0.18);
     }
     body.stash-liquid-glass .refract-mobile-drawer .refract-drawer-tile.is-active svg {
         filter:
-            drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.55))
-            drop-shadow(0 0 4px rgba(var(--accent-rgb), 0.4));
+            drop-shadow(0 0 8px rgba(var(--accent-rgb), calc(0.55 * var(--glow, 1))))
+            drop-shadow(0 0 4px rgba(var(--accent-rgb), calc(0.4 * var(--glow, 1))));
     }
 
     /* Stagger fade-in on open */

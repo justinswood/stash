@@ -318,7 +318,7 @@ body.stash-liquid-glass nav.top-nav .navbar-toggler {
         transform: translateY(-1px) scale(1.06) !important;
         box-shadow:
             0 6px 18px rgba(0, 0, 0, 0.35),
-            0 0 22px rgba(var(--accent-rgb), 0.18),
+            0 0 22px rgba(var(--accent-rgb), calc(0.18 * var(--glow, 1))),
             inset 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
         -webkit-backdrop-filter: var(--glass-blur-md-sat) !important;
         backdrop-filter: var(--glass-blur-md-sat) !important;
@@ -409,15 +409,15 @@ body.stash-liquid-glass nav.top-nav .navbar-buttons a[href$="/new"] > :is(button
     background: var(--accent-tint) !important;
     border-color: var(--accent-glow) !important;
     box-shadow:
-        0 0 18px rgba(var(--accent-rgb), 0.45),
+        0 0 18px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1))),
         0 0 0 1px rgba(var(--accent-rgb), 0.18) inset !important;
 }
 body.stash-liquid-glass nav.top-nav :is(a.nav-link, a.nav-utility):is(.stash-nav-active, .active) svg,
 body.stash-liquid-glass nav.top-nav .navbar-nav a.btn.stash-nav-active svg,
 body.stash-liquid-glass nav.top-nav .navbar-buttons a[href$="/new"] svg {
     filter:
-        drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.65))
-        drop-shadow(0 0 4px rgba(var(--accent-rgb), 0.45));
+        drop-shadow(0 0 8px rgba(var(--accent-rgb), calc(0.65 * var(--glow, 1))))
+        drop-shadow(0 0 4px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1))));
 }
 body.stash-liquid-glass nav.top-nav .navbar-buttons a[href$="/new"] > button:hover,
 body.stash-liquid-glass nav.top-nav .navbar-buttons a[href$="/new"] > .btn:hover {
@@ -425,13 +425,13 @@ body.stash-liquid-glass nav.top-nav .navbar-buttons a[href$="/new"] > .btn:hover
     border-color: rgba(var(--accent-rgb), 0.55) !important;
     color: var(--accent-bright) !important;
     box-shadow:
-        0 0 22px rgba(var(--accent-rgb), 0.52),
+        0 0 22px rgba(var(--accent-rgb), calc(0.52 * var(--glow, 1))),
         0 0 0 1px rgba(var(--accent-rgb), 0.22) inset !important;
 }
 body.stash-liquid-glass nav.top-nav .navbar-buttons a[href$="/new"] svg {
     filter:
-        drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.65))
-        drop-shadow(0 0 4px rgba(var(--accent-rgb), 0.45));
+        drop-shadow(0 0 8px rgba(var(--accent-rgb), calc(0.65 * var(--glow, 1))))
+        drop-shadow(0 0 4px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1))));
 }
 
 /* url-switcher styling (sizing + mode-tunnel glow) lives in 13_plugins.css. */
@@ -479,9 +479,9 @@ html.stash-liquid-glass nav.navbar.fixed-top .navbar-brand > a > button {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     box-shadow:
-        0 0 8px rgba(var(--accent-rgb), 0.5),
-        0 0 22px rgba(var(--accent-rgb), 0.42),
-        0 0 44px rgba(var(--accent-rgb), 0.26) !important;
+        0 0 8px rgba(var(--accent-rgb), calc(0.5 * var(--glow, 1))),
+        0 0 22px rgba(var(--accent-rgb), calc(0.42 * var(--glow, 1))),
+        0 0 44px rgba(var(--accent-rgb), calc(0.26 * var(--glow, 1))) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -523,9 +523,9 @@ html.stash-liquid-glass nav.navbar.fixed-top .navbar-brand > a > button:hover {
     filter: brightness(1.08) saturate(1.05);
     box-shadow:
         0 0 0 1px rgba(var(--accent-rgb), 0.28) inset,
-        0 0 10px rgba(var(--accent-rgb), 0.6),
-        0 0 24px rgba(var(--accent-rgb), 0.5),
-        0 0 48px rgba(var(--accent-rgb), 0.32) !important;
+        0 0 10px rgba(var(--accent-rgb), calc(0.6 * var(--glow, 1))),
+        0 0 24px rgba(var(--accent-rgb), calc(0.5 * var(--glow, 1))),
+        0 0 48px rgba(var(--accent-rgb), calc(0.32 * var(--glow, 1))) !important;
     transform: scale(1.04);
 }
 body.stash-liquid-glass nav.navbar.navbar-dark .navbar-brand .brand-link:active,
@@ -560,9 +560,9 @@ html.stash-liquid-glass nav.navbar.fixed-top .navbar-brand > a > button:focus-vi
         0 0 0 2px rgba(10, 10, 12, 0.95),
         0 0 0 4px rgba(var(--accent-rgb), 0.65),
         0 0 0 1px rgba(var(--accent-rgb), 0.28) inset,
-        0 0 10px rgba(var(--accent-rgb), 0.55),
-        0 0 24px rgba(var(--accent-rgb), 0.45),
-        0 0 48px rgba(var(--accent-rgb), 0.3) !important;
+        0 0 10px rgba(var(--accent-rgb), calc(0.55 * var(--glow, 1))),
+        0 0 24px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1))),
+        0 0 48px rgba(var(--accent-rgb), calc(0.3 * var(--glow, 1))) !important;
 }
 @media (prefers-reduced-transparency: reduce) {
     body.stash-liquid-glass nav.navbar.navbar-dark .navbar-brand .brand-link,

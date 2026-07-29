@@ -17,7 +17,7 @@ body.stash-liquid-glass :is(.scene-tabs, .image-tabs) {
     backdrop-filter: var(--glass-blur-sm);
     box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.35),
-        0 0 60px -10px rgba(var(--accent-rgb), 0.28),
+        0 0 60px -10px rgba(var(--accent-rgb), calc(0.28 * var(--glow, 1))),
         inset 0 0 0 1px rgba(255, 255, 255, 0.04) !important;
     padding: 1.25rem !important;
 }
@@ -360,7 +360,7 @@ body.stash-liquid-glass .stash-perf-prev:hover,
 body.stash-liquid-glass .stash-perf-next:hover {
     opacity: 1;
     transform: translateY(-50%) scale(1.15);
-    filter: drop-shadow(0 2px 6px rgba(var(--accent-rgb), 0.65));
+    filter: drop-shadow(0 2px 6px rgba(var(--accent-rgb), calc(0.65 * var(--glow, 1))));
 }
 
 /* The #operation-menu 3-dots button has a custom modal overlay (built by
@@ -396,7 +396,7 @@ body.stash-liquid-glass .st-op-menu-card {
     box-shadow:
         0 24px 60px rgba(0, 0, 0, 0.7),
         0 0 0 1px rgba(var(--accent-rgb), 0.14),
-        0 0 40px 6px rgba(var(--accent-rgb), 0.18);
+        0 0 40px 6px rgba(var(--accent-rgb), calc(0.18 * var(--glow, 1)));
     backdrop-filter: var(--glass-blur-2xl-sat);
     -webkit-backdrop-filter: var(--glass-blur-2xl-sat);
     padding: 0.4rem;
@@ -478,7 +478,7 @@ body.stash-liquid-glass .gallery-tabs {
     backdrop-filter: var(--glass-blur-sm);
     box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.35),
-        0 0 60px -10px rgba(var(--accent-rgb), 0.28),
+        0 0 60px -10px rgba(var(--accent-rgb), calc(0.28 * var(--glow, 1))),
         inset 0 0 0 1px rgba(255, 255, 255, 0.04) !important;
     padding: 1.25rem !important;
 }
@@ -763,15 +763,15 @@ body.stash-liquid-glass :is(.scene-tabs, .image-tabs) :is(.scene-toolbar, .image
     background: var(--accent-tint) !important;
     border-color: var(--accent-bright) !important;
     color: var(--accent-bright) !important;
-    box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.35) !important;
+    box-shadow: 0 0 10px rgba(var(--accent-rgb), calc(0.35 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass :is(.scene-tabs, .image-tabs) :is(.scene-toolbar, .image-toolbar) .organized-button.organized:hover {
     background: rgba(var(--accent-rgb), 0.24) !important;
     color: #fff !important;
-    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.45) !important;
+    box-shadow: 0 0 12px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass :is(.scene-tabs, .image-tabs) :is(.scene-toolbar, .image-toolbar) .organized-button.organized svg {
-    filter: drop-shadow(0 0 4px rgba(var(--accent-rgb), 0.55)) !important;
+    filter: drop-shadow(0 0 4px rgba(var(--accent-rgb), calc(0.55 * var(--glow, 1)))) !important;
 }
 body.stash-liquid-glass :is(.scene-tabs, .image-tabs) :is(.scene-toolbar, .image-toolbar) .organized-button svg,
 body.stash-liquid-glass :is(.scene-tabs, .image-tabs) :is(.scene-toolbar, .image-toolbar) .dropdown-toggle svg,
@@ -849,7 +849,7 @@ body.stash-liquid-glass .nav-tabs .nav-link.active {
     background: var(--accent-tint) !important;
     border-color: var(--accent-glow) !important;
     box-shadow:
-        0 0 14px rgba(var(--accent-rgb), 0.35),
+        0 0 14px rgba(var(--accent-rgb), calc(0.35 * var(--glow, 1))),
         0 0 0 1px rgba(var(--accent-rgb), 0.18) inset !important;
 }
 
@@ -893,7 +893,7 @@ body.stash-liquid-glass .markers-panel .marker-card {
 body.stash-liquid-glass .scene-markers-list .marker-card:hover,
 body.stash-liquid-glass .markers-panel .marker-card:hover {
     border-color: var(--accent-glow) !important;
-    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.25) !important;
+    box-shadow: 0 0 12px rgba(var(--accent-rgb), calc(0.25 * var(--glow, 1))) !important;
 }
 
 body.stash-liquid-glass .scene-file-info table,
@@ -1325,8 +1325,8 @@ body.stash-liquid-glass.refract-rating-style-playing-card :is(.scene-tabs, .imag
 body.stash-liquid-glass.refract-rating-style-playing-card :is(.scene-tabs, .image-tabs, .gallery-tabs) .scene-performers > .performer-card .favorite-button {
     top: 4.3cqw !important;
     right: 6.3cqw !important;
-    width: 20.5cqw !important;
-    height: 20.5cqw !important;
+    width: 14.35cqw !important;
+    height: 14.35cqw !important;
     padding: 0 !important;
 }
 body.stash-liquid-glass.refract-rating-style-playing-card :is(.scene-tabs, .image-tabs, .gallery-tabs) .scene-performers > .performer-card .favorite-button svg {
@@ -1495,7 +1495,7 @@ body.stash-liquid-glass #queue-content > ol > li:hover {
 body.stash-liquid-glass #queue-content > ol > li.current {
     background: var(--accent-tint) !important;
     border-color: var(--accent-glow) !important;
-    box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.2) !important;
+    box-shadow: 0 0 14px rgba(var(--accent-rgb), calc(0.2 * var(--glow, 1))) !important;
 }
 body.stash-liquid-glass #queue-content > ol > li > a {
     display: block !important;
@@ -1878,7 +1878,7 @@ body.stash-liquid-glass .main.container-fluid > .row:has(> .image-tabs) > .image
     justify-content: center !important;
     box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.35),
-        0 0 60px -10px rgba(var(--accent-rgb), 0.28),
+        0 0 60px -10px rgba(var(--accent-rgb), calc(0.28 * var(--glow, 1))),
         inset 0 0 0 1px rgba(255, 255, 255, 0.04) !important;
 }
 body.stash-liquid-glass .main.container-fluid > .row:has(> .image-tabs) > .image-container > img.image-image {

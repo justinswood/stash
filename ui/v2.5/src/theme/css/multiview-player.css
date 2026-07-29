@@ -64,7 +64,7 @@ body:has(#mv-menu-panel) #mv-roulette-btn {
     border-color: rgba(var(--accent-rgb), 0.45) !important;
     color: var(--accent) !important;
     box-shadow:
-        0 0 14px rgba(var(--accent-rgb), 0.40),
+        0 0 14px rgba(var(--accent-rgb), calc(0.40 * var(--glow, 1))),
         0 0 0 1px rgba(var(--accent-rgb), 0.18) inset !important;
 }
 #mv-focus-btn.active:hover,
@@ -90,7 +90,7 @@ body:has(#mv-menu-panel) #mv-roulette-btn:hover {
     border-color: rgba(255, 255, 255, 0.14) !important;
     border-radius: 14px !important;
     box-shadow:
-        0 0 60px rgba(var(--accent-rgb), 0.22),
+        0 0 60px rgba(var(--accent-rgb), calc(0.22 * var(--glow, 1))),
         0 0 0 1px rgba(var(--accent-rgb), 0.08),
         0 16px 48px rgba(0, 0, 0, 0.60) !important;
 }
@@ -173,7 +173,7 @@ body:has(#mv-menu-panel) #mv-roulette-btn:hover {
     border-color: rgba(255, 255, 255, 0.32) !important;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        0 0 14px rgba(var(--accent-rgb), 0.42),
+        0 0 14px rgba(var(--accent-rgb), calc(0.42 * var(--glow, 1))),
         0 0 0 1px rgba(var(--accent-rgb), 0.22) !important;
 }
 .mv-toggle:checked::after {
@@ -183,7 +183,7 @@ body:has(#mv-menu-panel) #mv-roulette-btn:hover {
         var(--accent) 100%) !important;
     box-shadow:
         0 2px 6px rgba(0, 0, 0, 0.35),
-        0 0 10px rgba(var(--accent-rgb), 0.50),
+        0 0 10px rgba(var(--accent-rgb), calc(0.50 * var(--glow, 1))),
         0 0 0 1px rgba(255, 255, 255, 0.35) inset !important;
 }
 
@@ -214,14 +214,14 @@ body:has(#mv-menu-panel) #mv-roulette-btn:hover {
     border-color: rgba(255, 255, 255, 0.14) !important;
     border-radius: 14px !important;
     box-shadow:
-        0 0 60px rgba(var(--accent-rgb), 0.22),
+        0 0 60px rgba(var(--accent-rgb), calc(0.22 * var(--glow, 1))),
         0 0 0 1px rgba(var(--accent-rgb), 0.08),
         0 16px 48px rgba(0, 0, 0, 0.60) !important;
 }
 
 .mv-menu-count {
     color: var(--accent) !important;
-    text-shadow: 0 0 12px rgba(var(--accent-rgb), 0.45) !important;
+    text-shadow: 0 0 12px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1))) !important;
 }
 
 .mv-menu-slider {
@@ -230,10 +230,10 @@ body:has(#mv-menu-panel) #mv-roulette-btn:hover {
 
 .mv-menu-roll-btn {
     background: var(--accent) !important;
-    box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.30) !important;
+    box-shadow: 0 0 14px rgba(var(--accent-rgb), calc(0.30 * var(--glow, 1))) !important;
     border-radius: 6px !important;
 }
 .mv-menu-roll-btn:hover {
     background: var(--accent-bright) !important;
-    box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.45) !important;
+    box-shadow: 0 0 20px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1))) !important;
 }

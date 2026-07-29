@@ -183,6 +183,10 @@
             var lightOn = lightState[0];
             var setLightOn = lightState[1];
 
+            var glowState = R.useState(getStoredGlowPct());
+            var glowPct = glowState[0];
+            var setGlowPct = glowState[1];
+
             var cardStyleState = R.useState(getStoredCardStyle());
             var cardStyle = cardStyleState[0];
             var setCardStyle = cardStyleState[1];
@@ -330,6 +334,17 @@
                 }
             }
 
+            /* Glow slider. Applies on every drag tick so the page dims live
+               under the cursor; the server write is debounced by
+               scheduleServerSync so dragging doesn't spam the API. */
+            function updateGlow(pct) {
+                var v = Math.max(0, Math.min(GLOW_MAX_PCT, parseInt(pct, 10) || 0));
+                try { localStorage.setItem(GLOW_STORAGE_KEY, String(v)); } catch (e) { /* ignore */ }
+                scheduleServerSync();
+                applyGlowScale(v);
+                setGlowPct(v);
+            }
+
             function toggleLite() {
                 var next = !liteOn;
                 try { localStorage.setItem(LITE_MODE_STORAGE_KEY, next ? "1" : "0"); } catch (e) { /* ignore */ }
@@ -403,6 +418,36 @@
                             "Click a swatch to apply instantly. Saved per browser.")
                     ),
                     R.createElement("div", { className: "refract-accent-swatches" }, swatches)
+                ),
+                R.createElement("div", { className: "setting", id: "plugin-refract-glow" },
+                    R.createElement("div", null,
+                        R.createElement("h3", null, "Glow intensity"),
+                        R.createElement("div", { className: "sub-heading" },
+                            "Dims or brightens every coloured glow halo in the theme — hover " +
+                            "haloes, active navbar icons, rating banners, tier frames. " +
+                            "0% removes them entirely; 100% is the designed default. " +
+                            "Borders, depth shadows, and highlights are unaffected.")
+                    ),
+                    R.createElement("div", { className: "refract-setting-control refract-glow-control" },
+                        R.createElement("input", {
+                            type: "range",
+                            className: "refract-glow-slider",
+                            min: 0,
+                            max: GLOW_MAX_PCT,
+                            step: 5,
+                            value: glowPct,
+                            "aria-label": "Glow intensity",
+                            onChange: function (e) { updateGlow(e.target.value); }
+                        }),
+                        R.createElement("span", { className: "refract-glow-value" }, glowPct + "%"),
+                        R.createElement("button", {
+                            type: "button",
+                            className: "refract-glow-reset",
+                            title: "Reset to 100%",
+                            disabled: glowPct === 100,
+                            onClick: function () { updateGlow(100); }
+                        }, "Reset")
+                    )
                 ),
                 R.createElement("div", { className: "setting", id: "plugin-refract-rating-style" },
                     R.createElement("div", null,
@@ -574,7 +619,7 @@
                             R.createElement("div", null,
                                 R.createElement("h3", null, "View-mode minimiser"),
                                 R.createElement("div", { className: "sub-heading" },
-                                    "Collapse the row of view-mode buttons into a single icon + expand chevron. Disable to use Stash's original button group.")
+                                    "Collapse the row of view-mode buttons into a single icon + expand chevron. Off by default, so Stash's original button group is shown expanded.")
                             ),
                             R.createElement("div", { className: "refract-setting-control" },
                                 R.createElement("div", { className: "custom-control custom-switch" },
@@ -596,7 +641,7 @@
                             R.createElement("div", null,
                                 R.createElement("h3", null, "Custom logo"),
                                 R.createElement("div", { className: "sub-heading" },
-                                    "Image URL displayed in the navbar home button. Leave empty for the default Refract orb. Hosted URLs and ",
+                                    "Image URL displayed in the navbar home button. Leave empty for the default Stash mark. The image is used as a mask, so it's painted as a flat silhouette in the navbar text colour — a solid-background icon will come out as a solid blob. Hosted URLs and ",
                                     R.createElement("code", null, "data:image/..."),
                                     " URIs are both supported.")
                             ),
@@ -714,6 +759,12 @@
     var STORAGE_KEY_API = "refract.apiKey";
     var VIEW_MINIMISER_STORAGE_KEY = "refract.viewMinimiser";
     var LOGO_URL_STORAGE_KEY = "refract.customLogoUrl";
+    /* Fallback mark for the home orb when no custom logo is set. Just the
+       Stash box glyph traced out of public/stash_icon.svg — the icon's dark
+       rounded-square backing plate and drop-shadow are omitted because the
+       orb paints this as a CSS mask (alpha channel), so a filled plate would
+       mask to a solid blob and hide the box entirely. */
+    var DEFAULT_LOGO_URL = "/theme/img/stash-box.svg";
     var LITE_MODE_STORAGE_KEY = "refract.liteMode";
     var LIGHT_MODE_STORAGE_KEY = "refract.lightMode";
     var LIGHT_TOGGLE_NAVBAR_KEY = "refract.lightToggleNavbar";
@@ -723,6 +774,9 @@
     var MINIMAL_CARDS_STORAGE_KEY = "refract.minimalCards";
     var RATING_STYLE_STORAGE_KEY = "refract.ratingStyle";
     var CARD_BACK_EXPLICIT_KEY = "refract.cardBackExplicit";
+    /* Glow intensity — multiplier on every coloured glow halo in the theme.
+       Stored as a percentage string ("100" = designed default). */
+    var GLOW_STORAGE_KEY = "refract.glow";
     /* Settings → Plugins list: float disabled plugins to the bottom (the
        pre-v1.15 behaviour) instead of one flat A→Z run. Opt-in; default off. */
     var PLUGIN_SORT_DISABLED_BOTTOM_KEY = "refract.pluginSortDisabledBottom";
@@ -744,7 +798,7 @@
         LITE_MODE_STORAGE_KEY, LIGHT_MODE_STORAGE_KEY, LIGHT_TOGGLE_NAVBAR_KEY,
         HELP_BUTTON_STORAGE_KEY, STUDIO_BANNER_STORAGE_KEY, PERFORMER_CARD_HOVER_KEY,
         MINIMAL_CARDS_STORAGE_KEY, RATING_STYLE_STORAGE_KEY, CARD_BACK_EXPLICIT_KEY,
-        PLUGIN_SORT_DISABLED_BOTTOM_KEY, HIDE_CENTER_CONTROLS_KEY
+        PLUGIN_SORT_DISABLED_BOTTOM_KEY, HIDE_CENTER_CONTROLS_KEY, GLOW_STORAGE_KEY
     ];
 
     function isPluginSortDisabledBottom() {
@@ -851,6 +905,34 @@
         document.body.classList.toggle("refract-light", !!on);
     }
     applyLightModeClass(isLightModeEnabled());
+
+    /* Glow intensity — one multiplier over every coloured glow halo in the
+       theme. Each blurred, theme-coloured shadow layer in css/ multiplies
+       its alpha by `--glow` (see the token comment in 01_tokens.css), so
+       setting the variable once dims or brightens the whole UI. Written as
+       an inline style on <body> because the token's own declaration lives
+       on `body.stash-liquid-glass` — inline is the only thing that outranks
+       it without an !important arms race.
+       Stored 0..GLOW_MAX_PCT as a percentage string; 100 = designed default. */
+    var GLOW_MAX_PCT = 150;
+    function getStoredGlowPct() {
+        try {
+            var raw = localStorage.getItem(GLOW_STORAGE_KEY);
+            if (raw === null) { return 100; }
+            var n = parseInt(raw, 10);
+            if (isNaN(n)) { return 100; }
+            return Math.max(0, Math.min(GLOW_MAX_PCT, n));
+        } catch (e) { return 100; }
+    }
+    function applyGlowScale(pct) {
+        if (!document.body) { return; }
+        /* Clear the inline property at the default so the stylesheet token
+           stays authoritative — keeps devtools readable and lets a future
+           token change take effect for users who never moved the slider. */
+        if (pct === 100) { document.body.style.removeProperty("--glow"); }
+        else { document.body.style.setProperty("--glow", (pct / 100).toFixed(2)); }
+    }
+    applyGlowScale(getStoredGlowPct());
 
     /* Light-mode navbar toggle visibility. Defaults to ON so users can
        discover light mode without digging into plugin settings. Stash
@@ -977,21 +1059,22 @@
     }
     applyRatingStyleClass(getStoredRatingStyle());
 
-    /* View-mode minimiser feature toggle. Default enabled — Refract
-       collapses Stash's row of view-mode buttons into a single icon +
-       expand chevron to reduce toolbar clutter. Users who prefer the
-       original Stash btn-group can disable this in plugin settings. */
+    /* View-mode minimiser feature toggle. Default disabled — Stash's full
+       row of view-mode buttons (grid/wall/list/tagger…) stays expanded in
+       the filter bar, no chevron click needed. Users who prefer Refract's
+       collapsed single icon + expand chevron can enable this in plugin
+       settings. */
     function isViewMinimiserEnabled() {
         try {
             var v = localStorage.getItem(VIEW_MINIMISER_STORAGE_KEY);
-            if (v === "0") { return false; }
+            if (v === "1") { return true; }
         } catch (e) { /* ignore */ }
-        return true;
+        return false;
     }
 
-    /* Custom navbar home-orb logo. Empty/null = default Refract orb;
-       any URL (including data:image/...) renders as an <img> inside the
-       brand button. */
+    /* Custom navbar home-orb logo. Empty/null = fall back to
+       DEFAULT_LOGO_URL (the Stash box mark); any URL (including
+       data:image/...) is masked into the brand button instead. */
     function getStoredLogoUrl() {
         try {
             var v = localStorage.getItem(LOGO_URL_STORAGE_KEY);
@@ -1118,6 +1201,7 @@
             applyAccentClass(getStoredAccent());
             applyLiteModeClass(isLiteModeEnabled());
             applyLightModeClass(isLightModeEnabled());
+            applyGlowScale(getStoredGlowPct());
             applyLightToggleNavbarClass(isLightToggleNavbarVisible());
             applyHelpButtonClass(isHelpButtonVisible());
             applyStudioBannerClass(isStudioBannerVisible());
@@ -1315,42 +1399,26 @@
         if (!btn) {
             return false;
         }
-        var logoUrl = getStoredLogoUrl();
+        /* Render a masked <span> tinted to the same --text white as the rest
+           of the navbar icons — the user's custom logo if they set one, else
+           the Stash box mark so the orb is never bare. The image is used as a
+           CSS mask, not a foreground bitmap, so any opaque pixel paints in the
+           accent-aware text colour. Skip rebuild if URL unchanged. */
+        var logoUrl = getStoredLogoUrl() || DEFAULT_LOGO_URL;
         var existingLogo = btn.querySelector(".refract-custom-logo");
-        if (logoUrl) {
-            /* Custom logo set — render a masked <span> tinted to the same
-               --text white as the rest of the navbar icons. The image is
-               used as a CSS mask, not a foreground bitmap, so any
-               opaque pixel paints in the accent-aware text colour. Skip
-               rebuild if URL unchanged. */
-            if (!existingLogo || existingLogo.dataset.src !== logoUrl) {
-                if (btn.tagName === "A") {
-                    while (btn.firstChild) { btn.removeChild(btn.firstChild); }
-                } else {
-                    btn.innerHTML = "";
-                }
-                var logo = document.createElement("span");
-                logo.className = "refract-custom-logo";
-                logo.dataset.src = logoUrl;
-                var maskUrl = 'url("' + logoUrl.replace(/"/g, '\\"') + '")';
-                logo.style.maskImage = maskUrl;
-                logo.style.webkitMaskImage = maskUrl;
-                btn.appendChild(logo);
-            }
-        } else {
-            /* Default orb — strip any text/svg/img so Refract's CSS
-               renders the empty styled circle. */
+        if (!existingLogo || existingLogo.dataset.src !== logoUrl) {
             if (btn.tagName === "A") {
-                var aText = (btn.textContent || "").replace(/\s+/g, " ").trim();
-                if (aText || btn.querySelector("svg, img")) {
-                    while (btn.firstChild) { btn.removeChild(btn.firstChild); }
-                }
+                while (btn.firstChild) { btn.removeChild(btn.firstChild); }
             } else {
-                var text = (btn.textContent || "").replace(/\s+/g, " ").trim();
-                if (text || btn.querySelector("svg, img")) {
-                    btn.innerHTML = "";
-                }
+                btn.innerHTML = "";
             }
+            var logo = document.createElement("span");
+            logo.className = "refract-custom-logo";
+            logo.dataset.src = logoUrl;
+            var maskUrl = 'url("' + logoUrl.replace(/"/g, '\\"') + '")';
+            logo.style.maskImage = maskUrl;
+            logo.style.webkitMaskImage = maskUrl;
+            btn.appendChild(logo);
         }
         var aria = (btn.getAttribute("aria-label") || "").trim();
         var low = aria.toLowerCase();
@@ -5522,28 +5590,15 @@
         else if (t.indexOf("youngest") >= 0) { refractDupStrategy = "youngest"; }
         else { return; /* unknown dropdown item */ }
 
-        /* For oldest/youngest we still need the boxes to be checked
-           (we can't compute file age from the DOM). Native behavior is
-           cheaper than a separate query, so let it through but mark
-           strategy. For largestFile/largestRes we can compute ourselves,
-           so block native and just update chips. */
-        if (refractDupStrategy === "oldest" || refractDupStrategy === "youngest") {
-            /* Let native fire — sync poll will reflect checked state and
-               trigger refractApplyDupSuggestions to flag the right cards. */
-            setTimeout(refractApplyDupSuggestions, 50);
-            return;
-        }
-
-        e.preventDefault();
-        e.stopImmediatePropagation();
-
-        /* Close the open dropdown menu manually since we ate the click that
-           Bootstrap would have used to dismiss it. Re-toggling the button
-           is the safe path (React-managed state). */
-        var toggleBtn = item.closest(".dropdown") && item.closest(".dropdown").querySelector(".dropdown-toggle");
-        if (toggleBtn) { setTimeout(function () { toggleBtn.click(); }, 0); }
-
-        refractApplyDupSuggestions();
+        /* Every strategy now lets Stash's native handler fire, so picking a
+           dropdown item actually ticks the checkboxes — which is what the
+           menu says it does. This previously called preventDefault +
+           stopImmediatePropagation for largestFile/largestRes, repurposing
+           them as a filter for the Suggested chip and deferring the real
+           selection to the "Select N suggested" pill. That two-step flow read
+           as "the dropdown is broken": you picked an option and nothing got
+           selected. The suggestion chips still update, just after the fact. */
+        setTimeout(refractApplyDupSuggestions, 50);
     }, true);
 
     /* Walks every currently-suggested card and clicks its hidden Stash

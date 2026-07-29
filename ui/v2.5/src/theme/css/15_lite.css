@@ -281,7 +281,7 @@ body.stash-liquid-glass.refract-lite:is(.refract-rating-style-tiers, .refract-ra
     box-shadow:
         0 0 0 1px rgba(255, 255, 255, 0.65),
         0 0 0 3px rgba(var(--tier-color-bright, var(--tier-color)), 0.85),
-        0 0 10px rgba(var(--tier-color), 0.4),
+        0 0 10px rgba(var(--tier-color), calc(0.4 * var(--glow, 1))),
         0 4px 14px rgba(0, 0, 0, 0.45) !important;
 }
 /* The sheen sweep (::before) rests off-canvas at opacity 0 when frozen,
