@@ -120,8 +120,15 @@ body.stash-liquid-glass .grid-card:hover {
    Tier-ribbon cards keep their higher-specificity tier shadow; the cheap
    border-colour highlight stays for hover feedback. Full effect remains on the
    real list/grid views. */
-body.stash-liquid-glass .slick-slider .card:hover,
-body.stash-liquid-glass .slick-slider .grid-card:hover {
+/* `.refract-flip3d` is exempted from the transform strip: an !important
+   declaration outranks even a Web Animation, so while a home-page card was
+   mid-flip this made the 3D turn impossible to render — the card sat flat for
+   the whole turn and then snapped to its back face. The flip tab is inside the
+   card, so the pointer is always hovering when it's clicked. Killing the hover
+   LIFT is all this is for, so skipping cards that are currently turning costs
+   nothing. (Same fix as the lite-mode card rule in 15_lite.css.) */
+body.stash-liquid-glass .slick-slider .card:not(.refract-flip3d):hover,
+body.stash-liquid-glass .slick-slider .grid-card:not(.refract-flip3d):hover {
     transform: none !important;
     box-shadow: var(--shadow-md) !important;
 }
@@ -1976,28 +1983,5 @@ body.stash-liquid-glass .stash-perf-scenes svg {
 }
 body.stash-liquid-glass .stash-perf-scenes:hover {
     color: var(--accent-bright) !important;
-}
-
-/* O count on performer cards — same muted style as scene-count; sits
-   left of scene-count in the stats row. Stash exposes performer.o_counter
-   in the native popover, refract extracts it before hiding popovers. */
-body.stash-liquid-glass .stash-perf-ocount {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    line-height: 1;
-    margin-right: 0.5rem;
-    transition: color 0.15s;
-}
-body.stash-liquid-glass .stash-perf-ocount svg {
-    width: 0.85em;
-    height: 0.85em;
-    flex-shrink: 0;
-}
-body.stash-liquid-glass .stash-perf-ocount:hover {
-    color: var(--text);
 }
 

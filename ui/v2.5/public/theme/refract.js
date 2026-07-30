@@ -2415,7 +2415,6 @@
        card (you click the button) and built LAZILY on first flip, so normal
        browsing is untouched and no GraphQL runs until you actually flip.
        Scoped to playing-card mode + performer cards for now. */
-    var REFRACT_CATEGORY_RE = /^(.+?)\s*:\s*([0-5])$/; /* advanced-rating tag */
     /* Rarity names per tier, shown as the card subtitle only when the
        explicit-labels toggle is on (otherwise the tier badge alone speaks). */
     var REFRACT_RARITY = {
@@ -2436,43 +2435,8 @@
     var REFRACT_FLIP_ICON =
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>';
 
-    /* Category display order, mirroring the advanced-rating plugin. The plugin
-       stores its performer criteria as an ordered `performer_criteria_ids` list
-       in its own plugin config, with display names in `performer_name_<id>`. We
-       read that same config once (cached) so the card-back ratings sit in the
-       exact order the plugin shows them, including any reordering the user does
-       in its settings. Until/if that loads we use the plugin's default order. */
-    var REFRACT_AR_DEFAULT_NAMES = {
-        face: "Face", breasts: "Breasts", ass: "Ass", body: "Body Overall",
-        genitals: "Genitals", technique: "Technique",
-        energy: "Energy & Presence", sluttiness: "Sluttiness"
-    };
-    var REFRACT_AR_CAT_ORDER = ["face", "breasts", "ass", "body overall", "genitals",
-        "technique", "energy & presence", "sluttiness"];
-    var refractAROrderLoaded = false;
-    function refractLoadARCategoryOrder() {
-        if (refractAROrderLoaded) { return; }
-        refractAROrderLoaded = true;
-        try {
-            gql("query { configuration { plugins } }").then(function (res) {
-                var plugins = res && res.data && res.data.configuration && res.data.configuration.plugins;
-                var cfg = plugins && plugins.advancedRating;
-                if (!cfg) { return; }
-                var raw = cfg.performer_criteria_ids;
-                if (typeof raw !== "string" || !raw.trim()) { return; }
-                var order = raw.split(",").map(function (s) { return s.trim(); }).filter(Boolean)
-                    .map(function (id) {
-                        var nm = cfg["performer_name_" + id] || REFRACT_AR_DEFAULT_NAMES[id] || id;
-                        return String(nm).toLowerCase();
-                    });
-                if (order.length) { REFRACT_AR_CAT_ORDER = order; }
-            }).catch(function () {});
-        } catch (e) {}
-    }
-
     function injectPerformerCardFlip() {
         if (!document.body.classList.contains("refract-rating-style-playing-card")) { return; }
-        refractLoadARCategoryOrder();
         var cards = document.querySelectorAll(".performer-card:not([data-refract-flip])");
         for (var i = 0; i < cards.length; i++) {
             (function (card) {
@@ -2497,14 +2461,22 @@
         }
     }
 
-    /* Two-phase flip: spin the whole card to its edge (rotateY -90deg, where
-       it foreshortens to an invisible vertical line), swap front<->back
-       content at that hidden midpoint, then spin back to face-on. The card
-       rests at rotateY(0) either way, so the back is never mirrored and the
-       state survives a React re-render (no leftover inline transform). A true
-       preserve-3d two-face flip isn't possible here: the card needs
-       overflow:hidden (rounded corners + the tier ribbon clip), which forces
-       transform-style:flat. */
+    var REFRACT_FLIP_MS = 520;
+
+    /* True 3D flip: both faces stay live and the card makes a single
+       rotateY(0 -> 180deg) turn, with backface-visibility deciding which face
+       you see. The CSS side (.refract-flip3d, 16_playing_card.css) carries the
+       structural notes — the short version is that the card itself must be the
+       rotating element (no per-card wrapper exists and the front children are
+       React-owned), so preserve-3d lives on .performer-card and its overflow
+       clip is lifted for the duration.
+
+       The resting 180deg comes from the .refract-show-back CLASS rule rather
+       than an inline transform: GridCard writes style={{width}} on the card, so
+       a React re-render rewrites the style attribute and would strip an inline
+       transform, leaving the card face-on with a mirrored front. So the turn is
+       played as a Web Animation and the card LANDS flat at rotateY(0) with the
+       back as an ordinary overlay — the same rest state the theme already used. */
     function refractDoPerformerFlip(card, pid) {
         if (card._rfxFlipBusy) { return; }
         var toBack = !card.classList.contains("refract-show-back");
@@ -2513,31 +2485,72 @@
         }
         card._rfxFlipBusy = true;
         card.style.zIndex = "200";
-        /* Phase 1: turn to the edge (-90deg). */
-        card.style.transition = "transform 0.24s ease-in";
-        card.style.transform = "perspective(1200px) rotateY(-90deg)";
-        setTimeout(function () {
-            /* At the invisible edge, swap faces, then TELEPORT across to the
-               mirror edge (+90deg, also edge-on and invisible) with transitions
-               off. Finishing the same-direction turn (+90 -> 0) reads as one
-               continuous flip, and BOTH faces come to rest at rotateY(0) so
-               nothing is ever mirrored (no scaleX trickery, no accumulation,
-               and the state survives a React re-render). */
+
+        /* Enter 3D mode: overflow clip off, preserve-3d on, back face live and
+           pre-rotated to face the other way. */
+        card.classList.add("refract-flip3d");
+
+        /* Kill the card's inline transform (the hover tilt's leftover angle) and
+           its transitions for the duration. Cards carry a base
+           `transition: transform 0.22s` — leaving that live means the landing
+           snap unwinds visibly, and it also races the start-of-turn style flush. */
+        card.style.transition = "none";
+        card.style.removeProperty("transform");
+
+        var from = toBack ? 0 : 180;
+        var to = toBack ? 180 : 360;
+
+        function land() {
+            /* Land FLAT: the back goes back to being a plain full-cover overlay,
+               the card rests at rotateY(0) with no transform of its own, and 3D
+               mode comes off. The swap is invisible (the face on screen doesn't
+               change) and it's what keeps the rest state robust — nothing for the
+               hover tilt or a React re-render to fight, and no preserve-3d left
+               on for a stray transform to become a half-flipped card. */
             if (toBack) { card.classList.add("refract-show-back"); }
             else { card.classList.remove("refract-show-back"); }
-            card.style.transition = "none";
-            card.style.transform = "perspective(1200px) rotateY(90deg)";
+            card.classList.remove("refract-flip3d");
+            card.style.removeProperty("transform");
             void card.offsetWidth;
-            /* Phase 2: finish the turn to face-on. */
-            card.style.transition = "transform 0.24s ease-out";
-            card.style.transform = "perspective(1200px) rotateY(0deg)";
-            setTimeout(function () {
-                card.style.transition = "";
-                card.style.transform = "";
-                card.style.zIndex = "";
-                card._rfxFlipBusy = false;
-            }, 250);
-        }, 235);
+            card.style.removeProperty("transition");
+            card.style.zIndex = "";
+            card._rfxFlipBusy = false;
+        }
+
+        /* Drive the turn with the Web Animations API rather than a CSS
+           transition. A transition here is genuinely fragile: it has to be armed
+           by flushing a start pose and then changing the property in a later
+           style recalc, and the card's own 0.22s transform transition plus the
+           tilt's inline writes kept winning that race — the rotation never ran
+           and the card simply appeared on its back when the timer fired.
+           An animation has no start-pose race, outranks inline styles while it
+           plays (so the tilt can't interfere), and reports completion properly.
+           `fill: "forwards"` holds the end pose so there's no flash between the
+           last frame and land(). */
+        if (typeof card.animate === "function") {
+            var anim = card.animate(
+                [
+                    { transform: "perspective(1200px) rotateY(" + from + "deg)" },
+                    { transform: "perspective(1200px) rotateY(" + to + "deg)" }
+                ],
+                { duration: REFRACT_FLIP_MS, easing: "cubic-bezier(.42, 0, .58, 1)", fill: "forwards" }
+            );
+            var done = false;
+            var finish = function () {
+                if (done) { return; }
+                done = true;
+                land();
+                try { anim.cancel(); } catch (e) { /* already gone */ }
+            };
+            anim.onfinish = finish;
+            anim.oncancel = finish;
+            /* Belt-and-braces: if the animation never fires onfinish (tab
+               backgrounded mid-turn, for instance) don't strand the card
+               mid-flip with _rfxFlipBusy stuck true. */
+            setTimeout(finish, REFRACT_FLIP_MS + 400);
+        } else {
+            land();
+        }
     }
 
     function refractBuildPerformerBack(card, pid) {
@@ -2553,11 +2566,11 @@
         var photo = imgSrc
             ? ' style="background-image:url(\'' + imgSrc.replace(/'/g, "%27") + '\')"' : '';
 
-        /* Fixed, NON-SCROLLING dossier with the STATS as the hero: a title bar
-           (name top-left, tier chip top-right), a hero row pairing the portrait
-           beside the score banner, a 3-up media strip (top scene + library
-           photos), then the category "Assets" as the large flex body (one
-           readable row each), and a collector footer of library stats. */
+        /* Fixed, NON-SCROLLING dossier, SCENES-first: a title bar (name
+           top-left, tier chip top-right), a hero row pairing the portrait
+           beside the score banner, then the top scenes as the large flex body
+           (a 2x2 of equal thumbnails), and a collector footer of library
+           stats. */
         back.innerHTML =
             '<div class="refract-back-photo"' + photo + '></div>' +
             '<div class="refract-back-frost"></div>' +
@@ -2572,9 +2585,11 @@
             '<div class="refract-cb-portrait"' + photo + '></div>' +
             '<div class="refract-cb-score refract-cb-score-empty"></div>' +
             '</div>' +
-            '<div class="refract-cb-assets"><div class="refract-cb-loading">Loading</div></div>' +
             '<div class="refract-cb-media refract-cb-media-loading">' +
+            '<div class="refract-cb-media-head"><span>Loading</span></div>' +
+            '<div class="refract-cb-media-grid">' +
             '<div class="refract-cb-media-item"><div class="refract-cb-media-img"' + photo + '></div></div>' +
+            '</div>' +
             '</div>' +
             '<div class="refract-cb-foot"></div>' +
             '</div>';
@@ -2595,7 +2610,7 @@
         var q =
             'query RefractFlip($id: ID!) {' +
             '  findPerformer(id: $id) { id rating100 favorite o_counter scene_count measurements height_cm weight career_length tags { id name } }' +
-            '  findScenes(scene_filter: { performers: { value: [$id], modifier: INCLUDES } }, filter: { per_page: 3, sort: "rating", direction: DESC }) { scenes { id title rating100 paths { screenshot } } }' +
+            '  findScenes(scene_filter: { performers: { value: [$id], modifier: INCLUDES } }, filter: { per_page: 4, sort: "rating", direction: DESC }) { scenes { id title rating100 paths { screenshot } } }' +
             '  findImages(image_filter: { performers: { value: [$id], modifier: INCLUDES } }, filter: { per_page: 3, sort: "rating", direction: DESC }) { images { id paths { thumbnail } } }' +
             '}';
         gqlWithVars(q, { id: pid }).then(function (res) {
@@ -2605,7 +2620,9 @@
             var images = d && d.findImages && d.findImages.images;
             if (p) { refractFillPerformerBack(back, p, scenes, images); }
         }).catch(function () {
-            var l = back.querySelector(".refract-cb-loading");
+            /* The top-scenes header doubles as the loading/error slot — it's
+               the placeholder the template ships with. */
+            var l = back.querySelector(".refract-cb-media-head span");
             if (l) { l.textContent = "Couldn't load stats"; }
         });
     }
@@ -2650,12 +2667,19 @@
         }
     }
 
+    /* How many tiles the top-scenes block holds: a fixed 2x2 of equal
+       thumbnails. Kept in step with the findScenes `per_page` in
+       refractBuildPerformerBack. */
+    var REFRACT_CB_MEDIA_MAX = 4;
+
     function refractFillPerformerBack(back, p, scenes, images) {
         var explicit = isCardBackExplicit();
         var L = explicit ? {
-            score: "Slut Score", assets: "Assets", scenes: "On-Cam Fucks", o: "Loads", topscene: "Best Fuck"
+            score: "Slut Score", scenes: "On-Cam Fucks", o: "Loads",
+            topscene: "Best Fuck", topscenes: "Best Fucks"
         } : {
-            score: "Rating", assets: "Ratings", scenes: "Scenes", o: "O-Count", topscene: "Top Scene"
+            score: "Rating", scenes: "Scenes", o: "O-Count",
+            topscene: "Top Scene", topscenes: "Top Scenes"
         };
 
         /* Headline score (the overall rating100 / "slut score") - the hero. */
@@ -2668,10 +2692,12 @@
                 (p.favorite ? '<span class="refract-cb-fav" title="Favourite">&#10084;</span>' : '');
         }
 
-        /* Media strip: lead with the top scene (labelled + rated), then the
-           performer's top-rated library photos, then any remaining scenes as
-           stills. Up to three; all lazy (only fetched on flip). Falls back to
-           the portrait placeholder when she has no scenes or photos. */
+        /* Top scenes - the main body of the card back. Scenes come FIRST and
+           fill the block (up to REFRACT_CB_MEDIA_MAX) as a 2x2 of equal-sized
+           thumbnails; the top-rated one leads and keeps its label + rating. Library photos are filler only, used when the performer has
+           fewer scenes than the block holds, so a sparse performer still shows
+           something. Falls back to the portrait placeholder when there's
+           neither. All lazy - nothing is fetched until the card is flipped. */
         var mediaEl = back.querySelector(".refract-cb-media");
         if (mediaEl) {
             mediaEl.classList.remove("refract-cb-media-loading");
@@ -2680,19 +2706,26 @@
             if (top && top.paths && top.paths.screenshot) {
                 media.push({ url: top.paths.screenshot, tag: L.topscene, rate: top.rating100, href: "/scenes/" + top.id });
             }
-            (images || []).forEach(function (im) {
-                if (media.length >= 3) { return; }
-                if (im && im.paths && im.paths.thumbnail) { media.push({ url: im.paths.thumbnail, href: "/images/" + im.id }); }
-            });
             (scenes || []).slice(1).forEach(function (sc) {
-                if (media.length >= 3) { return; }
+                if (media.length >= REFRACT_CB_MEDIA_MAX) { return; }
                 if (sc && sc.paths && sc.paths.screenshot) { media.push({ url: sc.paths.screenshot, href: "/scenes/" + sc.id }); }
             });
-            if (media.length) {
-                mediaEl.innerHTML = media.map(function (m) {
+            (images || []).forEach(function (im) {
+                if (media.length >= REFRACT_CB_MEDIA_MAX) { return; }
+                if (im && im.paths && im.paths.thumbnail) { media.push({ url: im.paths.thumbnail, href: "/images/" + im.id }); }
+            });
+            var headEl = mediaEl.querySelector(".refract-cb-media-head");
+            var gridEl = mediaEl.querySelector(".refract-cb-media-grid");
+            if (headEl) {
+                headEl.innerHTML = '<span>' + refractFlipEscHtml(L.topscenes) + '</span>' +
+                    (p.scene_count ? '<span class="refract-cb-media-n">' + p.scene_count + '</span>' : '');
+            }
+            if (gridEl && media.length) {
+                gridEl.innerHTML = media.map(function (m, i) {
                     var tag = m.tag ? '<span class="refract-cb-media-tag">' + refractFlipEscHtml(m.tag) + '</span>' : '';
                     var rate = (m.rate != null) ? '<span class="refract-cb-media-rate">&#9733; ' + m.rate + '</span>' : '';
-                    return '<a class="refract-cb-media-item" href="' + refractFlipEscHtml(m.href) + '">' +
+                    return '<a class="refract-cb-media-item" href="' +
+                        refractFlipEscHtml(m.href) + '">' +
                         '<div class="refract-cb-media-img" style="background-image:url(\'' +
                         String(m.url).replace(/'/g, "%27") + '\')"></div>' + tag + rate + '</a>';
                 }).join("");
@@ -2700,45 +2733,6 @@
             }
         }
 
-        /* Category ratings ("Assets") - the main body, one readable row each
-           (name, full-width meter bar and the 0-5 value). FIXED order, matching
-           the advanced-rating plugin's own criteria order (so each category
-           always sits in the same row); anything the plugin doesn't list falls
-           to the end alphabetically. The list scrolls if it overflows. Parsed
-           from advanced-rating's `Category: N` tags. */
-        var cats = [];
-        (p.tags || []).forEach(function (t) {
-            var nm = t.name || "";
-            var mm = nm.match(REFRACT_CATEGORY_RE);
-            if (mm) { cats.push({ name: mm[1].replace(/[\W_]+$/, "").trim(), score: parseInt(mm[2], 10) }); }
-        });
-        cats.sort(function (a, b) {
-            var an = a.name.toLowerCase(), bn = b.name.toLowerCase();
-            var ia = REFRACT_AR_CAT_ORDER.indexOf(an); if (ia === -1) { ia = 999; }
-            var ib = REFRACT_AR_CAT_ORDER.indexOf(bn); if (ib === -1) { ib = 999; }
-            if (ia !== ib) { return ia - ib; }
-            return an < bn ? -1 : (an > bn ? 1 : 0);
-        });
-        var shown = cats;
-        var assets = back.querySelector(".refract-cb-assets");
-        if (assets) {
-            var h = '<div class="refract-cb-assets-head"><span>' + L.assets + '</span>' +
-                (cats.length ? '<span class="refract-cb-assets-n">' + cats.length + '</span>' : '') + '</div>';
-            if (shown.length) {
-                h += '<div class="refract-cb-grid">';
-                shown.forEach(function (c) {
-                    var segs = "";
-                    for (var s = 1; s <= 5; s++) { segs += '<span class="refract-cb-seg' + (s <= c.score ? " on" : "") + '"></span>'; }
-                    h += '<div class="refract-cb-stat refract-s' + c.score + '"><span class="refract-cb-stat-name">' +
-                        refractFlipEscHtml(c.name) + '</span><span class="refract-cb-bar">' + segs + '</span>' +
-                        '<span class="refract-cb-stat-val">' + c.score + '</span></div>';
-                });
-                h += '</div>';
-            } else {
-                h += '<div class="refract-cb-empty">No ' + (explicit ? 'assets rated' : 'category ratings') + ' yet</div>';
-            }
-            assets.innerHTML = h;
-        }
 
         /* Collector footer: library counts beside physical/career vitals,
            each shown only if set. */
@@ -3136,7 +3130,19 @@
 
         var raf = null;
 
+        /* The tilt must stand down for the duration of a card flip. Both write
+           card.style.transform, and the flip button sits INSIDE the card — so
+           the pointer is always hovering when it's clicked, and without this
+           the tilt's per-rAF write clobbers the rotation within a frame (and
+           onEnter's `transition: none` lands mid-turn), leaving the faces to
+           swap with no visible animation at all.
+           Only DURING the turn: refractDoPerformerFlip lands the card back at
+           rotateY(0) with no inline transform and 3D mode off, so a card
+           resting on its back tilts on hover exactly like any other. */
+        function tiltBlocked() { return !!card._rfxFlipBusy; }
+
         function applyTilt(e) {
+            if (tiltBlocked()) { return; }
             var rect = card.getBoundingClientRect();
             var x = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
             var y = Math.min(Math.max((e.clientY - rect.top) / rect.height, 0), 1);
@@ -3155,6 +3161,7 @@
 
         var enterTimer = null;
         function onEnter() {
+            if (tiltBlocked()) { return; }
             /* Cancel any pending leave-cleanup so the timer doesn't strip
                the transform we're about to set. */
             if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null; }
@@ -3166,20 +3173,25 @@
                 "scale3d(" + TILT_SCALE + "," + TILT_SCALE + "," + TILT_SCALE + ")";
             if (enterTimer) { clearTimeout(enterTimer); }
             enterTimer = setTimeout(function () {
+                enterTimer = null;
+                /* A hover that began just before a flip would otherwise land
+                   this `transition: none` in the middle of the turn. */
+                if (tiltBlocked()) { return; }
                 if (card.style.zIndex === "1000") {
                     card.style.transition = "none";
                 }
-                enterTimer = null;
             }, 220);
         }
 
         function onMove(e) {
+            if (tiltBlocked()) { return; }
             if (raf) { cancelAnimationFrame(raf); }
             raf = requestAnimationFrame(function () { applyTilt(e); });
         }
 
         var leaveTimer = null;
         function onLeave() {
+            if (tiltBlocked()) { return; }
             if (raf) { cancelAnimationFrame(raf); raf = null; }
             if (enterTimer) { clearTimeout(enterTimer); enterTimer = null; }
             card.style.willChange = "auto";
@@ -3194,6 +3206,7 @@
                window (onEnter cancels this timer in that case anyway). */
             if (leaveTimer) { clearTimeout(leaveTimer); }
             leaveTimer = setTimeout(function () {
+                if (tiltBlocked()) { leaveTimer = null; return; }
                 if (card.style.transform.indexOf("scale3d(1, 1, 1)") !== -1
                     || card.style.transform.indexOf("scale3d(1,1,1)") !== -1) {
                     card.style.removeProperty("transform");
@@ -3839,26 +3852,55 @@
             row.appendChild(ageSpan);
             if (ageValue != null) { anyStat = true; }
 
-            /* O count — Stash renders it as a two-button group:
-                 .count-button > [button title="O Count"] + [button.count-value > span]
-               Find the title="O Count" button, walk to its parent group,
-               read the .count-value span. Real value only when non-zero. */
-            var oValue = null;
-            var oTitleBtn = popovers ? popovers.querySelector('button[title="O Count"]') : null;
-            if (oTitleBtn) {
-                var oGroup = oTitleBtn.closest(".count-button");
-                var oValueSpan = oGroup ? oGroup.querySelector(".count-value span") : null;
-                var oText = oValueSpan ? oValueSpan.textContent.trim() : "";
-                if (oText && oText !== "0") { oValue = oText; }
+            /* Country — the 4th pill slot (was O count). Stash renders the
+               nationality as a flag span plus a text string:
+                 .performer-card__country-flag (flag-icons: `fi fi-XX`)
+                 .performer-card__country-string (localized country name)
+               Read the name straight from Stash's own string rather than
+               reconstructing it from the ISO code, so it matches whatever
+               locale the UI is running in. The flag is a clone of the native
+               span, tagged `stash-perf-flag` so the playing-card "hide native
+               flag" rule skips this copy (see 16_playing_card.css). Long names
+               are ellipsised by CSS rather than shortened here, so the title
+               attribute still carries the full text. */
+            var countryStrEl = card.querySelector(".performer-card__country-string");
+            var countryName = countryStrEl ? (countryStrEl.textContent || "").trim() : "";
+            /* The pill VALUE is the ISO-2 code, not the full name. Every other
+               pill in this strip is a short value under an uppercase label, and
+               the strip only has ~58px per pill — a real country name ("United
+               Arab Emirates") is ~4x too wide and pushes the other three pills
+               off the card. The flag already carries the recognition; the code
+               disambiguates it, and the full name rides the title tooltip.
+               Code comes from the flag-icons class (`fi fi-XX`); if there's no
+               flag we fall back to the name text so the pill still says
+               something. */
+            var isoCode = "";
+            if (flagEl) {
+                var fiMatch = (flagEl.className || "").match(/\bfi-([a-z]{2})\b/i);
+                if (fiMatch) { isoCode = fiMatch[1].toUpperCase(); }
             }
-            var oEl = document.createElement("span");
-            oEl.className = "stash-perf-ocount" + (oValue == null ? " stash-perf-empty" : "");
-            if (oValue != null) { oEl.title = oValue + " O"; }
-            oEl.innerHTML = O_ICON_SVG +
-                '<span class="stash-perf-label">O Count</span>' +
-                "<span>" + (oValue == null ? "-" : escapeHtml(oValue)) + "</span>";
-            row.appendChild(oEl);
-            if (oValue != null) { anyStat = true; }
+            var countryValue = isoCode || countryName;
+            if (!countryValue) { countryValue = null; }
+            var cEl = document.createElement("span");
+            cEl.className = "stash-perf-country-stat" + (countryValue == null ? " stash-perf-empty" : "");
+            /* Full localized country name as the native tooltip — the pill
+               itself shows only the flag, so this is where the name lives. */
+            if (countryValue != null) { cEl.title = countryName || countryValue; }
+            cEl.innerHTML = '<span class="stash-perf-label">Country</span>';
+            /* FLAG ONLY under the label — no code text. The flag is the value
+               here, so it spans the whole bottom row (CSS). Only when there's
+               no flag to clone do we fall back to a text value, so a performer
+               with a country but no flag asset still reads as something. */
+            if (flagEl) {
+                var statFlag = flagEl.cloneNode(true);
+                statFlag.classList.add("stash-perf-flag");
+                cEl.appendChild(statFlag);
+            } else {
+                cEl.insertAdjacentHTML("beforeend",
+                    "<span>" + (countryValue == null ? "-" : escapeHtml(countryValue)) + "</span>");
+            }
+            row.appendChild(cEl);
+            if (countryValue != null) { anyStat = true; }
 
             /* Scene count — wrap the number in an inner <span> for the
                same reason as age (lets playing-card mode target an inner
@@ -3968,33 +4010,13 @@
                .gender-icon under the title) PLUS just the performer name
                text (from .TruncatedText so we exclude the hidden country
                string). Display is CSS-gated to playing-card mode. */
-            /* Country indicator — extract the ISO-2 code from the
-               flag-icons class (`fi fi-XX`) and convert it to the
-               full localized country name via `Intl.DisplayNames`
-               (built-in browser API). Inserted into the chin above
-               the stat strip so it stacks naturally as a quiet
-               caption (no absolute positioning to fight). Falls
-               back to the raw uppercase code if DisplayNames isn't
-               available or doesn't know the region. */
-            if (flagEl) {
-                var countryWrap = document.createElement("span");
-                countryWrap.className = "stash-perf-country";
-                /* Show the country FLAG (not its name) in the caption
-                   slot — clone the native flag-icons span here. Mark the
-                   clone `stash-perf-country` so the playing-card "hide
-                   native flag" rule (:not(.stash-perf-country)) keeps
-                   this copy visible. The flag stays wrapped in the inner
-                   `.stash-perf-country-name` span so the Ascension rank
-                   read-out still rides the same line and truncates
-                   against it (see integrateAscensionBadges). */
-                var countryNameSpan = document.createElement("span");
-                countryNameSpan.className = "stash-perf-country-name";
-                var flagClone = flagEl.cloneNode(true);
-                flagClone.classList.add("stash-perf-country");
-                countryNameSpan.appendChild(flagClone);
-                countryWrap.appendChild(countryNameSpan);
-                section.insertBefore(countryWrap, row);
-            }
+            /* The standalone `.stash-perf-country` caption line that used to
+               sit above the stat strip is gone: the country now lives in the
+               strip itself as the 4th pill (flag + name), so a separate
+               flag-only caption was just a duplicate of the same flag.
+               integrateAscensionBadges has a documented fallback for a missing
+               caption — the rank read-out drops into the chin directly above
+               the pills instead of riding the caption's line. */
 
             if (titleEl) {
                 var banner = document.createElement("div");

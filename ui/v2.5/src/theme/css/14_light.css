@@ -598,20 +598,17 @@ body.stash-liquid-glass.refract-light .count-button.increment-only {
    span/svg elements; the `color: inherit` + `fill: currentColor`
    below would override those and flatten the gradient. */
 body.stash-liquid-glass.refract-light:not(.refract-rating-style-playing-card) .performer-card .stash-perf-scenes,
-body.stash-liquid-glass.refract-light:not(.refract-rating-style-playing-card) .performer-card .stash-perf-ocount,
 body.stash-liquid-glass.refract-light .scene-card .stash-o-count,
 body.stash-liquid-glass.refract-light .grid-card .stash-o-count {
     color: rgba(var(--accent-rgb), 0.78) !important;
 }
 body.stash-liquid-glass.refract-light:not(.refract-rating-style-playing-card) .performer-card .stash-perf-scenes *,
-body.stash-liquid-glass.refract-light:not(.refract-rating-style-playing-card) .performer-card .stash-perf-ocount *,
 body.stash-liquid-glass.refract-light .scene-card .stash-o-count *,
 body.stash-liquid-glass.refract-light .grid-card .stash-o-count * {
     color: inherit !important;
     fill: currentColor !important;
 }
 body.stash-liquid-glass.refract-light:not(.refract-rating-style-playing-card) .performer-card .stash-perf-scenes:hover,
-body.stash-liquid-glass.refract-light:not(.refract-rating-style-playing-card) .performer-card .stash-perf-ocount:hover,
 body.stash-liquid-glass.refract-light .scene-card .stash-o-count:hover,
 body.stash-liquid-glass.refract-light .grid-card .stash-o-count:hover {
     color: var(--accent-bright) !important;

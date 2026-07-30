@@ -63,11 +63,23 @@ body.stash-liquid-glass.refract-lite .detail-header {
 /* ── 5. Cards: no hover lift, dark drop-shadow instead of accent
        glow halo. Keeps a sense of depth on hover without the GPU
        cost of the multi-layer accent glow. Base mode's accent
-       border-color flows through (cheap, no compositor cost). */
-body.stash-liquid-glass.refract-lite .card:hover,
-body.stash-liquid-glass.refract-lite .grid-card:hover,
-body.stash-liquid-glass.refract-lite .scene-card:hover,
-body.stash-liquid-glass.refract-lite .performer-card:hover {
+       border-color flows through (cheap, no compositor cost).
+
+       `.refract-flip3d` is exempted from the transform strip. This file
+       loads LAST (see src/theme/index.ts), and an !important author
+       declaration outranks BOTH CSS animations and Web Animations — so
+       while a card was mid-flip this rule made the 3D turn literally
+       impossible to render. The flip tab lives inside the card, so the
+       pointer is always hovering when it's clicked; the card stayed flat
+       for the whole turn and then snapped to its back face. Moving the
+       cursor off mid-turn dropped the !important and let the rotation
+       jump in, which read as the card flipping around at random.
+       The intent here is only to kill the hover LIFT, so scoping it to
+       cards that aren't currently turning costs nothing. */
+body.stash-liquid-glass.refract-lite .card:not(.refract-flip3d):hover,
+body.stash-liquid-glass.refract-lite .grid-card:not(.refract-flip3d):hover,
+body.stash-liquid-glass.refract-lite .scene-card:not(.refract-flip3d):hover,
+body.stash-liquid-glass.refract-lite .performer-card:not(.refract-flip3d):hover {
     transform: none !important;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
 }
@@ -235,8 +247,13 @@ body.stash-liquid-glass.refract-lite.refract-rating-style-playing-card .performe
 /* Readability: in lite, drop the tier-colour gradient/fill on the pill
    label, value AND icon and paint them flat white, which reads clearly
    over the translucent fill (the gold-on-gold fix). The border (above) is
-   whitened to match. No blur/shadow, just a colour swap. */
-body.stash-liquid-glass.refract-lite.refract-rating-style-playing-card .performer-card .stash-perf-stats > * > span {
+   whitened to match. No blur/shadow, just a colour swap.
+
+   `.stash-perf-flag` is EXCLUDED. The country pill's flag is a flag-icons
+   <span> that paints itself with a background-image, so `background: none`
+   erased the flag and left an empty translucent box. It carries no text, so
+   none of the colour/text-fill work here applies to it anyway. */
+body.stash-liquid-glass.refract-lite.refract-rating-style-playing-card .performer-card .stash-perf-stats > * > span:not(.stash-perf-flag) {
     background: none !important;
     -webkit-background-clip: initial !important;
             background-clip: initial !important;

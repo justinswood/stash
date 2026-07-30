@@ -242,6 +242,63 @@ body.stash-liquid-glass nav.top-nav .stash-nav-label {
     display: none !important;
 }
 
+/* ── Library nav: icon + TEXT LABEL (restores stock Stash) ──────────
+   The rules above make the whole navbar icon-only. Put the label back on
+   the LIBRARY links only (Scenes / Images / Groups / Markers / Galleries /
+   Performers / Studios / Tags, plus the Categories dropdown) — the utility
+   cluster on the right stays icon-only, where the icons are unambiguous and
+   space is tight.
+
+   Hook: the library items are the only ones that render an `.nav-menu-icon`
+   (MainNavbar.tsx), and their label is the span that follows it. That matches
+   both shapes Stash uses here — `a.btn` for plain links and
+   `button.dropdown-toggle` for the Categories dropdown — without touching
+   search results, badges, or any other nav span. */
+body.stash-liquid-glass nav.top-nav .navbar-collapse > .navbar-nav > .nav-link .nav-menu-icon ~ span {
+    display: inline-block !important;
+    /* The .nav-link parent is font-size: 0, so this must be absolute. */
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    letter-spacing: 0.01em !important;
+    color: inherit !important;
+    white-space: nowrap !important;
+    /* Bootstrap's `mb-2 mb-xl-0` on the icon stacks icon-over-label below
+       1200px; we lay them out in a row, so kill the gap it leaves. */
+    margin: 0 !important;
+}
+/* Grow the tile into a pill that fits icon + label. The base nav-button rule
+   pins every button to a square `--nav-btn-size`; these need auto width. */
+body.stash-liquid-glass nav.top-nav .navbar-collapse > .navbar-nav > .nav-link :is(a.btn, button.btn, .dropdown-toggle):has(.nav-menu-icon) {
+    width: auto !important;
+    min-width: var(--nav-btn-size) !important;
+    /* Row layout: Bootstrap puts `flex-column` on these below xl. */
+    flex-direction: row !important;
+    gap: 0.4rem !important;
+    padding: 0 0.7rem !important;
+}
+body.stash-liquid-glass nav.top-nav .navbar-collapse > .navbar-nav > .nav-link .nav-menu-icon {
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+}
+/* Narrow viewports can't fit ~9 labelled items plus the utility cluster —
+   the navbar is `overflow-x: clip` and its children are `flex-shrink: 0`, so
+   they'd be silently cut off rather than wrapping. Fall back to icon-only
+   tiles there.
+   1200px is Bootstrap's `xl`, which is also the breakpoint Stash's own navbar
+   uses (`expand="xl"` in MainNavbar.tsx). Measured: the labelled library row
+   is ~890px and the brand ~42px, so 1200px leaves ~270px for the utility
+   cluster + search — enough for the stock buttons plus a few plugin icons. */
+@media (max-width: 1199.98px) {
+    body.stash-liquid-glass nav.top-nav .navbar-collapse > .navbar-nav > .nav-link .nav-menu-icon ~ span {
+        display: none !important;
+    }
+    body.stash-liquid-glass nav.top-nav .navbar-collapse > .navbar-nav > .nav-link :is(a.btn, button.btn, .dropdown-toggle):has(.nav-menu-icon) {
+        width: var(--nav-btn-size) !important;
+        padding: 0 !important;
+    }
+}
+
 /* Drop Bootstrap col / list wrappers on library links.
    Stash may use flat `.navbar-nav > a.nav-link` or `ul > li.nav-item > a.nav-link`. */
 body.stash-liquid-glass nav.top-nav .navbar-nav > * {
