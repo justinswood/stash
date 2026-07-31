@@ -373,6 +373,41 @@ func (r *mutationResolver) PerformerUpdate(ctx context.Context, input models.Per
 	return r.getPerformer(ctx, performerID)
 }
 
+func (r *mutationResolver) PerformerImageCrop(ctx context.Context, input PerformerImageCropInput) (*models.Performer, error) {
+	performerID, err := strconv.Atoi(input.PerformerID)
+	if err != nil {
+		return nil, fmt.Errorf("converting id: %w", err)
+	}
+
+	if input.Width <= 0 || input.Height <= 0 {
+		return nil, fmt.Errorf("crop width and height must both be positive, got %dx%d", input.Width, input.Height)
+	}
+
+	if err := r.withTxn(ctx, func(ctx context.Context) error {
+		qb := r.repository.Performer
+
+		existing, err := qb.GetImage(ctx, performerID)
+		if err != nil {
+			return fmt.Errorf("getting performer image: %w", err)
+		}
+		if len(existing) == 0 {
+			return fmt.Errorf("performer %d has no image to crop", performerID)
+		}
+
+		cropped, err := utils.CropImage(existing, input.X, input.Y, input.Width, input.Height)
+		if err != nil {
+			return err
+		}
+
+		return qb.UpdateImage(ctx, performerID, cropped)
+	}); err != nil {
+		return nil, err
+	}
+
+	r.hookExecutor.ExecutePostHooks(ctx, performerID, hook.PerformerUpdatePost, input, []string{"image"})
+	return r.getPerformer(ctx, performerID)
+}
+
 func (r *mutationResolver) BulkPerformerUpdate(ctx context.Context, input BulkPerformerUpdateInput) ([]*models.Performer, error) {
 	performerIDs, err := stringslice.StringSliceToIntSlice(input.Ids)
 	if err != nil {

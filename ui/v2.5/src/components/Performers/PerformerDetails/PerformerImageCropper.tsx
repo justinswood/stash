@@ -3,7 +3,7 @@ import { Button } from "react-bootstrap";
 import { FormattedMessage } from "react-intl";
 import Cropper from "cropperjs";
 import "cropperjs/dist/cropper.min.css";
-import { usePerformerUpdate } from "src/core/StashService";
+import { usePerformerImageCrop } from "src/core/StashService";
 import { useToast } from "src/hooks/Toast";
 
 interface IPerformerImageCropperProps {
@@ -18,7 +18,7 @@ export const PerformerImageCropper: React.FC<IPerformerImageCropperProps> = ({
   onCroppingChange,
 }) => {
   const Toast = useToast();
-  const [updatePerformer] = usePerformerUpdate();
+  const [cropPerformerImage] = usePerformerImageCrop();
   const [cropping, setCroppingState] = useState(false);
   const [cropReady, setCropReady] = useState(false);
   const [cropInfo, setCropInfo] = useState("");
@@ -89,19 +89,34 @@ export const PerformerImageCropper: React.FC<IPerformerImageCropperProps> = ({
   const handleCropAccept = useCallback(async () => {
     if (!cropperRef.current) return;
 
-    const dataUrl = cropperRef.current.getCroppedCanvas().toDataURL();
+    // Only the selected rectangle is sent; the server cuts it out of the stored
+    // image. Cropper is used purely to pick the region.
+    //
+    // The pixels are deliberately NOT produced here. Doing that requires
+    // reading them back out of a canvas, and browsers with canvas
+    // anti-fingerprinting protection (Gecko with canvas protection enabled, as
+    // Zen ships by default) return blank data for any canvas past a small size
+    // threshold — silently, with no error. That previously wrote a fully
+    // transparent image over the performer's photo, which showed up as black.
+    const data = cropperRef.current.getData(true);
+    const input = {
+      performer_id: performerId,
+      x: Math.max(0, Math.round(data.x)),
+      y: Math.max(0, Math.round(data.y)),
+      width: Math.round(data.width),
+      height: Math.round(data.height),
+    };
+
+    if (input.width <= 0 || input.height <= 0) {
+      Toast.error("Select an area to crop first.");
+      return;
+    }
+
     destroyCropper();
     setCropping(false);
 
     try {
-      await updatePerformer({
-        variables: {
-          input: {
-            id: performerId,
-            image: dataUrl,
-          },
-        },
-      });
+      await cropPerformerImage({ variables: { input } });
 
       // Force reload the performer image to show the updated crop
       const image = getPerformerImage();
@@ -115,7 +130,14 @@ export const PerformerImageCropper: React.FC<IPerformerImageCropperProps> = ({
     } catch (e) {
       Toast.error(e);
     }
-  }, [destroyCropper, setCropping, updatePerformer, performerId, getPerformerImage, Toast]);
+  }, [
+    destroyCropper,
+    setCropping,
+    cropPerformerImage,
+    performerId,
+    getPerformerImage,
+    Toast,
+  ]);
 
   const handleCropCancel = useCallback(() => {
     destroyCropper();

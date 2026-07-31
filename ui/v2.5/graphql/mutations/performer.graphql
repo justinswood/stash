@@ -29,3 +29,9 @@ mutation PerformerMerge($input: PerformerMergeInput!) {
     id
   }
 }
+
+mutation PerformerImageCrop($input: PerformerImageCropInput!) {
+  performerImageCrop(input: $input) {
+    ...PerformerData
+  }
+}

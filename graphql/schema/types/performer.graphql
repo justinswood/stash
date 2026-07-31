@@ -192,3 +192,17 @@ input PerformerMergeInput {
   # values defined here will override values in the destination
   values: PerformerUpdateInput
 }
+
+"""
+Crops the performer's existing image in place. The rectangle is in pixels of
+the stored image and is clamped to its bounds. Cropping is done server-side
+because browsers with canvas anti-fingerprinting protection return blank data
+when a page tries to read cropped pixels back out of a canvas.
+"""
+input PerformerImageCropInput {
+  performer_id: ID!
+  x: Int!
+  y: Int!
+  width: Int!
+  height: Int!
+}

@@ -1833,6 +1833,16 @@ export const usePerformerUpdate = () =>
     },
   });
 
+export const usePerformerImageCrop = () =>
+  GQL.usePerformerImageCropMutation({
+    update(cache, result) {
+      if (!result.data?.performerImageCrop) return;
+
+      evictTypeFields(cache, performerMutationImpactedTypeFields);
+      evictQueries(cache, performerMutationImpactedQueries);
+    },
+  });
+
 export const useBulkPerformerUpdate = (input: GQL.BulkPerformerUpdateInput) =>
   GQL.useBulkPerformerUpdateMutation({
     variables: { input },
