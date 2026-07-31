@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
-import { FormattedMessage } from "react-intl";
+import { FormattedMessage, useIntl } from "react-intl";
 import { Link } from "react-router-dom";
 import { useTitleProps } from "src/hooks/title";
 import * as GQL from "src/core/generated-graphql";
-import { TagCardGrid } from "../Tags/TagCardGrid";
+import { TagCard } from "../Tags/TagCard";
+import { ClearableInput } from "../Shared/ClearableInput";
 import { LoadingIndicator } from "../Shared/LoadingIndicator";
 
 // The Categories hub lists the child tags of a single parent tag literally
@@ -13,9 +14,15 @@ import { LoadingIndicator } from "../Shared/LoadingIndicator";
 const CATEGORY_PARENT_NAME = "Categories";
 
 const noop = () => {};
-const emptySelection = new Set<string>();
+
+// Fixed card width — see the render comment below for why this page does not
+// use TagCardGrid's measured sizing.
+const CATEGORY_CARD_WIDTH = 300;
 
 const CategoriesGrid: React.FC<{ parentId: string }> = ({ parentId }) => {
+  const intl = useIntl();
+  const [query, setQuery] = useState("");
+
   const { data, loading } = GQL.useFindTagsQuery({
     variables: {
       filter: { per_page: -1, sort: "name", direction: GQL.SortDirectionEnum.Asc },
@@ -29,11 +36,26 @@ const CategoriesGrid: React.FC<{ parentId: string }> = ({ parentId }) => {
     },
   });
 
+  const tags = useMemo(() => data?.findTags.tags ?? [], [data]);
+
+  // Filtered in the browser rather than re-queried: the page already fetches
+  // every category up front (per_page: -1) and the list is small, so matching
+  // locally is instant and costs no round-trip per keystroke.
+  // Aliases are matched too — they're already in TagData, and a category is
+  // often searched for by a name it isn't filed under.
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return tags;
+    return tags.filter(
+      (t) =>
+        t.name.toLowerCase().includes(q) ||
+        (t.aliases ?? []).some((a) => a.toLowerCase().includes(q))
+    );
+  }, [tags, query]);
+
   if (loading) {
     return <LoadingIndicator />;
   }
-
-  const tags = data?.findTags.tags ?? [];
 
   if (tags.length === 0) {
     return (
@@ -47,12 +69,58 @@ const CategoriesGrid: React.FC<{ parentId: string }> = ({ parentId }) => {
   }
 
   return (
-    <TagCardGrid
-      tags={tags}
-      zoomIndex={1}
-      selectedIds={emptySelection}
-      onSelectChange={noop}
-    />
+    <>
+      <div className="categories-toolbar mb-3 d-flex justify-content-center align-items-center">
+        <ClearableInput
+          value={query}
+          setValue={setQuery}
+          placeholder={`${intl.formatMessage({ id: "actions.search" })}…`}
+        />
+        {!!query.trim() && (
+          <span className="categories-result-count text-muted">
+            <FormattedMessage
+              id="categories.match_count"
+              defaultMessage="{count} of {total}"
+              values={{ count: filtered.length, total: tags.length }}
+            />
+          </span>
+        )}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center mt-4">
+          <FormattedMessage
+            id="categories.no_matches"
+            defaultMessage="No categories match “{query}”."
+            values={{ query: query.trim() }}
+          />
+        </div>
+      ) : (
+        /* Cards are rendered directly at a fixed width rather than through
+           TagCardGrid. That component sizes cards from a ResizeObserver on its
+           own container (useContainerDimensions → useCardWidth), and here the
+           card width feeds back into the measured height — `.tag-card-header`
+           is `aspect-ratio: 5/3`, so height tracks width — which left the grid
+           oscillating: cards rendered large, got measured, shrank, and round
+           again, continuously.
+           This page is a small curated list with no zoom slider, so there is
+           nothing to measure for: a fixed width in a wrapping flex row gives a
+           stable layout and removes the feedback path entirely. */
+        <div className="row justify-content-center">
+          {filtered.map((tag) => (
+            <TagCard
+              key={tag.id}
+              tag={tag}
+              cardWidth={CATEGORY_CARD_WIDTH}
+              zoomIndex={1}
+              selecting={false}
+              selected={false}
+              onSelectedChanged={noop}
+            />
+          ))}
+        </div>
+      )}
+    </>
   );
 };
 
@@ -73,8 +141,8 @@ const CategoriesPage: React.FC = () => {
   const parent = data?.findTags.tags[0];
 
   return (
-    <div className="container-fluid mt-4">
-      <h1 className="mb-4">
+    <div className="container-fluid mt-4 categories-page">
+      <h1 className="mb-4 text-center">
         <FormattedMessage id="categories" defaultMessage="Categories" />
       </h1>
       {loading ? (

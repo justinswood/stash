@@ -1,0 +1,18 @@
+// Layout (centring the heading and the toolbar) is done with Bootstrap utility
+// classes in Categories.tsx rather than here, so the page still lays out
+// correctly even if this stylesheet hasn't loaded. This file only carries what
+// utilities can't express.
+.categories-toolbar {
+  .clearable-input-group {
+    // Capped so it reads as a filter box rather than a full-width form field.
+    // The input and the match count are centred together as a unit, so the
+    // input doesn't shift sideways as the count appears and disappears.
+    max-width: 22rem;
+    width: 100%;
+  }
+}
+
+.categories-result-count {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}

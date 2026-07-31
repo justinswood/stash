@@ -3874,173 +3874,6 @@ body.stash-liquid-glass .stash-performer-popup::before {
     pointer-events: auto;
 }
 
-/* ───────────────────────────────────────────────────────────────────
-   Categories overlay (injected by refract.js)
-   ─────────────────────────────────────────────────────────────────── */
-
-#stash-category-browser {
-    --pad: clamp(1rem, 3vw, 2rem);
-    position: fixed;
-    inset: 0;
-    z-index: 20000;
-    display: flex;
-    flex-direction: column;
-    padding: var(--pad);
-    padding-top: max(var(--pad), env(safe-area-inset-top));
-    box-sizing: border-box;
-    background: linear-gradient(180deg, rgba(8, 8, 8, 0.92) 0%, #0a0a0a 100%);
-    -webkit-backdrop-filter: var(--glass-blur-md);
-    backdrop-filter: var(--glass-blur-md);
-    overflow: auto;
-    color: var(--text, #fff);
-}
-#stash-category-browser[hidden] { display: none !important; }
-
-#stash-category-browser .stash-cat-top {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
-}
-#stash-category-browser h1 {
-    font-size: clamp(1.35rem, 2.2vw, 1.75rem);
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    margin: 0;
-    flex: 1;
-}
-#stash-category-browser .stash-cat-back,
-#stash-category-browser .stash-cat-close {
-    background: var(--glass-bg, rgba(255, 255, 255, 0.08));
-    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.14));
-    color: #fff;
-    border-radius: var(--radius-sm, 12px);
-    padding: 0.45rem 0.9rem;
-    font-size: 0.9rem;
-    height: 2.4rem;
-    cursor: pointer;
-    -webkit-backdrop-filter: var(--glass-blur-lg);
-    backdrop-filter: var(--glass-blur-lg);
-    transition: background 0.18s, border-color 0.18s;
-}
-#stash-category-browser .stash-cat-close {
-    width: 2.4rem;
-    padding: 0;
-    font-size: 1.2rem;
-    line-height: 1;
-}
-#stash-category-browser .stash-cat-back { display: none; }
-#stash-category-browser.is-child .stash-cat-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-#stash-category-browser .stash-cat-back:hover,
-#stash-category-browser .stash-cat-close:hover {
-    background: rgba(255, 255, 255, 0.10);
-    border-color: var(--glass-border-bright, rgba(255, 255, 255, 0.20));
-}
-
-#stash-category-browser .stash-cat-sub {
-    color: var(--text-muted, rgba(255, 255, 255, 0.55));
-    font-size: 0.9rem;
-    margin: 0 0 0.75rem;
-}
-#stash-category-browser .stash-cat-error {
-    color: #fb7185;
-    background: rgba(251, 113, 133, 0.12);
-    border: 1px solid rgba(251, 113, 133, 0.35);
-    border-radius: var(--radius-sm, 12px);
-    padding: 0.75rem 1rem;
-    margin-bottom: 1rem;
-}
-#stash-category-browser .stash-cat-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-    gap: 1rem;
-}
-#stash-category-browser .stash-cat-tile {
-    position: relative;
-    border-radius: var(--radius, 16px);
-    overflow: hidden;
-    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
-    background: var(--glass-bg, rgba(255, 255, 255, 0.06));
-    -webkit-backdrop-filter: var(--glass-blur-lg);
-    backdrop-filter: var(--glass-blur-lg);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    cursor: pointer;
-    text-align: left;
-    padding: 0;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.2s ease, box-shadow 0.2s, border-color 0.2s;
-}
-#stash-category-browser .stash-cat-tile:hover {
-    transform: scale(1.02);
-    border-color: var(--glass-border-bright, rgba(255, 255, 255, 0.20));
-    box-shadow: var(--shadow-xl);
-}
-#stash-category-browser .stash-cat-tile::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 45%;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, transparent 100%);
-    pointer-events: none;
-    opacity: 0.4;
-}
-#stash-category-browser .stash-cat-hero {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1;
-    overflow: hidden;
-    background: linear-gradient(145deg, rgba(40, 40, 40, 0.9) 0%, rgba(20, 20, 20, 0.95) 100%);
-}
-#stash-category-browser .stash-cat-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-#stash-category-browser .stash-cat-initials {
-    position: absolute;
-    inset: 0;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.4);
-    letter-spacing: 0.08em;
-}
-#stash-category-browser .stash-cat-tile-text {
-    padding: 0.7rem 0.85rem 0.85rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-}
-#stash-category-browser .stash-cat-tile-text strong {
-    font-size: 0.95rem;
-    font-weight: 600;
-    line-height: 1.2;
-}
-#stash-category-browser .stash-cat-tile-text small {
-    font-size: 0.75rem;
-    color: var(--text-muted, rgba(255, 255, 255, 0.5));
-}
-#stash-category-browser .stash-cat-skel {
-    min-height: 8rem;
-    border-radius: var(--radius, 16px);
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.04) 100%);
-    background-size: 200% 100%;
-    animation: stash-cat-skel 1.1s ease infinite;
-}
-@keyframes stash-cat-skel {
-    0%   { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-}
-
 /* multiView plugin integration moved to 13_plugins.css. */
 
 /* ── Home-page section "View All" links → chevron icon ─────────────
@@ -4510,7 +4343,6 @@ body.stash-liquid-glass .grid-card .preview-button {
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
 }
-
 
 /* ───────────────────────────────────────────────────────────────────
    Stats page (built-in + custom community plugins)
@@ -6494,7 +6326,6 @@ body.stash-liquid-glass .refract-job-chevron svg {
 body.stash-liquid-glass .job.refract-job-expanded .refract-job-chevron svg {
     transform: rotate(90deg) !important;
 }
-
 
 /* Row layout: stop button left, status block right */
 body.stash-liquid-glass .job-table.card > ul > li.job > div {

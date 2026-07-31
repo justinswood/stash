@@ -755,7 +755,6 @@
     }
     registerAccentPatch();
 
-    var CATEGORIES_PATH = "/categories";
     var STORAGE_KEY_API = "refract.apiKey";
     var VIEW_MINIMISER_STORAGE_KEY = "refract.viewMinimiser";
     var LOGO_URL_STORAGE_KEY = "refract.customLogoUrl";
@@ -1083,12 +1082,6 @@
         return "";
     }
 
-    var QUERY_ROOT_TAGS =
-        'query StashThemeRootTags { findTags(' +
-        '  filter: { per_page: -1, sort: "name", direction: ASC },' +
-        '  tag_filter: { parents: { modifier: IS_NULL } }' +
-        ') { count tags { id name sort_name scene_count children { id name sort_name scene_count } } } }';
-
     var PLUS_SVG =
         '<svg class="stash-injected-icon svg-inline--fa fa-icon" viewBox="0 0 448 512" aria-hidden="true">' +
         '<path fill="currentColor" d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/>' +
@@ -1290,17 +1283,6 @@
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;");
-    }
-
-    function tagImageUrl(id) {
-        return window.location.origin + "/tag/" + encodeURIComponent(id) + "/image?default=true";
-    }
-
-    function isCategoriesPath() {
-        var p = (window.location.pathname || "/").replace(/\/$/, "") || "/";
-        if (p === CATEGORIES_PATH) { return true; }
-        var h = window.location.hash || "";
-        return h === "#/categories" || h.indexOf("#/categories/") === 0;
     }
 
     /* Insert newNode into parent before referenceNode. Falls back to
@@ -2633,6 +2615,45 @@
         catch (e) { return false; }
     }
 
+    /* ISO-3166 alpha-2 -> full country name, for the performer-card country
+       pill's hover tooltip.
+
+       Stash stores `performer.country` as the bare code and renders
+       `.performer-card__country-string` with that code verbatim; the display
+       name only exists inside its <CountryFlag> React component
+       (getCountryByISO), which the theme script can't call. Intl.DisplayNames
+       is the browser's own copy of the same CLDR data, so it produces the same
+       localized names without duplicating a country table here.
+
+       The instance is built once and cached — constructing one per card is
+       measurably expensive on a grid of 80 performers. Falls back to the plain
+       uppercase code if the API is missing or doesn't know the region. */
+    var refractRegionNames;
+    var refractRegionNamesTried = false;
+    function refractCountryName(iso) {
+        if (!iso || !/^[A-Za-z]{2}$/.test(iso)) { return ""; }
+        var code = iso.toUpperCase();
+        if (!refractRegionNamesTried) {
+            refractRegionNamesTried = true;
+            try {
+                if (typeof Intl !== "undefined" && Intl.DisplayNames) {
+                    /* Match the UI's language where Stash sets it on <html>. */
+                    var loc = (document.documentElement && document.documentElement.lang) ||
+                              navigator.language || "en";
+                    refractRegionNames = new Intl.DisplayNames([loc], { type: "region" });
+                }
+            } catch (e) { refractRegionNames = null; }
+        }
+        if (refractRegionNames) {
+            try {
+                var name = refractRegionNames.of(code);
+                /* `.of()` echoes the input back when the region is unknown. */
+                if (name && name !== code) { return name; }
+            } catch (e) { /* invalid region code */ }
+        }
+        return code;
+    }
+
     /* Career span in whole years, parsed from the free-text career_length
        ("2014 -", "2014-2020", etc.). Open-ended ranges count up to now; a
        non-year string passes through if it's short enough to fit a chip. */
@@ -2810,182 +2831,10 @@
         });
     }
 
-    /* ── Categories overlay (used when /categories URL is hit) ───── */
-
-    var overlayEl = null;
-    var state = { root: null, view: "root", parent: null };
-
-    function ensureOverlay() {
-        if (overlayEl && document.body.contains(overlayEl)) { return overlayEl; }
-        overlayEl = document.getElementById("stash-category-browser");
-        if (!overlayEl) {
-            overlayEl = document.createElement("div");
-            overlayEl.id = "stash-category-browser";
-            overlayEl.setAttribute("hidden", "");
-            document.body.appendChild(overlayEl);
-        }
-        return overlayEl;
-    }
-
-    function setOverlayVisible(v) {
-        var el = ensureOverlay();
-        if (v) { el.removeAttribute("hidden"); } else { el.setAttribute("hidden", ""); }
-    }
-
-    function topBar(title, opts) {
-        opts = opts || {};
-        var back = opts.showBack
-            ? '<button type="button" class="stash-cat-back" data-action="back">‹ Back</button>'
-            : "";
-        return '<div class="stash-cat-top">' +
-            back +
-            '<h1>' + escapeHtml(title) + '</h1>' +
-            '<button type="button" class="stash-cat-close" data-action="close" aria-label="Close">×</button>' +
-            '</div>';
-    }
-
-    function bindOverlayUi() {
-        var el = ensureOverlay();
-        el.querySelectorAll('[data-action="close"]').forEach(function (b) {
-            b.onclick = function () { window.history.back(); };
-        });
-        el.querySelectorAll('[data-action="back"]').forEach(function (b) {
-            b.onclick = function () {
-                if (state.view === "child") {
-                    state.view = "root";
-                    state.parent = null;
-                    renderGrid(state.root, false);
-                }
-            };
-        });
-    }
-
-    function renderLoading() {
-        var el = ensureOverlay();
-        el.className = "";
-        el.removeAttribute("hidden");
-        el.innerHTML = topBar("Categories") +
-            '<p class="stash-cat-sub">Loading tag hierarchy…</p>' +
-            '<div class="stash-cat-skel"></div>';
-        bindOverlayUi();
-    }
-
-    function renderError(msg) {
-        var el = ensureOverlay();
-        el.className = "";
-        el.removeAttribute("hidden");
-        el.innerHTML = topBar("Categories") +
-            '<p class="stash-cat-error">' + escapeHtml(msg) + '</p>' +
-            '<p class="stash-cat-sub">If unauthenticated, set an API key: ' +
-            '<code>localStorage.setItem("' + STORAGE_KEY_API + '", "YOUR_KEY")</code> then reload.</p>';
-        bindOverlayUi();
-    }
-
-    function renderGrid(tags, isChild) {
-        var el = ensureOverlay();
-        el.className = isChild ? "is-child" : "";
-        el.removeAttribute("hidden");
-
-        var title = isChild && state.parent ? state.parent.name : "Categories";
-        var sub = isChild
-            ? "Subtags. Click a tile to open the tag in Stash."
-            : "Top-level tag groups. Click a tile to drill in.";
-
-        var parts = [topBar(title, { showBack: isChild }), '<p class="stash-cat-sub">' + escapeHtml(sub) + "</p>"];
-
-        if (!tags || !tags.length) {
-            parts.push('<p class="stash-cat-sub">No tags here.</p>');
-            el.innerHTML = parts.join("");
-            bindOverlayUi();
-            return;
-        }
-
-        parts.push('<div class="stash-cat-grid">');
-        tags.forEach(function (t) {
-            var name = t.sort_name || t.name || "";
-            var count = t.scene_count != null ? t.scene_count : 0;
-            var initials = (name.slice(0, 2) || "??").toUpperCase();
-            parts.push(
-                '<button type="button" class="stash-cat-tile" data-tid="' + escapeHtml(t.id) + '">' +
-                    '<div class="stash-cat-hero">' +
-                        '<img class="stash-cat-img" src="' + escapeHtml(tagImageUrl(t.id)) + '" alt="" loading="lazy">' +
-                        '<div class="stash-cat-initials" aria-hidden="true">' + escapeHtml(initials) + '</div>' +
-                    '</div>' +
-                    '<span class="stash-cat-tile-text">' +
-                        '<strong>' + escapeHtml(name) + '</strong>' +
-                        '<small>' + count + ' scenes</small>' +
-                    '</span>' +
-                '</button>'
-            );
-        });
-        parts.push("</div>");
-        el.innerHTML = parts.join("");
-
-        el.querySelectorAll(".stash-cat-img").forEach(function (img) {
-            img.addEventListener("error", function () {
-                img.style.display = "none";
-                var n = img.nextElementSibling;
-                if (n && n.classList.contains("stash-cat-initials")) { n.style.display = "flex"; }
-            });
-        });
-
-        el.querySelectorAll(".stash-cat-tile").forEach(function (btn) {
-            btn.addEventListener("click", function () {
-                var id = btn.getAttribute("data-tid");
-                var pool = state.view === "root" ? state.root : ((state.parent && state.parent._children) || []);
-                var tag = null;
-                for (var i = 0; i < pool.length; i++) {
-                    if (pool[i].id === id) { tag = pool[i]; break; }
-                }
-                if (!tag) { return; }
-                var hasKids = tag.children && tag.children.length;
-                if (state.view === "root" && hasKids) {
-                    var kids = tag.children.slice().sort(function (a, b) {
-                        return (a.sort_name || a.name).localeCompare(b.sort_name || b.name);
-                    });
-                    state.view = "child";
-                    state.parent = { name: tag.sort_name || tag.name, id: tag.id, _children: kids };
-                    renderGrid(kids, true);
-                } else {
-                    window.location.assign("/tags/" + encodeURIComponent(tag.id));
-                }
-            });
-        });
-
-        bindOverlayUi();
-    }
-
-    function loadAndShow() {
-        renderLoading();
-        gql(QUERY_ROOT_TAGS)
-            .then(function (data) {
-                if (data.errors && data.errors.length) {
-                    renderError(data.errors[0].message || "GraphQL error");
-                    return;
-                }
-                var tags = (data.data && data.data.findTags && data.data.findTags.tags) || [];
-                state.root = tags;
-                state.view = "root";
-                state.parent = null;
-                if (!isCategoriesPath()) { return; }
-                renderGrid(tags, false);
-            })
-            .catch(function (e) { renderError((e && e.message) || String(e)); });
-    }
-
+    /* Route class only. The /categories overlay this used to drive is gone —
+       Stash's own React route (Categories.tsx) renders that page now. */
     function syncRoute() {
         setRouteClass();
-        if (isCategoriesPath()) {
-            if (!state.root) {
-                loadAndShow();
-            } else {
-                setOverlayVisible(true);
-                if (state.view === "root") { renderGrid(state.root, false); }
-                else if (state.parent) { renderGrid(state.parent._children, true); }
-            }
-        } else {
-            setOverlayVisible(false);
-        }
     }
 
     /* ── SPA route detection ─────────────────────────────────────── */
@@ -3855,37 +3704,34 @@
             /* Country — the 4th pill slot (was O count). Stash renders the
                nationality as a flag span plus a text string:
                  .performer-card__country-flag (flag-icons: `fi fi-XX`)
-                 .performer-card__country-string (localized country name)
-               Read the name straight from Stash's own string rather than
-               reconstructing it from the ISO code, so it matches whatever
-               locale the UI is running in. The flag is a clone of the native
-               span, tagged `stash-perf-flag` so the playing-card "hide native
-               flag" rule skips this copy (see 16_playing_card.css). Long names
-               are ellipsised by CSS rather than shortened here, so the title
-               attribute still carries the full text. */
+                 .performer-card__country-string
+               NOTE the string span holds `performer.country`, which is the raw
+               ISO-2 CODE ("US"), not a display name — Stash converts it for
+               display via getCountryByISO, which isn't reachable from here. So
+               the full name is resolved from the code with Intl.DisplayNames
+               (see refractCountryName).
+               The flag is a clone of the native span, tagged `stash-perf-flag`
+               so the playing-card "hide native flag" rule skips this copy (see
+               16_playing_card.css). */
             var countryStrEl = card.querySelector(".performer-card__country-string");
-            var countryName = countryStrEl ? (countryStrEl.textContent || "").trim() : "";
-            /* The pill VALUE is the ISO-2 code, not the full name. Every other
-               pill in this strip is a short value under an uppercase label, and
-               the strip only has ~58px per pill — a real country name ("United
-               Arab Emirates") is ~4x too wide and pushes the other three pills
-               off the card. The flag already carries the recognition; the code
-               disambiguates it, and the full name rides the title tooltip.
-               Code comes from the flag-icons class (`fi fi-XX`); if there's no
-               flag we fall back to the name text so the pill still says
-               something. */
+            var countryRaw = countryStrEl ? (countryStrEl.textContent || "").trim() : "";
+            /* ISO code from the flag-icons class (`fi fi-XX`), falling back to
+               the raw string when there's no flag to read it off. */
             var isoCode = "";
             if (flagEl) {
                 var fiMatch = (flagEl.className || "").match(/\bfi-([a-z]{2})\b/i);
                 if (fiMatch) { isoCode = fiMatch[1].toUpperCase(); }
             }
-            var countryValue = isoCode || countryName;
+            if (!isoCode && /^[A-Za-z]{2}$/.test(countryRaw)) { isoCode = countryRaw.toUpperCase(); }
+            var countryValue = isoCode || countryRaw;
             if (!countryValue) { countryValue = null; }
+            var countryName = refractCountryName(isoCode) || countryRaw || countryValue;
             var cEl = document.createElement("span");
             cEl.className = "stash-perf-country-stat" + (countryValue == null ? " stash-perf-empty" : "");
-            /* Full localized country name as the native tooltip — the pill
-               itself shows only the flag, so this is where the name lives. */
-            if (countryValue != null) { cEl.title = countryName || countryValue; }
+            /* Full country name as the native hover tooltip — the pill shows
+               only the flag, so this is where the name lives. Set on the PILL
+               (not the flag) so the whole chip is a hover target. */
+            if (countryValue != null) { cEl.title = countryName; }
             cEl.innerHTML = '<span class="stash-perf-label">Country</span>';
             /* FLAG ONLY under the label — no code text. The flag is the value
                here, so it spans the whole bottom row (CSS). Only when there's
@@ -3894,6 +3740,10 @@
             if (flagEl) {
                 var statFlag = flagEl.cloneNode(true);
                 statFlag.classList.add("stash-perf-flag");
+                /* The innermost title wins the native tooltip, so strip any the
+                   clone inherited — otherwise hovering the flag would show it
+                   instead of the pill's full country name. */
+                statFlag.removeAttribute("title");
                 cEl.appendChild(statFlag);
             } else {
                 cEl.insertAdjacentHTML("beforeend",
@@ -4280,13 +4130,6 @@
         });
     }
 
-    function onKey(e) {
-        if (e.key === "Escape" && isCategoriesPath() && overlayEl && !overlayEl.hasAttribute("hidden")) {
-            e.preventDefault();
-            window.history.back();
-        }
-    }
-
     /* ── Floating pagination ─────────────────────────────────────────── */
 
     function initFloatingPager() {
@@ -4565,8 +4408,12 @@
            or forms (third-party plugins like edit-tags-overhaul inject a
            "Search tags…" input inside the scene edit form; the form column
            has plenty of buttons, so it'd otherwise get tagged as a toolbar
-           and inherit all the filter-bar styling). */
-        if (search.closest && search.closest('.modal, .modal-dialog, .modal-content, .sidebar, form, .edit-tags-overhaul, #tag-manager-host, .tag-manager')) { return; }
+           and inherit all the filter-bar styling).
+           .categories-toolbar is the same false positive: its own filter box
+           has just one button, so the walk-up runs past it to the page
+           container, which holds the card grid and therefore plenty of
+           buttons — the page itself would become display:flex. */
+        if (search.closest && search.closest('.modal, .modal-dialog, .modal-content, .sidebar, form, .edit-tags-overhaul, #tag-manager-host, .tag-manager, .categories-toolbar')) { return; }
 
         /* Walk up until we find a div containing ≥ 4 buttons — that is the
            filter toolbar wrapper, whatever Stash names the class. */
@@ -4968,7 +4815,6 @@
         cleanupLegacyArtifacts();
         initHistory();
         refractBindBurgerGlobalHandlers();
-        document.addEventListener("keydown", onKey);
 
         if (typeof PluginApi !== "undefined" && PluginApi && PluginApi.Event && PluginApi.Event.addEventListener) {
             PluginApi.Event.addEventListener("stash:location", function () {
