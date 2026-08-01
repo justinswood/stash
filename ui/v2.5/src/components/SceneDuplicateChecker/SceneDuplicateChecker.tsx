@@ -65,8 +65,6 @@ export const SceneDuplicateChecker: React.FC = () => {
   const [isMultiDelete, setIsMultiDelete] = useState(false);
   const [deletingScenes, setDeletingScenes] = useState(false);
   const [editingScenes, setEditingScenes] = useState(false);
-  const [chkSafeSelect, setChkSafeSelect] = useState(false);
-
   const [checkedScenes, setCheckedScenes] = useState<Record<string, boolean>>(
     {}
   );
@@ -239,11 +237,6 @@ export const SceneDuplicateChecker: React.FC = () => {
     );
   };
 
-  function checkSameCodec(codecGroup: GQL.SlimSceneDataFragment[]) {
-    const codecs = codecGroup.map((s) => s.files[0]?.video_codec);
-    return new Set(codecs).size === 1;
-  }
-
   function checkSameResolution(dataGroup: GQL.SlimSceneDataFragment[]) {
     const resolutions = dataGroup.map(
       (s) => s.files[0]?.width * s.files[0]?.height
@@ -256,9 +249,6 @@ export const SceneDuplicateChecker: React.FC = () => {
     const checkedArray: Record<string, boolean> = {};
 
     scenes.forEach((group) => {
-      if (chkSafeSelect && !checkSameCodec(group)) {
-        return;
-      }
       // Find largest scene in group a
       const largest = findLargestScene(group);
       group.forEach((scene) => {
@@ -276,9 +266,6 @@ export const SceneDuplicateChecker: React.FC = () => {
     const checkedArray: Record<string, boolean> = {};
 
     scenes.forEach((group) => {
-      if (chkSafeSelect && !checkSameCodec(group)) {
-        return;
-      }
       // Don't select scenes where resolution is identical.
       if (checkSameResolution(group)) {
         return;
@@ -301,9 +288,6 @@ export const SceneDuplicateChecker: React.FC = () => {
     const checkedArray: Record<string, boolean> = {};
 
     scenes.forEach((group) => {
-      if (chkSafeSelect && !checkSameCodec(group)) {
-        return;
-      }
 
       const oldestScene = findFirstFileByAge(oldest, group);
       group.forEach((scene) => {
@@ -790,20 +774,6 @@ export const SceneDuplicateChecker: React.FC = () => {
                 </Dropdown>
               </Col>
             </Row>
-            <Row noGutters>
-              <Form.Check
-                type="checkbox"
-                id="chkSafeSelect"
-                label={intl.formatMessage({
-                  id: "dupe_check.only_select_matching_codecs",
-                })}
-                checked={chkSafeSelect}
-                onChange={(e) => {
-                  setChkSafeSelect(e.target.checked);
-                  resetCheckboxSelection();
-                }}
-              />
-            </Row>
           </Form.Group>
         </Form>
 
@@ -844,17 +814,23 @@ export const SceneDuplicateChecker: React.FC = () => {
                   scene.files.length > 0 ? scene.files[0] : undefined;
 
                 return (
-                  <>
+                  // Key belongs on the fragment: it, not the <tr>, is the
+                  // element of the mapped array.
+                  <React.Fragment key={scene.id}>
                     {i === 0 && groupIndex !== 0 ? (
                       <tr className="separator" />
                     ) : undefined}
-                    <tr
-                      className={i === 0 ? "duplicate-group" : ""}
-                      key={scene.id}
-                    >
+                    <tr className={i === 0 ? "duplicate-group" : ""}>
                       <td>
                         <Form.Check
-                          checked={checkedScenes[scene.id]}
+                          // `?? false` keeps this a controlled input. Bare
+                          // checkedScenes[id] is undefined for unchecked rows,
+                          // and react-dom's updateChecked() only writes to the
+                          // DOM when `checked != null` — so a box that went
+                          // true -> undefined (Select None, or switching to a
+                          // select option that doesn't include this scene)
+                          // would never be visually cleared.
+                          checked={checkedScenes[scene.id] ?? false}
                           onChange={(e) =>
                             handleCheck(e.currentTarget.checked, scene.id)
                           }
@@ -944,7 +920,7 @@ export const SceneDuplicateChecker: React.FC = () => {
                         </Button>
                       </td>
                     </tr>
-                  </>
+                  </React.Fragment>
                 );
               })
             )}
