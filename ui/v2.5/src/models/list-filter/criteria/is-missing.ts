@@ -36,6 +36,10 @@ export const SceneIsMissingCriterionOption = new IsMissingCriterionOption(
     "performers",
     "tags",
     "stash_id",
+    // The backend has always handled is_missing:"phash"
+    // (fingerprints_phash.fingerprint IS NULL); it just wasn't offered here, so
+    // the dashboard's "Pending phashes" link had no criterion to render.
+    "phash",
   ]
 );
 

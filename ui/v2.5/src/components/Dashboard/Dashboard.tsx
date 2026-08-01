@@ -3,6 +3,13 @@ import { useHistory } from "react-router-dom";
 import TextUtils from "src/utils/text";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { getPlatformURL } from "src/core/createClient";
+import * as GQL from "src/core/generated-graphql";
+import { ListFilterModel } from "src/models/list-filter/filter";
+import { CriterionType } from "src/models/list-filter/types";
+import {
+  NumberCriterion,
+  StringCriterion,
+} from "src/models/list-filter/criteria/criterion";
 
 // ---- Dashboard data types ----
 interface DStats {
@@ -21,8 +28,8 @@ interface DStats {
   scenes_size: number;
   images_size: number;
 }
-interface DStudio { id: string; name: string; scene_count: number; }
-interface DPerformer { id: string; name: string; scene_count: number; }
+interface DStudio { id: string; name: string; scene_count: number; image_path?: string | null; }
+interface DPerformer { id: string; name: string; scene_count: number; image_path?: string | null; }
 interface DTag { id: string; name: string; scene_count: number; }
 interface DAddedScene { id: string; created_at: string; }
 interface DPlayedScene { id: string; last_played_at: string | null; play_duration: number | null; }
@@ -67,8 +74,8 @@ function useDashboardData(): DashboardData {
       // Request 1: stats + top studios + top performers + top tags
       post(`{
         stats { scene_count image_count gallery_count performer_count studio_count group_count tag_count total_o_count total_play_count scenes_played scenes_duration total_play_duration scenes_size images_size }
-        findStudios(filter:{per_page:5,sort:"scenes_count",direction:DESC}) { studios { id name scene_count } }
-        findPerformers(filter:{per_page:8,sort:"scenes_count",direction:DESC}) { performers { id name scene_count } }
+        findStudios(filter:{per_page:8,sort:"scenes_count",direction:DESC}) { studios { id name scene_count image_path } }
+        findPerformers(filter:{per_page:8,sort:"scenes_count",direction:DESC}) { performers { id name scene_count image_path } }
         findTags(filter:{per_page:50,sort:"scenes_count",direction:DESC}) { tags { id name scene_count } }
       }`),
       // Request 2: activity — added + played scenes in last 90 days (aliased)
@@ -164,15 +171,6 @@ function daysAgoISO(n: number): string {
   return new Date(Date.now() - n * 86400000).toISOString();
 }
 
-// ---- Palette ----
-const STUDIO_PALETTE = [
-  "#5ab9c9",
-  "#c98b5a",
-  "#8ec95a",
-  "#c95a8e",
-  "#9a5ac9",
-  "#3a4250",
-];
 
 // ---- Sparkline ----
 interface SparklineProps {
@@ -316,7 +314,7 @@ function StatGrid({ stats, sparkAdded, sparkPlays }: StatGridProps) {
       value: fmtNum(s.total_play_count),
       sub: `${fmtNum(s.scenes_played)} unique`,
       spark: sparkPlays,
-      onClick: () => history.push("/scenes"),
+      onClick: () => history.push(mostPlayedScenesUrl()),
     },
     {
       label: "PLAY DURATION",
@@ -610,7 +608,16 @@ function TopPerformers({ performers, ready }: { performers: DPerformer[]; ready:
                   className="db-leader__avatar"
                   style={{ background: `hsl(${hue} 22% 28%)` }}
                 >
-                  {initials}
+                  {/* image_path is always populated (the backend falls back to
+                      the default placeholder via &default=true), so this is the
+                      same image the performer's own page shows. The hue stays as
+                      the tint behind it while the image loads, and the initials
+                      remain the fallback if the field is ever absent. */}
+                  {p.image_path ? (
+                    <img src={p.image_path} alt="" loading="lazy" />
+                  ) : (
+                    initials
+                  )}
                 </span>
                 <div className="db-leader__main">
                   <a
@@ -644,123 +651,108 @@ function TopPerformers({ performers, ready }: { performers: DPerformer[]; ready:
 }
 
 // ---- TopStudios ----
-function TopStudios({ studios, totalScenes, ready }: { studios: DStudio[]; totalScenes: number; ready: boolean }) {
-  const [activeIdx, setActiveIdx] = useState<number | null>(null);
-
-  if (!ready) {
-    return (
-      <DashboardCard title="Top Studios">
-        <LoadingIndicator small />
-      </DashboardCard>
-    );
-  }
-
-  const top5Total = studios.reduce((a, s) => a + s.scene_count, 0);
-  const otherCount = Math.max(0, totalScenes - top5Total);
-
-  const allStudios = [
-    ...studios.map((s, i) => ({
-      id: s.id,
-      name: s.name,
-      scenes: s.scene_count,
-      color: STUDIO_PALETTE[i],
-    })),
-    ...(otherCount > 0
-      ? [{ id: "other", name: "Other", scenes: otherCount, color: STUDIO_PALETTE[5] }]
-      : []),
-  ];
-
-  const donutTotal = allStudios.reduce((a, s) => a + s.scenes, 0);
-  const r = 38;
-  const c = 50;
-  const circ = 2 * Math.PI * r;
-  let acc = 0;
-
-  const centerCount =
-    activeIdx !== null && allStudios[activeIdx]
-      ? allStudios[activeIdx].scenes
-      : donutTotal;
+// Same leaderboard treatment as TopPerformers: a ranked list with the studio's
+// own image, so the widget reads as a comparison rather than a share-of-total
+// donut. The avatar uses `contain` rather than the performers' `cover` — studio
+// art is wide wordmark/logo, which a centre-crop would decapitate.
+function TopStudios({ studios, ready }: { studios: DStudio[]; ready: boolean }) {
+  const history = useHistory();
+  const maxVal = Math.max(...studios.map((s) => s.scene_count), 1);
 
   return (
     <DashboardCard title="Top Studios">
-      <div className="db-studios">
-        <div className="db-studios__donut">
-          <svg viewBox="0 0 100 100">
-            <circle
-              cx={c}
-              cy={c}
-              r={r}
-              fill="none"
-              stroke="#1a1f27"
-              strokeWidth="14"
-            />
-            {allStudios.map((s, i) => {
-              const frac = donutTotal > 0 ? s.scenes / donutTotal : 0;
-              const dash = frac * circ;
-              const offset = -acc * circ;
-              acc += frac;
-              const isActive = activeIdx === i;
-              return (
-                <circle
-                  key={s.id}
-                  cx={c}
-                  cy={c}
-                  r={r}
-                  fill="none"
-                  stroke={s.color}
-                  strokeWidth={isActive ? 16 : 14}
-                  strokeDasharray={`${dash} ${circ - dash}`}
-                  strokeDashoffset={offset}
-                  transform={`rotate(-90 ${c} ${c})`}
-                  style={{ transition: "stroke-width .15s", cursor: "pointer" }}
-                  onMouseEnter={() => setActiveIdx(i)}
-                  onMouseLeave={() => setActiveIdx(null)}
-                />
-              );
-            })}
-            <text
-              x={c}
-              y={c - 2}
-              textAnchor="middle"
-              className="db-studios__center-num"
-            >
-              {fmtNum(centerCount)}
-            </text>
-            <text
-              x={c}
-              y={c + 8}
-              textAnchor="middle"
-              className="db-studios__center-lbl"
-            >
-              scenes
-            </text>
-          </svg>
-        </div>
-        <ul className="db-studios__list">
-          {allStudios.map((s, i) => {
-            const pct =
-              donutTotal > 0 ? ((s.scenes / donutTotal) * 100).toFixed(1) : "0.0";
+      {!ready ? (
+        <LoadingIndicator small />
+      ) : (
+        <ul className="db-leader">
+          {studios.map((s, i) => {
+            const initials = s.name
+              .split(" ")
+              .map((w) => w[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase();
+            const hue = (i * 47) % 360;
             return (
-              <li
-                key={s.id}
-                className={`db-studios__row ${activeIdx === i ? "is-active" : ""}`}
-                onMouseEnter={() => setActiveIdx(i)}
-                onMouseLeave={() => setActiveIdx(null)}
-              >
+              <li key={s.id} className="db-leader__row">
+                <span className="db-leader__rank">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
                 <span
-                  className="db-studios__sw"
-                  style={{ background: s.color }}
-                />
-                <span className="db-studios__name">{s.name}</span>
-                <span className="db-studios__pct">{pct}%</span>
-                <span className="db-studios__count">{fmtNum(s.scenes)}</span>
+                  className="db-leader__avatar db-leader__avatar--logo"
+                  style={{ background: `hsl(${hue} 22% 28%)` }}
+                >
+                  {s.image_path ? (
+                    <img src={s.image_path} alt="" loading="lazy" />
+                  ) : (
+                    initials
+                  )}
+                </span>
+                <div className="db-leader__main">
+                  <a
+                    className="db-leader__name"
+                    href={`/studios/${s.id}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      history.push(`/studios/${s.id}`);
+                    }}
+                  >
+                    {s.name}
+                  </a>
+                  <div className="db-leader__bar">
+                    <div
+                      className="db-leader__bar-fill"
+                      style={{ width: `${(s.scene_count / maxVal) * 100}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="db-leader__stat">
+                  <div className="db-leader__num">{fmtNum(s.scene_count)}</div>
+                  <div className="db-leader__trend-lbl">scenes</div>
+                </div>
               </li>
             );
           })}
         </ul>
-      </div>
+      )}
     </DashboardCard>
   );
+}
+
+// ---- Library health deep links ----
+// These MUST be built through ListFilterModel rather than hand-written query
+// strings. The scenes page parses `c=` params via ListFilterModel.decodeParams,
+// which expects the criterion JSON with {} translated to () and the reserved
+// characters percent-encoded. A malformed or unrecognised `c=` is discarded
+// silently, leaving an unfiltered list — which is why every one of these links
+// used to land on "all scenes".
+function scenesUrl(configure: (filter: ListFilterModel) => void): string {
+  const filter = new ListFilterModel(GQL.FilterMode.Scenes, undefined);
+  configure(filter);
+  return `/scenes?${filter.makeQueryParameters()}`;
+}
+
+// scenes where a count field is exactly zero (no files / no performers / no tags)
+function zeroCountScenesUrl(type: CriterionType): string {
+  return scenesUrl((filter) => {
+    const criterion = filter.makeCriterion(type) as NumberCriterion;
+    criterion.modifier = GQL.CriterionModifier.Equals;
+    criterion.value = { value: 0, value2: undefined };
+    filter.criteria.push(criterion);
+  });
+}
+
+// Watched scenes, most-played first. play_count > 0 drops everything never
+// played, so the list is only what has actually been watched.
+function mostPlayedScenesUrl(): string {
+  return scenesUrl((filter) => {
+    const criterion = filter.makeCriterion("play_count") as NumberCriterion;
+    criterion.modifier = GQL.CriterionModifier.GreaterThan;
+    criterion.value = { value: 0, value2: undefined };
+    filter.criteria.push(criterion);
+    filter.sortBy = "play_count";
+    filter.sortDirection = GQL.SortDirectionEnum.Desc;
+  });
 }
 
 // ---- LibraryHealth ----
@@ -776,12 +768,27 @@ function LibraryHealth({ health, totalScenes }: { health: DHealthCounts; totalSc
   const history = useHistory();
 
   const items: HealthItem[] = [
-    { label: "Missing files",      hint: "Tracked but not on disk",    severity: "high", count: health.noFiles,      linkTo: "/scenes" },
+    // Each linkTo mirrors the matching count query in loadDashboard() above, so
+    // the list the user lands on holds exactly the number shown next to it.
+    { label: "Missing files",      hint: "Tracked but not on disk",    severity: "high", count: health.noFiles,      linkTo: zeroCountScenesUrl("file_count") },
     { label: "Duplicate scenes",   hint: "Matched by phash",           severity: "med",  count: health.duplicates,   linkTo: "/sceneDuplicateChecker" },
-    { label: "Low-res scenes",     hint: "Below 720p",                 severity: "low",  count: health.lowRes,       linkTo: "/scenes" },
-    { label: "Missing performers", hint: "No performer assigned",      severity: "low",  count: health.noPerformers, linkTo: `/scenes?c=("type":"performers","modifier":"IS_NULL")&sortby=date` },
-    { label: "Untagged scenes",    hint: "Zero tags assigned",         severity: "low",  count: health.untagged,     linkTo: "/scenes" },
-    { label: "Pending phashes",    hint: "Awaiting hash generation",   severity: "med",  count: health.missingPhash, linkTo: "/scenes" },
+    { label: "Low-res scenes",     hint: "Below 720p",                 severity: "low",  count: health.lowRes,       linkTo: scenesUrl((filter) => {
+        const criterion = filter.makeCriterion("resolution") as StringCriterion;
+        criterion.modifier = GQL.CriterionModifier.LessThan;
+        // ResolutionCriterion is a StringCriterion keyed by the display string;
+        // stringToResolution maps "720p" to ResolutionEnum.StandardHd.
+        criterion.value = "720p";
+        filter.criteria.push(criterion);
+      }) },
+    { label: "Missing performers", hint: "No performer assigned",      severity: "low",  count: health.noPerformers, linkTo: zeroCountScenesUrl("performer_count") },
+    { label: "Untagged scenes",    hint: "Zero tags assigned",         severity: "low",  count: health.untagged,      linkTo: zeroCountScenesUrl("tag_count") },
+    { label: "Pending phashes",    hint: "Awaiting hash generation",   severity: "med",  count: health.missingPhash, linkTo: scenesUrl((filter) => {
+        // is_missing:"phash" is the same backend path the count query uses
+        // (fingerprints_phash.fingerprint IS NULL), so the two always agree.
+        const criterion = filter.makeCriterion("is_missing") as StringCriterion;
+        criterion.value = "phash";
+        filter.criteria.push(criterion);
+      }) },
   ];
 
   // Score: average per-category health percentage (avoids double-counting overlap)
@@ -935,11 +942,7 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className="db-col">
             <LibraryHealth health={dashData.health} totalScenes={totalScenes} />
-            <TopStudios
-              studios={dashData.studios}
-              totalScenes={totalScenes}
-              ready={dashData.ready}
-            />
+            <TopStudios studios={dashData.studios} ready={dashData.ready} />
           </div>
         </div>
       </div>

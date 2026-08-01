@@ -350,7 +350,8 @@
 
 .db-leader__row {
   display: grid;
-  grid-template-columns: 26px 28px 1fr auto;
+  // Second track must track .db-leader__avatar's width.
+  grid-template-columns: 26px 56px 1fr auto;
   gap: 10px;
   align-items: center;
   padding: 8px 0;
@@ -366,15 +367,29 @@
 }
 
 .db-leader__avatar {
-  width: 28px;
-  height: 28px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 10.5px;
+  font-size: 21px;
   font-family: "IBM Plex Mono", monospace;
   color: var(--db-fg-2);
   letter-spacing: 0.02em;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  // Studio art is a wide wordmark/logo, not a portrait — cropping it to fill
+  // the circle cuts the name off, so fit the whole thing inside instead.
+  &--logo img {
+    object-fit: contain;
+    padding: 4px;
+  }
 }
 
 .db-leader__name {
@@ -414,69 +429,6 @@
   font-family: "IBM Plex Mono", monospace;
   font-size: 10.5px;
   color: var(--db-muted);
-}
-
-// ---- Studios ----
-.db-studios {
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: 16px;
-  align-items: center;
-}
-
-.db-studios__center-num {
-  font-size: 14px;
-  fill: var(--db-fg);
-  font-family: "IBM Plex Mono", monospace;
-}
-
-.db-studios__center-lbl {
-  font-size: 5px;
-  fill: var(--db-muted);
-  font-family: "IBM Plex Mono", monospace;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.db-studios__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  font-size: 12.5px;
-}
-
-.db-studios__row {
-  display: grid;
-  grid-template-columns: 10px 1fr auto auto;
-  gap: 8px;
-  align-items: center;
-  padding: 5px 6px;
-  border-radius: 3px;
-  cursor: pointer;
-
-  &.is-active { background: var(--db-raised); }
-}
-
-.db-studios__sw {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  display: block;
-}
-
-.db-studios__name { color: var(--db-fg-2); }
-
-.db-studios__pct,
-.db-studios__count {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 11.5px;
-  color: var(--db-muted);
-}
-
-.db-studios__count {
-  color: var(--db-fg);
-  min-width: 40px;
-  text-align: right;
 }
 
 // ---- Health ----
