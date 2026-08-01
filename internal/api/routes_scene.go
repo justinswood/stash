@@ -17,6 +17,7 @@ import (
 	"github.com/stashapp/stash/pkg/fsutil"
 	"github.com/stashapp/stash/pkg/logger"
 	"github.com/stashapp/stash/pkg/models"
+	"github.com/stashapp/stash/pkg/txn"
 	"github.com/stashapp/stash/pkg/utils"
 )
 
@@ -26,6 +27,7 @@ type SceneFinder interface {
 	FindByChecksum(ctx context.Context, checksum string) ([]*models.Scene, error)
 	FindByOSHash(ctx context.Context, oshash string) ([]*models.Scene, error)
 	GetCover(ctx context.Context, sceneID int) ([]byte, error)
+	GetCoverChecksum(ctx context.Context, sceneID int) (*string, error)
 }
 
 type SceneMarkerFinder interface {
@@ -244,6 +246,28 @@ func (rs sceneRoutes) streamSegment(w http.ResponseWriter, r *http.Request, stre
 
 func (rs sceneRoutes) Screenshot(w http.ResponseWriter, r *http.Request) {
 	scene := r.Context().Value(sceneKey).(*models.Scene)
+
+	// Scene cards draw the cover at a fraction of its stored size, so serve a
+	// thumbnail unless the caller asks for the original (the player poster does).
+	// Falls through to the full cover for animated images, missing covers and
+	// the legacy on-disk screenshot path.
+	if r.URL.Query().Get("full") != "true" {
+		served := false
+		_ = txn.WithReadTxn(r.Context(), rs.txnManager, func(ctx context.Context) error {
+			checksum, err := rs.sceneFinder.GetCoverChecksum(ctx, scene.ID)
+			if err != nil {
+				return err
+			}
+
+			served = serveBlobThumbnail(w, r, checksum, sceneCoverThumbnailSize, func() ([]byte, error) {
+				return rs.sceneFinder.GetCover(ctx, scene.ID)
+			})
+			return nil
+		})
+		if served {
+			return
+		}
+	}
 
 	ss := manager.SceneServer{
 		TxnManager:       rs.txnManager,

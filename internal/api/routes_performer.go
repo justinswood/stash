@@ -16,6 +16,7 @@ import (
 type PerformerFinder interface {
 	models.PerformerGetter
 	GetImage(ctx context.Context, performerID int) ([]byte, error)
+	GetImageChecksum(ctx context.Context, performerID int) (*string, error)
 }
 
 type sfwConfig interface {
@@ -45,12 +46,30 @@ func (rs performerRoutes) Image(w http.ResponseWriter, r *http.Request) {
 
 	var image []byte
 	if defaultParam != "true" {
+		// The detail page and the cropper need the original; grids don't.
+		full := r.URL.Query().Get("full") == "true"
+
+		served := false
 		readTxnErr := rs.withReadTxn(r, func(ctx context.Context) error {
+			if !full {
+				checksum, err := rs.performerFinder.GetImageChecksum(ctx, performer.ID)
+				if err != nil {
+					return err
+				}
+
+				served = serveBlobThumbnail(w, r, checksum, performerThumbnailSize, func() ([]byte, error) {
+					return rs.performerFinder.GetImage(ctx, performer.ID)
+				})
+				if served {
+					return nil
+				}
+			}
+
 			var err error
 			image, err = rs.performerFinder.GetImage(ctx, performer.ID)
 			return err
 		})
-		if errors.Is(readTxnErr, context.Canceled) {
+		if served || errors.Is(readTxnErr, context.Canceled) {
 			return
 		}
 		if readTxnErr != nil {

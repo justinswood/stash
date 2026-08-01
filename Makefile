@@ -41,7 +41,9 @@ GO_BUILD_TAGS := $(GO_BUILD_TAGS)
 GO_BUILD_TAGS += sqlite_stat4 sqlite_math_functions
 
 # set STASH_NOLEGACY environment variable or uncomment to disable legacy browser support
-# STASH_NOLEGACY := true
+# Enabled here: the legacy bundle is ~5.3MB raw / 1.5MB gzipped — larger than the
+# modern bundle — and is never executed by any browser this instance is used from.
+STASH_NOLEGACY := true
 
 # set STASH_SOURCEMAPS environment variable or uncomment to enable UI sourcemaps
 # STASH_SOURCEMAPS := true

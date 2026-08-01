@@ -34,6 +34,11 @@ services:
       - STASH_PORT=9999
       ## FlareSolverr URL for Cloudflare-protected scrapers
       - FLARESOLVERR_URL=http://flaresolverr:8191/v1
+      ## SQLite page cache, in KiB (negative = KiB, positive = pages).
+      ## Default is -2000 (2MB) against a ~46MB database. This is PER CONNECTION
+      ## and stash opens 10 read + 1 write (pkg/sqlite/database.go), so the cap is
+      ## ~352MB; SQLite fills it lazily and can never exceed the database size.
+      - STASH_SQLITE_CACHE_SIZE=-32768
     volumes:
       - /etc/localtime:/etc/localtime:ro
       ## Adjust below paths (the left part) to your liking.

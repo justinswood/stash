@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -122,6 +123,35 @@ func (e *ThumbnailEncoder) GetThumbnail(f models.File, maxSize int) ([]byte, err
 			return e.vips.ImageThumbnail(buf, maxSize)
 		}
 	}
+	return e.ffmpegImageThumbnail(buf, maxSize)
+}
+
+// GetThumbnailFromData returns a thumbnail of the supplied image data, resized
+// so its largest dimension is at most maxSize. It never upscales.
+//
+// This is the in-memory counterpart to GetThumbnail: performer photos and scene
+// covers live in the blob store rather than as scanned files on disk, so there
+// is no models.File to open.
+func (e *ThumbnailEncoder) GetThumbnailFromData(data []byte, maxSize int) ([]byte, error) {
+	// #2266 - don't generate a thumbnail for animated images; a frozen first
+	// frame is not a fair substitute for the image it would replace.
+	switch http.DetectContentType(data) {
+	case "image/gif":
+		return nil, fmt.Errorf("%w: %s", ErrNotSupportedForThumbnail, formatGif)
+	case "image/webp":
+		if isWebPAnimated(data) {
+			return nil, fmt.Errorf("%w: animated %s", ErrNotSupportedForThumbnail, formatWebP)
+		}
+	}
+
+	buf := bytes.NewBuffer(data)
+
+	// vips has issues loading files from stdin on Windows, and unlike GetThumbnail
+	// there is no path on disk to fall back to, so use ffmpeg there instead.
+	if e.vips != nil && runtime.GOOS != "windows" {
+		return e.vips.ImageThumbnail(buf, maxSize)
+	}
+
 	return e.ffmpegImageThumbnail(buf, maxSize)
 }
 

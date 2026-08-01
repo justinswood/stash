@@ -799,7 +799,13 @@ export const ScenePlayer: React.FC<IScenePlayerProps> = PatchComponent(
       if (!player) return;
 
       if (scene.paths.screenshot) {
-        player.poster(scene.paths.screenshot);
+        // The screenshot route serves a card-sized thumbnail by default; the
+        // poster fills the whole player, so ask for the original here. (The
+        // media session artwork below is a lock-screen thumbnail and is better
+        // off with the small one.)
+        const poster = new URL(scene.paths.screenshot, window.location.href);
+        poster.searchParams.set("full", "true");
+        player.poster(poster.toString());
       } else {
         player.poster("");
       }

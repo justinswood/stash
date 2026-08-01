@@ -297,7 +297,16 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
           return image;
         }
       }
-      return performerImage;
+      if (!performerImage) return performerImage;
+
+      // The image route serves a card-sized thumbnail by default. This <img> is
+      // also what the lightbox opens and what Cropper.js measures, and the
+      // cropper reports its selection in the element's *natural* pixels while
+      // the backend crops the stored original — so a downscaled source here
+      // would land the crop short by the scale factor. Ask for the original.
+      const fullURL = new URL(performerImage);
+      fullURL.searchParams.set("full", "true");
+      return fullURL.toString();
     }, [image, isEditing, performer.image_path]);
 
     const lightboxImages = useMemo(

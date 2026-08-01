@@ -1360,6 +1360,13 @@ func (qb *SceneStore) HasCover(ctx context.Context, sceneID int) (bool, error) {
 	return qb.HasImage(ctx, sceneID, sceneCoverBlobColumn)
 }
 
+// GetCoverChecksum returns the blob checksum of the scene's cover, or nil if it
+// has none. This is an indexed lookup that does not read the blob itself, so it
+// can be used to address a cached derivative without paying for the original.
+func (qb *SceneStore) GetCoverChecksum(ctx context.Context, sceneID int) (*string, error) {
+	return qb.getChecksum(ctx, sceneID, sceneCoverBlobColumn)
+}
+
 func (qb *SceneStore) UpdateCover(ctx context.Context, sceneID int, image []byte) error {
 	return qb.UpdateImage(ctx, sceneID, sceneCoverBlobColumn, image)
 }

@@ -754,6 +754,29 @@ func (_m *SceneReaderWriter) GetCover(ctx context.Context, sceneID int) ([]byte,
 	return r0, r1
 }
 
+// GetCoverChecksum provides a mock function with given fields: ctx, sceneID
+func (_m *SceneReaderWriter) GetCoverChecksum(ctx context.Context, sceneID int) (*string, error) {
+	ret := _m.Called(ctx, sceneID)
+
+	var r0 *string
+	if rf, ok := ret.Get(0).(func(context.Context, int) *string); ok {
+		r0 = rf(ctx, sceneID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
+		r1 = rf(ctx, sceneID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetFiles provides a mock function with given fields: ctx, relatedID
 func (_m *SceneReaderWriter) GetFiles(ctx context.Context, relatedID int) ([]*models.VideoFile, error) {
 	ret := _m.Called(ctx, relatedID)

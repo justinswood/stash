@@ -85,6 +85,7 @@ type PerformerReader interface {
 
 	All(ctx context.Context) ([]*Performer, error)
 	GetImage(ctx context.Context, performerID int) ([]byte, error)
+	GetImageChecksum(ctx context.Context, performerID int) (*string, error)
 	HasImage(ctx context.Context, performerID int) (bool, error)
 }
 

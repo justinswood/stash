@@ -111,6 +111,7 @@ type SceneReader interface {
 	Duration(ctx context.Context) (float64, error)
 	PlayDuration(ctx context.Context) (float64, error)
 	GetCover(ctx context.Context, sceneID int) ([]byte, error)
+	GetCoverChecksum(ctx context.Context, sceneID int) (*string, error)
 	HasCover(ctx context.Context, sceneID int) (bool, error)
 }
 

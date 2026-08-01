@@ -15,6 +15,7 @@ const thumbDirLength int = 2 // thumbDirDepth * thumbDirLength must be smaller t
 type generatedPaths struct {
 	Screenshots        string
 	Thumbnails         string
+	BlobThumbnails     string
 	Vtt                string
 	Markers            string
 	Transcodes         string
@@ -27,6 +28,7 @@ func newGeneratedPaths(path string) *generatedPaths {
 	gp := generatedPaths{}
 	gp.Screenshots = filepath.Join(path, "screenshots")
 	gp.Thumbnails = filepath.Join(path, "thumbnails")
+	gp.BlobThumbnails = filepath.Join(path, "blob_thumbnails")
 	gp.Vtt = filepath.Join(path, "vtt")
 	gp.Markers = filepath.Join(path, "markers")
 	gp.Transcodes = filepath.Join(path, "transcodes")
@@ -80,6 +82,18 @@ func (gp *generatedPaths) TempDir(pattern string) (string, error) {
 func (gp *generatedPaths) GetThumbnailPath(checksum string, width int) string {
 	fname := fmt.Sprintf("%s_%d.jpg", checksum, width)
 	return filepath.Join(gp.Thumbnails, fsutil.GetIntraDir(checksum, thumbDirDepth, thumbDirLength), fname)
+}
+
+// GetBlobThumbnailPath returns the cache path for a downscaled copy of a
+// blob-stored image (performer photo, scene cover), addressed by blob checksum.
+//
+// These deliberately live outside Thumbnails: CleanGeneratedJob.cleanThumbnailFiles
+// deletes anything under that directory whose name doesn't hash to a known
+// *image*, which is every file here. The whole directory is disposable — it is
+// rebuilt on demand — so deleting it is always safe.
+func (gp *generatedPaths) GetBlobThumbnailPath(checksum string, maxSize int) string {
+	fname := fmt.Sprintf("%s_%d.jpg", checksum, maxSize)
+	return filepath.Join(gp.BlobThumbnails, fsutil.GetIntraDir(checksum, thumbDirDepth, thumbDirLength), fname)
 }
 
 func (gp *generatedPaths) GetClipPreviewPath(checksum string, width int) string {

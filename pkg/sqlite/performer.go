@@ -833,6 +833,13 @@ func (qb *PerformerStore) HasImage(ctx context.Context, performerID int) (bool, 
 	return qb.blobJoinQueryBuilder.HasImage(ctx, performerID, performerImageBlobColumn)
 }
 
+// GetImageChecksum returns the blob checksum of the performer's image, or nil if
+// it has none. This is an indexed lookup that does not read the blob itself, so
+// it can be used to address a cached derivative without paying for the original.
+func (qb *PerformerStore) GetImageChecksum(ctx context.Context, performerID int) (*string, error) {
+	return qb.blobJoinQueryBuilder.getChecksum(ctx, performerID, performerImageBlobColumn)
+}
+
 func (qb *PerformerStore) UpdateImage(ctx context.Context, performerID int, image []byte) error {
 	return qb.blobJoinQueryBuilder.UpdateImage(ctx, performerID, performerImageBlobColumn, image)
 }
