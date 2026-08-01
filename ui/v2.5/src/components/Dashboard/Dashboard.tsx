@@ -36,6 +36,7 @@ interface DPlayedScene { id: string; last_played_at: string | null; play_duratio
 interface DHealthCounts {
   noFiles: number; duplicates: number; lowRes: number;
   noPerformers: number; untagged: number; missingPhash: number;
+  unmatched: number;
 }
 interface DashboardData {
   ready: boolean;
@@ -52,7 +53,7 @@ const INITIAL_DATA: DashboardData = {
   ready: false,
   stats: null, studios: [], performers: [], tags: [],
   addedScenes: [], playedScenes: [],
-  health: { noFiles: 0, duplicates: 0, lowRes: 0, noPerformers: 0, untagged: 0, missingPhash: 0 },
+  health: { noFiles: 0, duplicates: 0, lowRes: 0, noPerformers: 0, untagged: 0, missingPhash: 0, unmatched: 0 },
 };
 
 // Single hook fetches all dashboard data with 3 parallel raw-fetch calls (no Apollo).
@@ -91,6 +92,7 @@ function useDashboardData(): DashboardData {
         noPerformers: findScenes(filter:{per_page:0},scene_filter:{performer_count:{modifier:EQUALS,value:0}}) { count }
         untagged: findScenes(filter:{per_page:0},scene_filter:{tag_count:{modifier:EQUALS,value:0}}) { count }
         missingPhash: findScenes(filter:{per_page:0},scene_filter:{is_missing:"phash"}) { count }
+        unmatched: findScenes(filter:{per_page:0},scene_filter:{is_missing:"stash_id"}) { count }
       }`),
     ])
       .then(([main, activity, health]) => {
@@ -109,6 +111,7 @@ function useDashboardData(): DashboardData {
             noPerformers: n(health.data?.noPerformers?.count),
             untagged:     n(health.data?.untagged?.count),
             missingPhash: n(health.data?.missingPhash?.count),
+            unmatched:    n(health.data?.unmatched?.count),
           },
         });
       })
@@ -782,6 +785,13 @@ function LibraryHealth({ health, totalScenes }: { health: DHealthCounts; totalSc
       }) },
     { label: "Missing performers", hint: "No performer assigned",      severity: "low",  count: health.noPerformers, linkTo: zeroCountScenesUrl("performer_count") },
     { label: "Untagged scenes",    hint: "Zero tags assigned",         severity: "low",  count: health.untagged,      linkTo: zeroCountScenesUrl("tag_count") },
+    { label: "Unmatched scenes",   hint: "No StashDB ID — never identified", severity: "med", count: health.unmatched, linkTo: scenesUrl((filter) => {
+        // is_missing:"stash_id" is the same backend path the count query uses
+        // (no row in scene_stash_ids), so the two always agree.
+        const criterion = filter.makeCriterion("is_missing") as StringCriterion;
+        criterion.value = "stash_id";
+        filter.criteria.push(criterion);
+      }) },
     { label: "Pending phashes",    hint: "Awaiting hash generation",   severity: "med",  count: health.missingPhash, linkTo: scenesUrl((filter) => {
         // is_missing:"phash" is the same backend path the count query uses
         // (fingerprints_phash.fingerprint IS NULL), so the two always agree.
