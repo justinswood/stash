@@ -399,7 +399,18 @@ func (r *mutationResolver) PerformerImageCrop(ctx context.Context, input Perform
 			return err
 		}
 
-		return qb.UpdateImage(ctx, performerID, cropped)
+		if err := qb.UpdateImage(ctx, performerID, cropped); err != nil {
+			return err
+		}
+
+		// Bump updated_at. The image URL is "/performer/{id}/image?t=<updated_at>"
+		// and the route serves anything carrying a "t" param as immutable for a
+		// year, so a crop that leaves the timestamp alone produces a byte-identical
+		// URL and the browser (and the service worker's image cache) go on showing
+		// the pre-crop photo indefinitely. UpdateImage writes the blob join table
+		// only, so nothing else here touches the performer row.
+		_, err = qb.UpdatePartial(ctx, performerID, models.NewPerformerPartial())
+		return err
 	}); err != nil {
 		return nil, err
 	}

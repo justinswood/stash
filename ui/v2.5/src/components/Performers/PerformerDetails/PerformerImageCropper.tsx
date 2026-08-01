@@ -67,7 +67,12 @@ export const PerformerImageCropper: React.FC<IPerformerImageCropperProps> = ({
 
     cropperRef.current = new Cropper(image, {
       viewMode: 1,
-      initialAspectRatio: 2 / 3,
+      // Locked, not initialAspectRatio. Performer cards render the image in a
+      // 2:3 frame with object-fit: cover (Performers/styles.scss), so a crop of
+      // any other shape gets silently re-cropped there — a 1000x700 selection
+      // shows only 47% of its width on a card. Constraining the selection keeps
+      // what you pick and what the card shows the same thing.
+      aspectRatio: 2 / 3,
       movable: false,
       rotatable: false,
       scalable: false,
@@ -116,28 +121,17 @@ export const PerformerImageCropper: React.FC<IPerformerImageCropperProps> = ({
     setCropping(false);
 
     try {
+      // The mutation bumps the performer's updated_at, which changes the "t"
+      // param in image_path, so the re-rendered <img> requests a URL the browser
+      // has not cached. Don't rewrite image.src by hand: React re-renders from
+      // image_path straight afterwards and would put the cached URL back.
       await cropPerformerImage({ variables: { input } });
-
-      // Force reload the performer image to show the updated crop
-      const image = getPerformerImage();
-      if (image) {
-        const url = new URL(image.src, window.location.origin);
-        url.searchParams.set("t", Date.now().toString());
-        image.src = url.toString();
-      }
 
       Toast.success("Image cropped successfully");
     } catch (e) {
       Toast.error(e);
     }
-  }, [
-    destroyCropper,
-    setCropping,
-    cropPerformerImage,
-    performerId,
-    getPerformerImage,
-    Toast,
-  ]);
+  }, [destroyCropper, setCropping, cropPerformerImage, performerId, Toast]);
 
   const handleCropCancel = useCallback(() => {
     destroyCropper();
