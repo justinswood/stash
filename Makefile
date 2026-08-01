@@ -416,8 +416,20 @@ validate-backend: lint it
 validate: validate-ui validate-backend
 
 # locally builds and tags a 'stash/build' docker image
+#
+# Deliberately two passes. The Dockerfile's `frontend` (node/pnpm/vite) and
+# `backend` (go) stages have no dependency until the `COPY --from=frontend`, so
+# BuildKit runs them concurrently and both toolchains peak at the same moment.
+# On a small host that sum can exhaust RAM and swap together, at which point the
+# kernel thrashes instead of OOM-killing anything and the box has to be power
+# cycled. Building `--target frontend` first makes the frontend a cache hit in
+# the second pass, leaving only Go compiling: peak memory becomes
+# max(frontend, backend) rather than frontend + backend. Wall-clock cost is one
+# extra cache probe. GITHASH/STASH_VERSION come from build-info as `:=` vars, so
+# both passes get identical build args and the cache is not busted between them.
 .PHONY: docker-build
 docker-build: build-info
+	docker build --target frontend --build-arg GITHASH=$(GITHASH) --build-arg STASH_VERSION=$(STASH_VERSION) -f docker/build/x86_64/Dockerfile .
 	docker build --build-arg GITHASH=$(GITHASH) --build-arg STASH_VERSION=$(STASH_VERSION) -t stash/build -f docker/build/x86_64/Dockerfile .
 
 # locally builds and tags a 'stash/cuda-build' docker image
