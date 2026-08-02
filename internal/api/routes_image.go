@@ -18,6 +18,7 @@ import (
 	"github.com/stashapp/stash/pkg/image"
 	"github.com/stashapp/stash/pkg/logger"
 	"github.com/stashapp/stash/pkg/models"
+	"github.com/stashapp/stash/pkg/sqlite"
 	"github.com/stashapp/stash/pkg/utils"
 )
 
@@ -188,6 +189,21 @@ func (rs imageRoutes) ImageCtx(next http.Handler) http.Handler {
 		if image == nil {
 			http.Error(w, http.StatusText(404), 404)
 			return
+		}
+
+		// content scoping: a restricted account must not reach hidden media by
+		// its id. 404 rather than 403 — saying "forbidden" confirms it exists.
+		if sqlite.RestrictionsActive(r.Context()) {
+			visible := false
+			_ = rs.withReadTxn(r, func(ctx context.Context) error {
+				var err error
+				visible, err = sqlite.ImageVisible(ctx, image.ID)
+				return err
+			})
+			if !visible {
+				http.Error(w, http.StatusText(404), 404)
+				return
+			}
 		}
 
 		ctx := context.WithValue(r.Context(), imageKey, image)

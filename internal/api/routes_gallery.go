@@ -13,6 +13,7 @@ import (
 	"github.com/stashapp/stash/pkg/image"
 	"github.com/stashapp/stash/pkg/logger"
 	"github.com/stashapp/stash/pkg/models"
+	"github.com/stashapp/stash/pkg/sqlite"
 	"github.com/stashapp/stash/pkg/utils"
 )
 
@@ -71,6 +72,13 @@ func (rs galleryRoutes) Cover(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 
+	// These routes serve an image directly, bypassing ImageCtx, so the image's
+	// own visibility has to be checked here — a visible gallery can contain a
+	// hidden image.
+	if i != nil && !rs.imageVisible(r, i.ID) {
+		i = nil
+	}
+
 	if i == nil {
 		// fallback to default image
 		image := static.ReadAll(static.DefaultGalleryImage)
@@ -111,12 +119,27 @@ func (rs galleryRoutes) Preview(w http.ResponseWriter, r *http.Request) {
 
 		return nil
 	})
-	if i == nil {
+	if i == nil || !rs.imageVisible(r, i.ID) {
 		http.Error(w, http.StatusText(404), 404)
 		return
 	}
 
 	rs.imageRoutes.serveThumbnail(w, r, i, nil)
+}
+
+// imageVisible reports whether an image may be served to this request. Used by
+// the gallery routes, which serve images without passing through ImageCtx.
+func (rs galleryRoutes) imageVisible(r *http.Request, imageID int) bool {
+	if !sqlite.RestrictionsActive(r.Context()) {
+		return true
+	}
+	visible := false
+	_ = rs.withReadTxn(r, func(ctx context.Context) error {
+		var err error
+		visible, err = sqlite.ImageVisible(ctx, imageID)
+		return err
+	})
+	return visible
 }
 
 func (rs galleryRoutes) GalleryCtx(next http.Handler) http.Handler {
@@ -151,6 +174,21 @@ func (rs galleryRoutes) GalleryCtx(next http.Handler) http.Handler {
 		if gallery == nil {
 			http.Error(w, http.StatusText(404), 404)
 			return
+		}
+
+		// content scoping: a restricted account must not reach hidden media by
+		// its id. 404 rather than 403 — saying "forbidden" confirms it exists.
+		if sqlite.RestrictionsActive(r.Context()) {
+			visible := false
+			_ = rs.withReadTxn(r, func(ctx context.Context) error {
+				var err error
+				visible, err = sqlite.GalleryVisible(ctx, gallery.ID)
+				return err
+			})
+			if !visible {
+				http.Error(w, http.StatusText(404), 404)
+				return
+			}
 		}
 
 		ctx := context.WithValue(r.Context(), galleryKey, gallery)
