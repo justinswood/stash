@@ -20,7 +20,7 @@ func (r *queryResolver) FindGallery(ctx context.Context, id string) (ret *models
 		return nil, err
 	}
 
-	return ret, nil
+	return r.hideRestrictedGallery(ctx, ret)
 }
 
 func (r *queryResolver) FindGalleries(ctx context.Context, galleryFilter *models.GalleryFilterType, filter *models.FindFilterType, ids []string) (ret *FindGalleriesResultType, err error) {

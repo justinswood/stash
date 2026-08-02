@@ -20,7 +20,7 @@ func (r *queryResolver) FindPerformer(ctx context.Context, id string) (ret *mode
 		return nil, err
 	}
 
-	return ret, nil
+	return r.hideRestrictedPerformer(ctx, ret)
 }
 
 func (r *queryResolver) FindPerformers(ctx context.Context, performerFilter *models.PerformerFilterType, filter *models.FindFilterType, performerIDs []int, ids []string) (ret *FindPerformersResultType, err error) {

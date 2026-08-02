@@ -1013,6 +1013,8 @@ func (qb *SceneStore) makeQuery(ctx context.Context, sceneFilter *models.SceneFi
 		return nil, err
 	}
 
+	restrictScenes(ctx, &query)
+
 	if err := qb.setSceneSort(&query, findFilter); err != nil {
 		return nil, err
 	}

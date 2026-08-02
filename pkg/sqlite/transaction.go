@@ -135,5 +135,6 @@ func (db *Database) Repository() models.Repository {
 		User:           db.User,
 		UserAPIKey:     db.UserAPIKey,
 		UserCapability: db.UserCapability,
+		UserGroup:      db.UserGroup,
 	}
 }

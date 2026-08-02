@@ -43,7 +43,7 @@ func (r *queryResolver) FindImage(ctx context.Context, id *string, checksum *str
 		return nil, err
 	}
 
-	return image, nil
+	return r.hideRestrictedImage(ctx, image)
 }
 
 func (r *queryResolver) FindImages(

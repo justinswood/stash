@@ -19,6 +19,9 @@ type Query {
   findUserAPIKeys(user_id: ID): [UserAPIKey!]!
   "Every capability the schema defines, for building a permissions UI."
   allCapabilities: [Capability!]!
+  "Content-restriction groups. Requires MANAGE_USERS."
+  findUserGroups: [UserGroup!]!
+  findUserGroup(id: ID!): UserGroup
   findDefaultFilter(mode: FilterMode!): SavedFilter
     @deprecated(reason: "default filter now stored in UI config")
 
@@ -476,6 +479,13 @@ type Mutation {
 
   "Replace an account's capability overrides. Requires MANAGE_USERS."
   userCapabilitiesSet(input: UserCapabilitiesSetInput!): User!
+
+  "Create a content-restriction group. Requires MANAGE_USERS."
+  userGroupCreate(input: UserGroupCreateInput!): UserGroup!
+  "Update a content-restriction group. Requires MANAGE_USERS."
+  userGroupUpdate(input: UserGroupUpdateInput!): UserGroup!
+  "Delete a content-restriction group. Requires MANAGE_USERS."
+  userGroupDestroy(id: ID!): Boolean!
 
   "Change general configuration options"
   configureGeneral(input: ConfigGeneralInput!): ConfigGeneralResult!

@@ -859,6 +859,8 @@ func (qb *ImageStore) makeQuery(ctx context.Context, imageFilter *models.ImageFi
 		return nil, err
 	}
 
+	restrictImages(ctx, &query)
+
 	if err := qb.setImageSortAndPagination(&query, findFilter); err != nil {
 		return nil, err
 	}

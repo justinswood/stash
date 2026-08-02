@@ -72,6 +72,9 @@ func refreshDisabledUsers(ctx context.Context) {
 	if err := manager.GetInstance().RefreshDisabledUsers(ctx); err != nil {
 		logger.Errorf("error refreshing disabled user accounts: %v", err)
 	}
+	if err := manager.GetInstance().RefreshContentRestrictions(ctx); err != nil {
+		logger.Errorf("error refreshing content restrictions: %v", err)
+	}
 }
 
 func (r *mutationResolver) UserUpdate(ctx context.Context, input UserUpdateInput) (*models.User, error) {

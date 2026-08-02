@@ -1,0 +1,41 @@
+"""
+A user group carrying content visibility restrictions.
+
+Members do not see performers of an excluded gender, content featuring such a
+performer, or content carrying an excluded tag. A user in several groups is
+restricted by the union of their exclusions, so adding a group can only hide
+more, never reveal something another group hid.
+"""
+type UserGroup {
+  id: ID!
+  name: String!
+  description: String
+  "Accounts belonging to this group."
+  users: [User!]!
+  "Performer genders hidden from members."
+  excluded_genders: [GenderEnum!]!
+  "Tags hidden from members, and any content carrying them."
+  excluded_tags: [Tag!]!
+  created_at: Time!
+  updated_at: Time!
+}
+
+input UserGroupCreateInput {
+  name: String!
+  description: String
+  user_ids: [ID!]
+  excluded_genders: [GenderEnum!]
+  excluded_tag_ids: [ID!]
+}
+
+input UserGroupUpdateInput {
+  id: ID!
+  name: String
+  description: String
+  "Replaces the membership list entirely when supplied."
+  user_ids: [ID!]
+  "Replaces the excluded gender list entirely when supplied."
+  excluded_genders: [GenderEnum!]
+  "Replaces the excluded tag list entirely when supplied."
+  excluded_tag_ids: [ID!]
+}

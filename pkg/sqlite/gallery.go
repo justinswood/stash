@@ -734,6 +734,8 @@ func (qb *GalleryStore) makeQuery(ctx context.Context, galleryFilter *models.Gal
 		return nil, err
 	}
 
+	restrictGalleries(ctx, &query)
+
 	if err := qb.setGallerySort(&query, findFilter); err != nil {
 		return nil, err
 	}

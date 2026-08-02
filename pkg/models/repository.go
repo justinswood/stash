@@ -31,6 +31,7 @@ type Repository struct {
 	User           UserReaderWriter
 	UserAPIKey     UserAPIKeyReaderWriter
 	UserCapability UserCapabilityReaderWriter
+	UserGroup      UserGroupReaderWriter
 }
 
 func (r *Repository) WithTxn(ctx context.Context, fn txn.TxnFunc) error {

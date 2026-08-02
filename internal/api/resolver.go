@@ -66,6 +66,9 @@ func (r *Resolver) Scene() SceneResolver {
 func (r *Resolver) User() UserResolver {
 	return &userResolver{r}
 }
+func (r *Resolver) UserGroup() UserGroupResolver {
+	return &userGroupResolver{r}
+}
 func (r *Resolver) Image() ImageResolver {
 	return &imageResolver{r}
 }
@@ -126,6 +129,7 @@ type sceneMarkerResolver struct{ *Resolver }
 type imageResolver struct{ *Resolver }
 type studioResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
+type userGroupResolver struct{ *Resolver }
 
 // movie is group under the hood
 type groupResolver struct{ *Resolver }

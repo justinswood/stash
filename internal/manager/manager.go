@@ -78,6 +78,13 @@ type Manager struct {
 	// lookup per asset. Maintained by RefreshDisabledUsers.
 	disabledUsersMu sync.RWMutex
 	disabledUsers   map[string]struct{}
+
+	// userRestrictions maps username to the content that account must not see,
+	// resolved from its group membership. Cached in memory for the same reason
+	// as disabledUsers: the check runs on every request including media routes,
+	// where a per-asset database read would be too expensive.
+	userRestrictionsMu sync.RWMutex
+	userRestrictions   map[string]models.ContentRestrictions
 }
 
 var instance *Manager

@@ -38,7 +38,7 @@ func (r *queryResolver) FindScene(ctx context.Context, id *string, checksum *str
 		return nil, err
 	}
 
-	return scene, nil
+	return r.hideRestrictedScene(ctx, scene)
 }
 
 func (r *queryResolver) FindSceneByHash(ctx context.Context, input SceneHashInput) (*models.Scene, error) {
@@ -71,7 +71,7 @@ func (r *queryResolver) FindSceneByHash(ctx context.Context, input SceneHashInpu
 		return nil, err
 	}
 
-	return scene, nil
+	return r.hideRestrictedScene(ctx, scene)
 }
 
 func (r *queryResolver) FindScenes(

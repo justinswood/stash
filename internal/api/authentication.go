@@ -141,6 +141,17 @@ func authenticateHandler() func(http.Handler) http.Handler {
 
 			ctx = session.SetCurrentUserID(ctx, userID)
 
+			// Scope what this request may see, on every path including media
+			// routes — otherwise a restricted account could still fetch hidden
+			// content by its id. Served from an in-memory cache so it costs no
+			// database read per asset. Never applied when userID is empty, so
+			// background tasks and unauthenticated paths stay unscoped.
+			if userID != "" {
+				if cr := manager.GetInstance().ContentRestrictionsForUsername(userID); !cr.Empty() {
+					ctx = sqlite.WithContentRestrictions(ctx, cr)
+				}
+			}
+
 			// resolve the account id and attach it so per-user view/o history
 			// and resume position are scoped to this user. Done here (before the
 			// dataloaders middleware) so the request-scoped loaders capture it.
@@ -161,6 +172,7 @@ func authenticateHandler() func(http.Handler) http.Handler {
 					} else {
 						logger.Errorf("error loading capability overrides for %q: %v", userID, oErr)
 					}
+
 				}
 			}
 

@@ -251,6 +251,12 @@ func (s *Manager) postInit(ctx context.Context) error {
 		logger.Errorf("error loading disabled user accounts: %v", err)
 	}
 
+	// prime the per-account content restrictions so group membership applies
+	// from the first request after a restart
+	if err := s.RefreshContentRestrictions(ctx); err != nil {
+		logger.Errorf("error loading content restrictions: %v", err)
+	}
+
 	// Set the proxy if defined in config
 	if s.Config.GetProxy() != "" {
 		os.Setenv("HTTP_PROXY", s.Config.GetProxy())

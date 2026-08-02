@@ -41,9 +41,12 @@ var mutationCapabilities = map[string]models.Capability{
 	"changePassword": models.CapChangeOwnPassword,
 
 	// account management
-	"userCreate":  models.CapManageUsers,
-	"userUpdate":  models.CapManageUsers,
-	"userDestroy": models.CapManageUsers,
+	"userGroupCreate":  models.CapManageUsers,
+	"userGroupUpdate":  models.CapManageUsers,
+	"userGroupDestroy": models.CapManageUsers,
+	"userCreate":       models.CapManageUsers,
+	"userUpdate":       models.CapManageUsers,
+	"userDestroy":      models.CapManageUsers,
 
 	// instance configuration
 	"configureGeneral":   models.CapConfigure,
@@ -159,6 +162,10 @@ var queryCapabilities = map[string]models.Capability{
 
 	"findShareLinks": models.CapManageShares,
 	"findShareLink":  models.CapManageShares,
+
+	// content-restriction groups are part of account administration
+	"findUserGroups": models.CapManageUsers,
+	"findUserGroup":  models.CapManageUsers,
 }
 
 // requiredCapabilityForQuery returns the capability a query requires. Reads

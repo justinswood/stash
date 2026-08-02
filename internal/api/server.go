@@ -28,8 +28,8 @@ import (
 	"github.com/go-chi/httplog"
 	"github.com/gorilla/websocket"
 	"github.com/vearutop/statigz"
-	"golang.org/x/time/rate"
 	"github.com/vektah/gqlparser/v2/ast"
+	"golang.org/x/time/rate"
 
 	"github.com/stashapp/stash/internal/api/loaders"
 	"github.com/stashapp/stash/internal/build"

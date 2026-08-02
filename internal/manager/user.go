@@ -153,6 +153,67 @@ func (s *Manager) GetUserCapabilityOverrides(ctx context.Context, userID int) ([
 	return ret, err
 }
 
+// RefreshContentRestrictions reloads every account's resolved restrictions.
+// Call after any change to groups, group membership, or the accounts
+// themselves, so a restriction takes effect on the next request.
+func (s *Manager) RefreshContentRestrictions(ctx context.Context) error {
+	if s.Database == nil || s.Database.Ready() != nil {
+		return nil
+	}
+
+	set := make(map[string]models.ContentRestrictions)
+	if err := s.Repository.WithReadTxn(ctx, func(ctx context.Context) error {
+		users, err := s.Repository.User.All(ctx)
+		if err != nil {
+			return err
+		}
+		for _, u := range users {
+			r, err := s.Repository.UserGroup.RestrictionsForUser(ctx, u.ID)
+			if err != nil {
+				return err
+			}
+			if !r.Empty() {
+				set[u.Username] = r
+			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	s.userRestrictionsMu.Lock()
+	s.userRestrictions = set
+	s.userRestrictionsMu.Unlock()
+	return nil
+}
+
+// ContentRestrictionsForUsername returns cached restrictions for an account.
+// Safe to call on every request; empty for accounts in no group.
+func (s *Manager) ContentRestrictionsForUsername(username string) models.ContentRestrictions {
+	if username == "" {
+		return models.ContentRestrictions{}
+	}
+	s.userRestrictionsMu.RLock()
+	defer s.userRestrictionsMu.RUnlock()
+	return s.userRestrictions[username]
+}
+
+// GetContentRestrictionsForUser resolves what a user must not see, from the
+// union of their group memberships. Empty for accounts in no group, which is
+// every account until a group is created and populated.
+func (s *Manager) GetContentRestrictionsForUser(ctx context.Context, userID int) (models.ContentRestrictions, error) {
+	var ret models.ContentRestrictions
+	if s.Database == nil || s.Database.Ready() != nil {
+		return ret, nil
+	}
+	err := s.Repository.WithReadTxn(ctx, func(ctx context.Context) error {
+		var err error
+		ret, err = s.Repository.UserGroup.RestrictionsForUser(ctx, userID)
+		return err
+	})
+	return ret, err
+}
+
 // GetUserByUsername returns the user account for a username, or nil if none.
 func (s *Manager) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	if s.Database == nil || s.Database.Ready() != nil {
