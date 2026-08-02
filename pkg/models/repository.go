@@ -30,6 +30,7 @@ type Repository struct {
 	ShareLink      ShareLinkReaderWriter
 	User           UserReaderWriter
 	UserAPIKey     UserAPIKeyReaderWriter
+	UserCapability UserCapabilityReaderWriter
 }
 
 func (r *Repository) WithTxn(ctx context.Context, fn txn.TxnFunc) error {

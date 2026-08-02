@@ -10,6 +10,7 @@ import {
   useUserDestroyMutation,
 } from "src/core/generated-graphql";
 import { useToast } from "src/hooks/Toast";
+import { UserCapabilitiesModal } from "./UserCapabilitiesModal";
 
 const roleLabel: Record<UserRole, string> = {
   [UserRole.Admin]: "Admin",
@@ -132,6 +133,7 @@ export const SettingsUsersPanel: React.FC = () => {
   const { data, loading, refetch } = useFindUsersQuery();
   const [destroyUser] = useUserDestroyMutation();
   const [modalUser, setModalUser] = useState<UserDataFragment | null>(null);
+  const [capsUser, setCapsUser] = useState<UserDataFragment | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
   const isAdmin = !meData?.me || meData.me.role === UserRole.Admin;
@@ -192,6 +194,14 @@ export const SettingsUsersPanel: React.FC = () => {
                   </Button>
                   <Button
                     size="sm"
+                    variant="secondary"
+                    className="mr-2"
+                    onClick={() => setCapsUser(u)}
+                  >
+                    Permissions
+                  </Button>
+                  <Button
+                    size="sm"
                     variant="danger"
                     onClick={() => onDelete(u)}
                   >
@@ -219,6 +229,14 @@ export const SettingsUsersPanel: React.FC = () => {
         <UserModal
           user={modalUser}
           onClose={() => setModalUser(null)}
+          onSaved={() => refetch()}
+        />
+      )}
+      {capsUser && (
+        <UserCapabilitiesModal
+          userId={capsUser.id}
+          username={capsUser.username}
+          onClose={() => setCapsUser(null)}
           onSaved={() => refetch()}
         />
       )}

@@ -11,6 +11,7 @@ import (
 	"github.com/stashapp/stash/internal/manager"
 	"github.com/stashapp/stash/internal/manager/config"
 	"github.com/stashapp/stash/pkg/logger"
+	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/session"
 	"github.com/stashapp/stash/pkg/sqlite"
 )
@@ -150,6 +151,16 @@ func authenticateHandler() func(http.Handler) http.Handler {
 					// share this lookup with the permission checks (getCurrentUser)
 					// so they don't re-query the same account per request.
 					ctx = withCurrentUser(ctx, u)
+
+					// resolve capabilities once per request rather than per root
+					// field. On failure we attach nothing and currentCapabilities
+					// recomputes — it must not fall back to the role preset here,
+					// or a revoked capability would silently come back.
+					if o, oErr := manager.GetInstance().GetUserCapabilityOverrides(ctx, u.ID); oErr == nil {
+						ctx = withCurrentCapabilities(ctx, models.EffectiveCapabilities(u.Role, u.Disabled, o))
+					} else {
+						logger.Errorf("error loading capability overrides for %q: %v", userID, oErr)
+					}
 				}
 			}
 

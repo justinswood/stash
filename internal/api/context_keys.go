@@ -16,4 +16,5 @@ const (
 	pluginKey
 	shareKey
 	currentUserKey
+	currentCapabilitiesKey
 )

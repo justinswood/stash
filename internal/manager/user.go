@@ -138,6 +138,21 @@ func (s *Manager) IsUserDisabled(username string) bool {
 	return disabled
 }
 
+// GetUserCapabilityOverrides returns a user's per-account departures from their
+// role preset. An empty result is the normal case — presets cover most accounts.
+func (s *Manager) GetUserCapabilityOverrides(ctx context.Context, userID int) ([]models.UserCapabilityOverride, error) {
+	if s.Database == nil || s.Database.Ready() != nil {
+		return nil, nil
+	}
+	var ret []models.UserCapabilityOverride
+	err := s.Repository.WithReadTxn(ctx, func(ctx context.Context) error {
+		var err error
+		ret, err = s.Repository.UserCapability.FindByUserID(ctx, userID)
+		return err
+	})
+	return ret, err
+}
+
 // GetUserByUsername returns the user account for a username, or nil if none.
 func (s *Manager) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	if s.Database == nil || s.Database.Ready() != nil {

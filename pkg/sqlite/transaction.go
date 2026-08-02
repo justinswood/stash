@@ -134,5 +134,6 @@ func (db *Database) Repository() models.Repository {
 		ShareLink:      db.ShareLink,
 		User:           db.User,
 		UserAPIKey:     db.UserAPIKey,
+		UserCapability: db.UserCapability,
 	}
 }

@@ -4,8 +4,67 @@ type User {
   username: String!
   role: UserRole!
   disabled: Boolean!
+  "Everything this account may actually do: the role preset plus grants, minus revokes."
+  capabilities: [Capability!]!
+  "Departures from the role preset. Empty for most accounts."
+  capability_overrides: [UserCapabilityOverride!]!
   created_at: Time!
   updated_at: Time!
+}
+
+"""
+A single permission. Roles are presets over these; an account's effective set is
+its role preset plus per-user grants, minus per-user revokes.
+"""
+enum Capability {
+  "Browse the library. Without it an account can log in and see nothing."
+  VIEW_LIBRARY
+  "Record one's own view and o history."
+  OWN_HISTORY
+  "Change one's own password."
+  CHANGE_OWN_PASSWORD
+  "Create and update library metadata."
+  EDIT_METADATA
+  "Run scrapers, which fetch external URLs on the server's behalf."
+  SCRAPE
+  "Create, update and revoke share links, which publish content publicly."
+  MANAGE_SHARES
+  "Issue and revoke one's own API keys."
+  MANAGE_OWN_API_KEYS
+  "Delete library objects and files."
+  DELETE_CONTENT
+  "Create, update and delete accounts, and read others' accounts and API keys."
+  MANAGE_USERS
+  "Change instance configuration."
+  CONFIGURE
+  "Run library tasks: scan, generate, identify, clean, import/export, migrate, backup."
+  RUN_TASKS
+  "Read operational state: logs, job queue, system and DLNA status."
+  VIEW_SYSTEM
+  "Enumerate paths on the host filesystem."
+  BROWSE_FILESYSTEM
+  "Install, enable and run plugins and packages."
+  MANAGE_PLUGINS
+  "Run arbitrary SQL against the database."
+  EXECUTE_SQL
+}
+
+"A per-account departure from the role preset."
+type UserCapabilityOverride {
+  capability: Capability!
+  "True adds a capability the role lacks; false removes one the role includes."
+  granted: Boolean!
+}
+
+input UserCapabilityOverrideInput {
+  capability: Capability!
+  granted: Boolean!
+}
+
+input UserCapabilitiesSetInput {
+  user_id: ID!
+  "The complete override set. Any override omitted here is removed."
+  overrides: [UserCapabilityOverrideInput!]!
 }
 
 enum UserRole {

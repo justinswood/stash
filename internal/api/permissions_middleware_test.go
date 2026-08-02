@@ -6,199 +6,280 @@ import (
 	"github.com/stashapp/stash/pkg/models"
 )
 
-// TestRequiredRoleForMutation pins the permission policy itself, not the
-// mechanics of the lookup. Each case below is a decision about who may do what;
-// if one of them changes, that is a security-relevant change and should have to
-// be made deliberately.
-func TestRequiredRoleForMutation(t *testing.T) {
+// TestRequiredCapabilityForMutation pins the permission policy itself. Each case
+// is a decision about who may do what; if one changes, that is a
+// security-relevant change and should have to be made deliberately.
+func TestRequiredCapabilityForMutation(t *testing.T) {
 	cases := []struct {
 		field string
-		want  models.UserRole
+		want  models.Capability
 		why   string
 	}{
 		{
 			field: "sceneAddO",
-			want:  models.UserRoleReadOnly,
+			want:  models.CapOwnHistory,
 			why:   "recording your own history is the whole point of the READ_ONLY role",
 		},
 		{
 			field: "changePassword",
-			want:  models.UserRoleReadOnly,
+			want:  models.CapChangeOwnPassword,
 			why:   "every account must be able to rotate its own password",
 		},
 		{
-			field: "configureGeneral",
-			want:  models.UserRoleAdmin,
-			why:   "instance configuration is admin-only",
-		},
-		{
-			field: "userCreate",
-			want:  models.UserRoleAdmin,
-			why:   "user management is admin-only; otherwise a USER could mint an admin",
-		},
-		{
-			field: "sceneDestroy",
-			want:  models.UserRoleAdmin,
-			why:   "the USER role does not delete content; the *Destroy suffix enforces this",
-		},
-		{
 			field: "sceneUpdate",
-			want:  models.UserRoleUser,
+			want:  models.CapEditMetadata,
 			why:   "metadata editing is the USER role's core capability",
 		},
 		{
+			field: "sceneDestroy",
+			want:  models.CapDeleteContent,
+			why:   "the *Destroy suffix routes destructive operations away from plain editing",
+		},
+		{
+			field: "deleteFiles",
+			want:  models.CapDeleteContent,
+			why: "does not end in Destroy, so the suffix rule cannot catch it — it must " +
+				"stay explicitly listed or it would fall through to EDIT_METADATA",
+		},
+		{
+			field: "moveFiles",
+			want:  models.CapDeleteContent,
+			why:   "same trap as deleteFiles",
+		},
+		{
+			field: "configureGeneral",
+			want:  models.CapConfigure,
+			why:   "instance configuration is separable from running tasks",
+		},
+		{
+			field: "metadataScan",
+			want:  models.CapRunTasks,
+			why:   "someone may be trusted to scan the library without being trusted to reconfigure it",
+		},
+		{
+			field: "execSQL",
+			want:  models.CapExecuteSQL,
+			why:   "arbitrary SQL is worth revoking even from most admins",
+		},
+		{
+			field: "userCreate",
+			want:  models.CapManageUsers,
+			why:   "otherwise any account could mint an admin",
+		},
+		{
+			field: "installPackages",
+			want:  models.CapManagePlugins,
+			why:   "installing code on the host is separable from other admin duties",
+		},
+		{
 			field: "someMutationAddedLater",
-			want:  models.UserRoleUser,
-			why:   "an unclassified mutation must never default to admin, and must never be open",
+			want:  models.CapEditMetadata,
+			why: "an unclassified mutation must default to the least privileged thing " +
+				"that still makes sense — never to an admin capability, and never open",
+		},
+		{
+			field: "shareLinkCreate",
+			want:  models.CapManageShares,
+			why:   "share links publish content to the open internet with no authentication",
+		},
+		{
+			// Regression guard. shareLinkDestroy must resolve via the shareLink
+			// prefix, not the *Destroy suffix, or revoking a share would require
+			// DELETE_CONTENT.
+			field: "shareLinkDestroy",
+			want:  models.CapManageShares,
+			why:   "the shareLink prefix rule must be evaluated before the *Destroy suffix rule",
 		},
 		{
 			field: "userAPIKeyCreate",
-			want:  models.UserRoleUser,
-			why:   "a user issues their own API keys; the resolver requires admin only to target another account",
+			want:  models.CapManageOwnAPIKeys,
+			why:   "a user issues their own keys; the resolver requires MANAGE_USERS to target another account",
 		},
 		{
-			// Regression guard. Renaming this to userAPIKeyDestroy would make it
-			// admin-only via the *Destroy suffix rule and silently stop users
-			// revoking their own keys — a lockout that looks like a UI bug.
+			// Regression guard. Renaming this to userAPIKeyDestroy would route it
+			// to CapDeleteContent via the suffix rule and stop users revoking
+			// their own keys.
 			field: "userAPIKeyRevoke",
-			want:  models.UserRoleUser,
-			why:   "users must be able to revoke their own keys without an admin",
+			want:  models.CapManageOwnAPIKeys,
+			why:   "users must be able to revoke their own keys without admin rights",
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.field, func(t *testing.T) {
-			if got := requiredRoleForMutation(c.field); got != c.want {
-				t.Errorf("requiredRoleForMutation(%q) = %q, want %q\nwhy this matters: %s",
+			if got := requiredCapabilityForMutation(c.field); got != c.want {
+				t.Errorf("requiredCapabilityForMutation(%q) = %q, want %q\nwhy this matters: %s",
 					c.field, got, c.want, c.why)
 			}
 		})
 	}
 }
 
-// TestRequiredRoleForQuery pins which reads are open to every authenticated
-// role and which expose the host rather than the library. Before this existed,
-// the middleware checked Mutation only and every query below was readable by
-// any account, including READ_ONLY.
-func TestRequiredRoleForQuery(t *testing.T) {
+// TestRequiredCapabilityForQuery pins which reads are open to every account and
+// which expose the host rather than the library.
+func TestRequiredCapabilityForQuery(t *testing.T) {
 	cases := []struct {
 		field string
-		want  models.UserRole
+		want  models.Capability
 		why   string
 	}{
 		{
 			field: "findScenes",
-			want:  models.UserRoleReadOnly,
-			why:   "browsing the library is what every role is for; gating it would break READ_ONLY entirely",
-		},
-		{
-			field: "stats",
-			want:  models.UserRoleReadOnly,
-			why:   "aggregate counts are part of browsing",
+			want:  models.CapViewLibrary,
+			why:   "browsing the library is what every role is for",
 		},
 		{
 			field: "configuration",
-			want:  models.UserRoleReadOnly,
+			want:  models.CapViewLibrary,
 			why: "the UI cannot render without it; it redacts its own secrets for " +
 				"non-admins in resolver_query_configuration.go rather than being gated here",
 		},
 		{
-			field: "directory",
-			want:  models.UserRoleAdmin,
-			why:   "walks arbitrary host filesystem paths — the most sensitive read in the schema",
-		},
-		{
-			field: "findFiles",
-			want:  models.UserRoleAdmin,
-			why:   "returns real filesystem paths, which are not library content",
-		},
-		{
-			field: "logs",
-			want:  models.UserRoleAdmin,
-			why:   "logs leak paths, config and request detail",
-		},
-		{
-			field: "jobQueue",
-			want:  models.UserRoleAdmin,
-			why:   "exposes what the instance is doing and the paths it is doing it to",
-		},
-		{
-			field: "systemStatus",
-			want:  models.UserRoleAdmin,
-			why: "reports database/config location. Safe to gate: the Setup and Migrate " +
-				"flows that call it run with no credentials configured, or with the DB " +
-				"not yet open, and both of those resolve to admin already",
-		},
-		{
-			field: "listScrapers",
-			want:  models.UserRoleAdmin,
-			why:   "scraper config includes third-party endpoints",
-		},
-		{
-			field: "scrapeURL",
-			want:  models.UserRoleUser,
-			why: "makes the server fetch an arbitrary URL on the caller's behalf; " +
-				"READ_ONLY must not be able to drive outbound requests",
-		},
-		{
-			field: "scrapeSingleScene",
-			want:  models.UserRoleUser,
-			why:   "scraping is part of editing metadata, which READ_ONLY cannot do",
-		},
-		{
-			field: "findShareLinks",
-			want:  models.UserRoleUser,
-			why:   "matches the shareLink* mutations, which are USER-level",
-		},
-		{
 			// Regression guard. PluginsLoader in App.tsx calls `plugins` on every
-			// page load for every account to fetch the plugin JS/CSS list. Gating
-			// it to admin breaks the app for every non-admin user — the loader
-			// errors and plugin assets never load.
+			// page load for every account to fetch the plugin JS/CSS list.
+			// Restricting it breaks the app for everyone without MANAGE_PLUGINS.
 			field: "plugins",
-			want:  models.UserRoleReadOnly,
+			want:  models.CapViewLibrary,
 			why:   "the app-wide plugin loader calls this for every account on every page load",
 		},
 		{
 			field: "pluginTasks",
-			want:  models.UserRoleAdmin,
+			want:  models.CapManagePlugins,
 			why:   "unlike `plugins`, this is only reached from Settings > Tasks",
 		},
 		{
+			field: "directory",
+			want:  models.CapBrowseFilesystem,
+			why:   "walks arbitrary host filesystem paths — the most sensitive read in the schema",
+		},
+		{
+			field: "findFiles",
+			want:  models.CapBrowseFilesystem,
+			why:   "returns real filesystem paths, which are not library content",
+		},
+		{
+			field: "logs",
+			want:  models.CapViewSystem,
+			why:   "logs leak paths, config and request detail",
+		},
+		{
+			field: "systemStatus",
+			want:  models.CapViewSystem,
+			why: "safe to restrict: the Setup and Migrate flows that call it run with " +
+				"no credentials configured, or with the database not yet open, and both " +
+				"of those already resolve to the admin preset",
+		},
+		{
+			field: "findUsers",
+			want:  models.CapManageUsers,
+			why:   "other people's accounts are not library content",
+		},
+		{
+			field: "scrapeURL",
+			want:  models.CapScrape,
+			why:   "makes the server fetch an arbitrary URL on the caller's behalf",
+		},
+		{
+			field: "findShareLinks",
+			want:  models.CapManageShares,
+			why:   "matches the shareLink* mutations",
+		},
+		{
 			field: "someQueryAddedLater",
-			want:  models.UserRoleReadOnly,
+			want:  models.CapViewLibrary,
 			why: "an unclassified query defaults to readable — deliberate, so adding a " +
 				"content query cannot accidentally lock out READ_ONLY. A new query that " +
-				"exposes the host must be added to adminQueries explicitly",
+				"exposes the host must be listed in queryCapabilities explicitly",
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.field, func(t *testing.T) {
-			if got := requiredRoleForQuery(c.field); got != c.want {
-				t.Errorf("requiredRoleForQuery(%q) = %q, want %q\nwhy this matters: %s",
+			if got := requiredCapabilityForQuery(c.field); got != c.want {
+				t.Errorf("requiredCapabilityForQuery(%q) = %q, want %q\nwhy this matters: %s",
 					c.field, got, c.want, c.why)
 			}
 		})
 	}
 }
 
-// TestMeQueryIsExempt guards the one query that must answer for anyone at all.
-// The UI calls `me` to discover whether a session exists; if it were gated,
-// an unauthenticated caller would get a permission error instead of null and
-// the client could not tell "logged out" from "broken".
-func TestMeQueryIsExempt(t *testing.T) {
-	if !exemptQueries["me"] {
-		t.Error("`me` must bypass the role check so it can return null when logged out")
+// TestLegacyRoleBehaviourPreserved is the equivalence check for the capability
+// migration at the operation level: for a representative set of operations,
+// each role preset must allow exactly what that role allowed before.
+//
+// pkg/models tests the presets in isolation; this checks the mapping wired to
+// them, which is where a typo in queryCapabilities or mutationCapabilities
+// would actually bite.
+func TestLegacyRoleBehaviourPreserved(t *testing.T) {
+	type op struct {
+		field      string
+		isMutation bool
+	}
+
+	// field -> whether each role could perform it before capabilities existed
+	expected := map[op]map[models.UserRole]bool{
+		{"sceneAddO", true}: {
+			models.UserRoleReadOnly: true, models.UserRoleUser: true, models.UserRoleAdmin: true,
+		},
+		{"changePassword", true}: {
+			models.UserRoleReadOnly: true, models.UserRoleUser: true, models.UserRoleAdmin: true,
+		},
+		{"sceneUpdate", true}: {
+			models.UserRoleReadOnly: false, models.UserRoleUser: true, models.UserRoleAdmin: true,
+		},
+		{"sceneDestroy", true}: {
+			models.UserRoleReadOnly: false, models.UserRoleUser: false, models.UserRoleAdmin: true,
+		},
+		{"configureGeneral", true}: {
+			models.UserRoleReadOnly: false, models.UserRoleUser: false, models.UserRoleAdmin: true,
+		},
+		{"userCreate", true}: {
+			models.UserRoleReadOnly: false, models.UserRoleUser: false, models.UserRoleAdmin: true,
+		},
+		{"shareLinkCreate", true}: {
+			models.UserRoleReadOnly: false, models.UserRoleUser: true, models.UserRoleAdmin: true,
+		},
+		{"findScenes", false}: {
+			models.UserRoleReadOnly: true, models.UserRoleUser: true, models.UserRoleAdmin: true,
+		},
+		{"plugins", false}: {
+			models.UserRoleReadOnly: true, models.UserRoleUser: true, models.UserRoleAdmin: true,
+		},
+		{"directory", false}: {
+			models.UserRoleReadOnly: false, models.UserRoleUser: false, models.UserRoleAdmin: true,
+		},
+		{"scrapeURL", false}: {
+			models.UserRoleReadOnly: false, models.UserRoleUser: true, models.UserRoleAdmin: true,
+		},
+	}
+
+	for o, byRole := range expected {
+		for role, allowed := range byRole {
+			t.Run(o.field+"/"+string(role), func(t *testing.T) {
+				var required models.Capability
+				if o.isMutation {
+					required = requiredCapabilityForMutation(o.field)
+				} else {
+					required = requiredCapabilityForQuery(o.field)
+				}
+
+				got := models.CapabilitiesForRole(role).Has(required)
+				if got != allowed {
+					verb := "gained"
+					if allowed {
+						verb = "lost"
+					}
+					t.Errorf("%s on %q: %s access (needs %s). The capability presets must "+
+						"reproduce the pre-capability role behaviour exactly, or accounts "+
+						"silently change permissions on upgrade.", role, o.field, verb, required)
+				}
+			})
+		}
 	}
 }
 
-// TestDestroySuffixDoesNotOverrideExemptions guards the ordering inside
-// requiredRoleForMutation: the userAPIKey and shareLink prefix rules must be
-// evaluated before the *Destroy suffix rule, or those features become admin-only.
-func TestDestroySuffixDoesNotOverrideExemptions(t *testing.T) {
-	if got := requiredRoleForMutation("shareLinkDestroy"); got != models.UserRoleUser {
-		t.Errorf("shareLinkDestroy = %q, want USER: share links are a user-level feature, "+
-			"so the shareLink prefix rule must win over the *Destroy suffix rule", got)
+func TestMeQueryIsExempt(t *testing.T) {
+	if !exemptQueries["me"] {
+		t.Error("`me` must bypass the capability check so it can return null when logged out")
 	}
 }

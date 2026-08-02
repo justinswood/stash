@@ -30,3 +30,10 @@ mutation UserAPIKeyCreate($input: UserAPIKeyCreateInput!) {
 mutation UserAPIKeyRevoke($id: ID!) {
   userAPIKeyRevoke(id: $id)
 }
+
+mutation UserCapabilitiesSet($input: UserCapabilitiesSetInput!) {
+  userCapabilitiesSet(input: $input) {
+    ...UserData
+    ...UserCapabilityData
+  }
+}

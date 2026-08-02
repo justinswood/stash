@@ -25,7 +25,7 @@ func enabledAdminCount(users []*models.User) int {
 }
 
 func (r *mutationResolver) UserCreate(ctx context.Context, input UserCreateInput) (*models.User, error) {
-	if err := r.requireAdmin(ctx); err != nil {
+	if err := r.requireCap(ctx, models.CapManageUsers); err != nil {
 		return nil, err
 	}
 	if input.Username == "" || input.Password == "" {
@@ -75,7 +75,7 @@ func refreshDisabledUsers(ctx context.Context) {
 }
 
 func (r *mutationResolver) UserUpdate(ctx context.Context, input UserUpdateInput) (*models.User, error) {
-	if err := r.requireAdmin(ctx); err != nil {
+	if err := r.requireCap(ctx, models.CapManageUsers); err != nil {
 		return nil, err
 	}
 	id, err := strconv.Atoi(input.ID)
@@ -137,7 +137,7 @@ func (r *mutationResolver) UserUpdate(ctx context.Context, input UserUpdateInput
 }
 
 func (r *mutationResolver) UserDestroy(ctx context.Context, id string) (bool, error) {
-	if err := r.requireAdmin(ctx); err != nil {
+	if err := r.requireCap(ctx, models.CapManageUsers); err != nil {
 		return false, err
 	}
 	idInt, err := strconv.Atoi(id)

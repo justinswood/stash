@@ -33,7 +33,7 @@ func (r *Resolver) resolveTargetUserID(ctx context.Context, userID *string) (int
 		return 0, err
 	}
 	if target != current.ID {
-		if err := r.requireAdmin(ctx); err != nil {
+		if err := r.requireCap(ctx, models.CapManageUsers); err != nil {
 			return 0, err
 		}
 	}

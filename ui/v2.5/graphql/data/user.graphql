@@ -16,3 +16,11 @@ fragment UserAPIKeyData on UserAPIKey {
   created_at
   updated_at
 }
+
+fragment UserCapabilityData on User {
+  capabilities
+  capability_overrides {
+    capability
+    granted
+  }
+}

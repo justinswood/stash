@@ -70,7 +70,7 @@ func (r *mutationResolver) UserAPIKeyRevoke(ctx context.Context, id string) (boo
 		}
 		// owners revoke their own keys; anything else requires admin
 		if k.UserID != current.ID {
-			if err := r.requireAdmin(ctx); err != nil {
+			if err := r.requireCap(ctx, models.CapManageUsers); err != nil {
 				return err
 			}
 		}

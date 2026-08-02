@@ -21,6 +21,13 @@ func withCurrentUser(ctx context.Context, u *models.User) context.Context {
 	return context.WithValue(ctx, currentUserKey, u)
 }
 
+// withCurrentCapabilities attaches the request's effective capability set so
+// every root field in a query reuses one resolution instead of re-reading the
+// user's overrides per field.
+func withCurrentCapabilities(ctx context.Context, caps models.CapabilitySet) context.Context {
+	return context.WithValue(ctx, currentCapabilitiesKey, caps)
+}
+
 // getCurrentUser resolves the authenticated user's account, or nil when no user
 // is logged in. When the session user matches the config credential but has no
 // account row yet (break-glass admin, pre-bootstrap), a synthetic admin is
@@ -91,8 +98,62 @@ func (r *Resolver) currentRole(ctx context.Context) (models.UserRole, error) {
 	return u.Role, nil
 }
 
+// currentCapabilities returns the effective capability set for the request:
+//
+//	preset(role) + granted - revoked
+//
+// authenticateHandler resolves this once per GraphQL request and attaches it to
+// the context; this reuses that rather than re-reading the overrides for every
+// root field in a query.
+func (r *Resolver) currentCapabilities(ctx context.Context) (models.CapabilitySet, error) {
+	if cached, ok := ctx.Value(currentCapabilitiesKey).(models.CapabilitySet); ok && cached != nil {
+		return cached, nil
+	}
+
+	u, err := r.getCurrentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if u == nil {
+		// no account: open system before any credentials are configured, denied
+		// otherwise. Mirrors currentRole.
+		if !manager.GetInstance().Config.HasCredentials() {
+			return models.CapabilitiesForRole(models.UserRoleAdmin), nil
+		}
+		return models.CapabilitySet{}, nil
+	}
+
+	// A synthetic principal (database not open yet — the migrate path) has no
+	// row and therefore no overrides; its role preset is the whole answer.
+	if u.ID == 0 {
+		return models.CapabilitiesForRole(u.Role), nil
+	}
+
+	overrides, err := manager.GetInstance().GetUserCapabilityOverrides(ctx, u.ID)
+	if err != nil {
+		return nil, err
+	}
+	return models.EffectiveCapabilities(u.Role, u.Disabled, overrides), nil
+}
+
+// requireCap returns ErrPermission unless the current user holds the capability.
+func (r *Resolver) requireCap(ctx context.Context, c models.Capability) error {
+	caps, err := r.currentCapabilities(ctx)
+	if err != nil {
+		return err
+	}
+	if !caps.Has(c) {
+		return ErrPermission
+	}
+	return nil
+}
+
 // requireRole returns ErrPermission unless the current user's role is at least
 // the given minimum.
+//
+// Prefer requireCap: a role is a preset over capabilities, so a role check
+// ignores any per-user override. This remains for the few places where the
+// question genuinely is "is this an admin" rather than "may they do X".
 func (r *Resolver) requireRole(ctx context.Context, min models.UserRole) error {
 	role, err := r.currentRole(ctx)
 	if err != nil {

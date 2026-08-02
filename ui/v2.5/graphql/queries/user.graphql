@@ -21,3 +21,14 @@ query FindUserAPIKeys($user_id: ID) {
     ...UserAPIKeyData
   }
 }
+
+query AllCapabilities {
+  allCapabilities
+}
+
+query FindUserCapabilities($id: ID!) {
+  findUser(id: $id) {
+    ...UserData
+    ...UserCapabilityData
+  }
+}

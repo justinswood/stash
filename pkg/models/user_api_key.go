@@ -11,9 +11,9 @@ import (
 // and inherit that user's role, which is what makes a key revocable by
 // disabling or deleting its owner.
 type UserAPIKey struct {
-	ID   int    `db:"id" json:"id"`
-	UserID int  `db:"user_id" json:"user_id"`
-	Name string `db:"name" json:"name"`
+	ID     int    `db:"id" json:"id"`
+	UserID int    `db:"user_id" json:"user_id"`
+	Name   string `db:"name" json:"name"`
 	// KeyHash is the SHA-256 of the plaintext key. Never exposed through the API.
 	KeyHash []byte `db:"key_hash" json:"-"`
 	// Prefix is the leading plaintext characters, stored so the UI can
