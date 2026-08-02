@@ -17,3 +17,16 @@ mutation UserDestroy($id: ID!) {
 mutation ChangePassword($input: ChangePasswordInput!) {
   changePassword(input: $input)
 }
+
+mutation UserAPIKeyCreate($input: UserAPIKeyCreateInput!) {
+  userAPIKeyCreate(input: $input) {
+    key
+    api_key {
+      ...UserAPIKeyData
+    }
+  }
+}
+
+mutation UserAPIKeyRevoke($id: ID!) {
+  userAPIKeyRevoke(id: $id)
+}

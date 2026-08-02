@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/stashapp/stash/internal/manager"
+	"github.com/stashapp/stash/pkg/logger"
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/session"
 )
@@ -52,7 +53,15 @@ func (r *Resolver) getCurrentUser(ctx context.Context) (*models.User, error) {
 	}
 
 	if u == nil {
-		return &models.User{Username: *uid, Role: models.UserRoleAdmin}, nil
+		// The session (or config API key) names an account that does not exist.
+		// Previously this returned a synthetic admin, which made the single
+		// config API key an unconditional admin credential regardless of the
+		// users table. Deny instead, and say so — a silent lockout here is very
+		// hard to diagnose from the UI.
+		logger.Warnf("authenticated principal %q has no user account; denying. "+
+			"An admin account is normally seeded from the config credential at "+
+			"startup (EnsureBootstrapAdmin).", *uid)
+		return nil, nil
 	}
 	return u, nil
 }

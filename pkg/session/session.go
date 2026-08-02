@@ -50,10 +50,17 @@ var ErrUnauthorized = errors.New("unauthorized")
 // single config credential (break-glass admin).
 type UserValidator func(username, password string) (found bool, valid bool)
 
+// APIKeyResolver resolves a plaintext API key to the username of its owning
+// account. ok reports whether the key matched a live (non-disabled) account.
+// Backed by the user_api_keys table; set by the manager once the database is
+// available.
+type APIKeyResolver func(plaintextKey string) (username string, ok bool)
+
 type Store struct {
-	sessionStore *sessions.CookieStore
-	config       SessionConfig
-	validateUser UserValidator
+	sessionStore  *sessions.CookieStore
+	config        SessionConfig
+	validateUser  UserValidator
+	resolveAPIKey APIKeyResolver
 }
 
 func NewStore(c SessionConfig) *Store {
@@ -73,6 +80,12 @@ func NewStore(c SessionConfig) *Store {
 // is used (preserving single-user behaviour).
 func (s *Store) SetUserValidator(v UserValidator) {
 	s.validateUser = v
+}
+
+// SetAPIKeyResolver wires in per-user API key lookup. When unset, only the
+// single config API key is accepted (preserving pre-multiuser behaviour).
+func (s *Store) SetAPIKeyResolver(v APIKeyResolver) {
+	s.resolveAPIKey = v
 }
 
 func (s *Store) Login(w http.ResponseWriter, r *http.Request) error {
@@ -184,10 +197,18 @@ func (s *Store) Authenticate(w http.ResponseWriter, r *http.Request) (userID str
 	}
 
 	if apiKey != "" {
-		// match against configured API and set userID to the
-		// configured username. In future, we'll want to
-		// get the username from the key.
-		if c.GetAPIKey() != apiKey {
+		// per-user keys take precedence: a key that belongs to an account
+		// authenticates as that account and inherits its role.
+		if s.resolveAPIKey != nil {
+			if username, ok := s.resolveAPIKey(apiKey); ok {
+				return username, nil
+			}
+		}
+
+		// fall back to the single config API key. It resolves to the config
+		// username, which normally has a real bootstrap admin row — so it now
+		// carries that account's role rather than being unconditionally admin.
+		if c.GetAPIKey() == "" || c.GetAPIKey() != apiKey {
 			return "", ErrUnauthorized
 		}
 

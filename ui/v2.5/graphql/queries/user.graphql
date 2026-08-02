@@ -15,3 +15,9 @@ query FindUser($id: ID!) {
     ...UserData
   }
 }
+
+query FindUserAPIKeys($user_id: ID) {
+  findUserAPIKeys(user_id: $user_id) {
+    ...UserAPIKeyData
+  }
+}

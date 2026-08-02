@@ -6,6 +6,7 @@ import {
   useChangePasswordMutation,
 } from "src/core/generated-graphql";
 import { useToast } from "src/hooks/Toast";
+import { UserAPIKeys } from "./UserAPIKeys";
 
 const roleLabel: Record<UserRole, string> = {
   [UserRole.Admin]: "Admin",
@@ -99,6 +100,8 @@ export const SettingsAccountPanel: React.FC = () => {
           </Button>
         </Form>
       )}
+
+      {me && <UserAPIKeys />}
     </>
   );
 };

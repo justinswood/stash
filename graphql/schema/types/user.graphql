@@ -33,6 +33,37 @@ input UserUpdateInput {
   disabled: Boolean
 }
 
+"""
+A named, revocable API key belonging to a user account. Requests made with the
+key act as that account and inherit its role, so disabling or deleting the owner
+revokes the key. The key itself is stored only as a hash and is never returned
+after creation.
+"""
+type UserAPIKey {
+  id: ID!
+  user_id: ID!
+  name: String!
+  "Leading characters of the key, so it can be identified in a list. Not secret."
+  prefix: String!
+  last_used_at: Time
+  created_at: Time!
+  updated_at: Time!
+}
+
+"Returned only when a key is created."
+type UserAPIKeyCreated {
+  api_key: UserAPIKey!
+  "The plaintext key. Shown exactly once — it cannot be recovered afterwards."
+  key: String!
+}
+
+input UserAPIKeyCreateInput {
+  "The account to issue the key for. Defaults to the current user; another user requires admin."
+  user_id: ID
+  "A label to identify the key later."
+  name: String!
+}
+
 input ChangePasswordInput {
   "The current password. Required when a user changes their own password."
   current_password: String

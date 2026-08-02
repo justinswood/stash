@@ -29,6 +29,7 @@ type Repository struct {
 	SavedFilter    SavedFilterReaderWriter
 	ShareLink      ShareLinkReaderWriter
 	User           UserReaderWriter
+	UserAPIKey     UserAPIKeyReaderWriter
 }
 
 func (r *Repository) WithTxn(ctx context.Context, fn txn.TxnFunc) error {

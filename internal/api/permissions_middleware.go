@@ -85,6 +85,13 @@ func requiredRoleForMutation(field string) models.UserRole {
 	if strings.HasPrefix(field, "shareLink") {
 		return models.UserRoleUser
 	}
+	// API keys are managed by their owner; the resolvers require admin only to
+	// act on another account's keys. Note the mutation is userAPIKeyRevoke, not
+	// ...Destroy — renaming it would silently make it admin-only via the suffix
+	// rule below and stop users revoking their own keys.
+	if strings.HasPrefix(field, "userAPIKey") {
+		return models.UserRoleUser
+	}
 	if adminMutations[field] || strings.HasSuffix(field, "Destroy") {
 		return models.UserRoleAdmin
 	}

@@ -133,5 +133,6 @@ func (db *Database) Repository() models.Repository {
 		SavedFilter:    db.SavedFilter,
 		ShareLink:      db.ShareLink,
 		User:           db.User,
+		UserAPIKey:     db.UserAPIKey,
 	}
 }

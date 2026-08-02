@@ -6,3 +6,13 @@ fragment UserData on User {
   created_at
   updated_at
 }
+
+fragment UserAPIKeyData on UserAPIKey {
+  id
+  user_id
+  name
+  prefix
+  last_used_at
+  created_at
+  updated_at
+}

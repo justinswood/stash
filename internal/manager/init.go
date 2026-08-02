@@ -191,6 +191,7 @@ func (s *Manager) postInit(ctx context.Context) error {
 
 	s.SessionStore = session.NewStore(s.Config)
 	s.SessionStore.SetUserValidator(s.ValidateUserCredentials)
+	s.SessionStore.SetAPIKeyResolver(s.ResolveAPIKey)
 	s.PluginCache.RegisterSessionStore(s.SessionStore)
 
 	s.RefreshPluginCache()

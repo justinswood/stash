@@ -15,6 +15,8 @@ type Query {
   findUsers: [User!]!
   "A single user account by id. Admin only."
   findUser(id: ID!): User
+  "API keys for an account. Defaults to the current user; another user's keys require admin."
+  findUserAPIKeys(user_id: ID): [UserAPIKey!]!
   findDefaultFilter(mode: FilterMode!): SavedFilter
     @deprecated(reason: "default filter now stored in UI config")
 
@@ -464,6 +466,11 @@ type Mutation {
   userDestroy(id: ID!): Boolean!
   "Change the current user's own password (or, for admins, requires re-auth via current_password)."
   changePassword(input: ChangePasswordInput!): Boolean!
+
+  "Issue a new API key. Returns the plaintext key once — it cannot be retrieved again."
+  userAPIKeyCreate(input: UserAPIKeyCreateInput!): UserAPIKeyCreated!
+  "Revoke an API key. Users may revoke their own; admins may revoke anyone's."
+  userAPIKeyRevoke(id: ID!): Boolean!
 
   "Change general configuration options"
   configureGeneral(input: ConfigGeneralInput!): ConfigGeneralResult!
