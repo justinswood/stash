@@ -1,0 +1,15 @@
+mutation UserGroupCreate($input: UserGroupCreateInput!) {
+  userGroupCreate(input: $input) {
+    ...UserGroupData
+  }
+}
+
+mutation UserGroupUpdate($input: UserGroupUpdateInput!) {
+  userGroupUpdate(input: $input) {
+    ...UserGroupData
+  }
+}
+
+mutation UserGroupDestroy($id: ID!) {
+  userGroupDestroy(id: $id)
+}

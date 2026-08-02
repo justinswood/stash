@@ -1,0 +1,11 @@
+query FindUserGroups {
+  findUserGroups {
+    ...UserGroupData
+  }
+}
+
+query FindUserGroup($id: ID!) {
+  findUserGroup(id: $id) {
+    ...UserGroupData
+  }
+}

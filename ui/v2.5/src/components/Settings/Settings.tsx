@@ -19,6 +19,7 @@ import { SettingsLibraryPanel } from "./SettingsLibraryPanel";
 import { SettingsSecurityPanel } from "./SettingsSecurityPanel";
 import { SettingsShareLinksPanel } from "./SettingsShareLinksPanel";
 import { SettingsUsersPanel } from "./SettingsUsersPanel";
+import { SettingsUserGroupsPanel } from "./SettingsUserGroupsPanel";
 import { SettingsAccountPanel } from "./SettingsAccountPanel";
 import { SettingsThemePanel } from "./SettingsThemePanel";
 import { Capability, UserRole, useMeQuery } from "src/core/generated-graphql";
@@ -32,6 +33,7 @@ const validTabs = [
   "security",
   "share-links",
   "users",
+  "user-groups",
   "account",
   "theme",
   "metadata-providers",
@@ -59,6 +61,9 @@ const SettingTabs: React.FC<{ tab: TabKey }> = ({ tab }) => {
   // findShareLinks requires MANAGE_SHARES, so the tab would only error without
   // it. Not tied to isAdmin: MANAGE_SHARES can be granted to any account.
   const { allowed: canManageShares } = useCapability(Capability.ManageShares);
+  // Keyed on the capability rather than the admin role, so an account granted
+  // MANAGE_USERS can reach it without being made an admin.
+  const { allowed: canManageUsers } = useCapability(Capability.ManageUsers);
 
   const titleProps = useTitleProps({ id: "settings" });
 
@@ -107,6 +112,13 @@ const SettingTabs: React.FC<{ tab: TabKey }> = ({ tab }) => {
               <Nav.Item>
                 <LinkContainer to="/settings?tab=users">
                   <Nav.Link eventKey="users">Users</Nav.Link>
+                </LinkContainer>
+              </Nav.Item>
+            )}
+            {canManageUsers && (
+              <Nav.Item>
+                <LinkContainer to="/settings?tab=user-groups">
+                  <Nav.Link eventKey="user-groups">User Groups</Nav.Link>
                 </LinkContainer>
               </Nav.Item>
             )}
@@ -212,6 +224,9 @@ const SettingTabs: React.FC<{ tab: TabKey }> = ({ tab }) => {
             </Tab.Pane>
             <Tab.Pane eventKey="users" unmountOnExit>
               <SettingsUsersPanel />
+            </Tab.Pane>
+            <Tab.Pane eventKey="user-groups" unmountOnExit>
+              <SettingsUserGroupsPanel />
             </Tab.Pane>
             <Tab.Pane eventKey="account" unmountOnExit>
               <SettingsAccountPanel />

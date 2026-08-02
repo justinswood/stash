@@ -1,0 +1,16 @@
+fragment UserGroupData on UserGroup {
+  id
+  name
+  description
+  users {
+    id
+    username
+  }
+  excluded_genders
+  excluded_tags {
+    id
+    name
+  }
+  created_at
+  updated_at
+}
