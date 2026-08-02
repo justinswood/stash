@@ -122,6 +122,22 @@ func authenticateHandler() func(http.Handler) http.Handler {
 				}
 			}
 
+			// Reject a disabled account's surviving session. Disabled was
+			// previously only checked at login, so an account disabled while
+			// logged in kept full access — including media streaming — until
+			// its cookie expired. Checked here rather than only in the GraphQL
+			// layer so it covers the media routes too; backed by an in-memory
+			// set so it costs no database lookup per asset.
+			if userID != "" && manager.GetInstance().IsUserDisabled(userID) {
+				logger.Warnf("rejecting request for disabled account %q", userID)
+				if err := manager.GetInstance().SessionStore.Logout(w, r); err != nil {
+					logger.Errorf("error clearing session for disabled account: %v", err)
+				}
+				w.Header().Add("WWW-Authenticate", "FormBased")
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
 			ctx = session.SetCurrentUserID(ctx, userID)
 
 			// resolve the account id and attach it so per-user view/o history

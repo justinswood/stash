@@ -245,6 +245,12 @@ func (s *Manager) postInit(ctx context.Context) error {
 		logger.Errorf("error ensuring bootstrap admin account: %v", err)
 	}
 
+	// prime the disabled-account set so a disabled user's surviving session is
+	// rejected from the first request after a restart
+	if err := s.RefreshDisabledUsers(ctx); err != nil {
+		logger.Errorf("error loading disabled user accounts: %v", err)
+	}
+
 	// Set the proxy if defined in config
 	if s.Config.GetProxy() != "" {
 		os.Setenv("HTTP_PROXY", s.Config.GetProxy())

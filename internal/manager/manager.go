@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/remeh/sizedwaitgroup"
@@ -70,6 +71,13 @@ type Manager struct {
 
 	scanSubs      *subscriptionManager
 	scanScheduler *scanScheduler
+
+	// disabledUsers is the set of usernames whose accounts are disabled, kept in
+	// memory so authenticateHandler can reject a disabled account's existing
+	// session on *every* request — including media routes — without a database
+	// lookup per asset. Maintained by RefreshDisabledUsers.
+	disabledUsersMu sync.RWMutex
+	disabledUsers   map[string]struct{}
 }
 
 var instance *Manager

@@ -90,6 +90,54 @@ func (s *Manager) ValidateUserCredentials(username, password string) (found bool
 	return found, valid
 }
 
+// RefreshDisabledUsers reloads the in-memory set of disabled accounts. Call it
+// at startup and after any mutation that could change an account's disabled
+// state (create, update, delete), so a disable takes effect on the very next
+// request rather than whenever the user's session cookie happens to expire.
+func (s *Manager) RefreshDisabledUsers(ctx context.Context) error {
+	if s.Database == nil || s.Database.Ready() != nil {
+		return nil
+	}
+
+	set := make(map[string]struct{})
+	if err := s.Repository.WithReadTxn(ctx, func(ctx context.Context) error {
+		users, err := s.Repository.User.All(ctx)
+		if err != nil {
+			return err
+		}
+		for _, u := range users {
+			if u.Disabled {
+				set[u.Username] = struct{}{}
+			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	s.disabledUsersMu.Lock()
+	s.disabledUsers = set
+	s.disabledUsersMu.Unlock()
+	return nil
+}
+
+// IsUserDisabled reports whether the named account is disabled. Backed by an
+// in-memory set so it is safe to call on every request, including media routes
+// where a per-asset database lookup would be too expensive.
+//
+// Authoritative for non-GraphQL routes. The GraphQL path additionally re-checks
+// against the database in getCurrentUser, so a stale cache there cannot grant
+// access.
+func (s *Manager) IsUserDisabled(username string) bool {
+	if username == "" {
+		return false
+	}
+	s.disabledUsersMu.RLock()
+	defer s.disabledUsersMu.RUnlock()
+	_, disabled := s.disabledUsers[username]
+	return disabled
+}
+
 // GetUserByUsername returns the user account for a username, or nil if none.
 func (s *Manager) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	if s.Database == nil || s.Database.Ready() != nil {

@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/stashapp/stash/internal/manager"
+	"github.com/stashapp/stash/pkg/logger"
 	"github.com/stashapp/stash/pkg/models"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -57,7 +58,20 @@ func (r *mutationResolver) UserCreate(ctx context.Context, input UserCreateInput
 	}); err != nil {
 		return nil, err
 	}
+	refreshDisabledUsers(ctx)
 	return u, nil
+}
+
+// refreshDisabledUsers reloads the in-memory disabled-account set after a user
+// mutation, so a disable takes effect on the next request instead of when the
+// account's session cookie eventually expires. Best effort: the GraphQL path
+// re-checks against the database anyway (getCurrentUser), so a failure here
+// degrades to the pre-existing behaviour on media routes rather than granting
+// anything.
+func refreshDisabledUsers(ctx context.Context) {
+	if err := manager.GetInstance().RefreshDisabledUsers(ctx); err != nil {
+		logger.Errorf("error refreshing disabled user accounts: %v", err)
+	}
 }
 
 func (r *mutationResolver) UserUpdate(ctx context.Context, input UserUpdateInput) (*models.User, error) {
@@ -118,6 +132,7 @@ func (r *mutationResolver) UserUpdate(ctx context.Context, input UserUpdateInput
 	}); err != nil {
 		return nil, err
 	}
+	refreshDisabledUsers(ctx)
 	return ret, nil
 }
 
@@ -151,6 +166,7 @@ func (r *mutationResolver) UserDestroy(ctx context.Context, id string) (bool, er
 	}); err != nil {
 		return false, err
 	}
+	refreshDisabledUsers(ctx)
 	return true, nil
 }
 

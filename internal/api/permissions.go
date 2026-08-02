@@ -63,6 +63,14 @@ func (r *Resolver) getCurrentUser(ctx context.Context) (*models.User, error) {
 			"startup (EnsureBootstrapAdmin).", *uid)
 		return nil, nil
 	}
+
+	// A disabled account has no role, even if it holds a valid session cookie.
+	// authenticateHandler rejects these earlier from an in-memory set; this is
+	// the authoritative database-backed check, so a stale set cannot grant
+	// GraphQL access.
+	if u.Disabled {
+		return nil, nil
+	}
 	return u, nil
 }
 
