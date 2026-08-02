@@ -236,8 +236,12 @@ func TestLegacyRoleBehaviourPreserved(t *testing.T) {
 		{"userCreate", true}: {
 			models.UserRoleReadOnly: false, models.UserRoleUser: false, models.UserRoleAdmin: true,
 		},
+		// DELIBERATE DEPARTURE: USER could create share links before capabilities
+		// existed. Share links bypass authentication entirely (routes_share.go),
+		// so publishing one is now admin-by-default and granted per account.
+		// This is the only entry here that does not match the legacy behaviour.
 		{"shareLinkCreate", true}: {
-			models.UserRoleReadOnly: false, models.UserRoleUser: true, models.UserRoleAdmin: true,
+			models.UserRoleReadOnly: false, models.UserRoleUser: false, models.UserRoleAdmin: true,
 		},
 		{"findScenes", false}: {
 			models.UserRoleReadOnly: true, models.UserRoleUser: true, models.UserRoleAdmin: true,

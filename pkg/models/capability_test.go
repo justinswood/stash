@@ -25,12 +25,24 @@ func TestPresetsReproduceLegacyRoleBehaviour(t *testing.T) {
 		UserRoleUser: {
 			must: []Capability{
 				CapViewLibrary, CapOwnHistory, CapChangeOwnPassword,
-				CapEditMetadata, CapScrape, CapManageShares, CapManageOwnAPIKeys,
+				CapEditMetadata, CapScrape, CapManageOwnAPIKeys,
 			},
 			mustNot: []Capability{
 				// the USER role never deleted content or touched the system
 				CapDeleteContent, CapManageUsers, CapConfigure, CapRunTasks,
 				CapViewSystem, CapBrowseFilesystem, CapManagePlugins, CapExecuteSQL,
+
+				// DELIBERATE DEPARTURE from the pre-capability behaviour. The USER
+				// role could previously create share links, because shareLink*
+				// mutations were classified USER-level. That was too permissive: a
+				// share link is served by routes_share.go, which bypasses
+				// authentication and the tripwire entirely, so any USER could
+				// publish a performer's whole catalogue to the open internet.
+				//
+				// This is the one intentional behaviour change in the capability
+				// migration. Accounts that need it are granted MANAGE_SHARES
+				// individually — which is exactly what per-user overrides are for.
+				CapManageShares,
 			},
 		},
 		UserRoleAdmin: {

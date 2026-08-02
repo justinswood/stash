@@ -1,6 +1,9 @@
 query Me {
   me {
     ...UserData
+    # Fetched here rather than in the UserData fragment so that findUsers does
+    # not resolve capabilities per row (each one reads that user's overrides).
+    capabilities
   }
 }
 

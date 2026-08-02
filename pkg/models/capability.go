@@ -146,10 +146,17 @@ var (
 	userCaps = append(append([]Capability{}, readOnlyCaps...),
 		CapEditMetadata,
 		CapScrape,
-		CapManageShares,
 		CapManageOwnAPIKeys,
 	)
+	// CapManageShares is deliberately NOT in the USER preset. A share link is
+	// served by routes_share.go, which bypasses authentication and the external
+	// access tripwire entirely — the token is the only credential. Creating one
+	// publishes a scene, or a performer's whole catalogue, to anyone on the
+	// internet who has the URL. That is a different kind of decision from
+	// editing metadata, so it is admin-by-default and granted per account to
+	// anyone else who needs it.
 	adminCaps = append(append([]Capability{}, userCaps...),
+		CapManageShares,
 		CapDeleteContent,
 		CapManageUsers,
 		CapConfigure,

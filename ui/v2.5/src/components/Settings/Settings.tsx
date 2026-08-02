@@ -21,7 +21,8 @@ import { SettingsShareLinksPanel } from "./SettingsShareLinksPanel";
 import { SettingsUsersPanel } from "./SettingsUsersPanel";
 import { SettingsAccountPanel } from "./SettingsAccountPanel";
 import { SettingsThemePanel } from "./SettingsThemePanel";
-import { UserRole, useMeQuery } from "src/core/generated-graphql";
+import { Capability, UserRole, useMeQuery } from "src/core/generated-graphql";
+import { useCapability } from "src/hooks/useCapability";
 import Changelog from "../Changelog/Changelog";
 
 const validTabs = [
@@ -55,6 +56,9 @@ const SettingTabs: React.FC<{ tab: TabKey }> = ({ tab }) => {
 
   const { data: meData } = useMeQuery();
   const isAdmin = !meData?.me || meData.me.role === UserRole.Admin;
+  // findShareLinks requires MANAGE_SHARES, so the tab would only error without
+  // it. Not tied to isAdmin: MANAGE_SHARES can be granted to any account.
+  const { allowed: canManageShares } = useCapability(Capability.ManageShares);
 
   const titleProps = useTitleProps({ id: "settings" });
 
@@ -92,11 +96,13 @@ const SettingTabs: React.FC<{ tab: TabKey }> = ({ tab }) => {
                 </Nav.Link>
               </LinkContainer>
             </Nav.Item>
-            <Nav.Item>
-              <LinkContainer to="/settings?tab=share-links">
-                <Nav.Link eventKey="share-links">Share Links</Nav.Link>
-              </LinkContainer>
-            </Nav.Item>
+            {canManageShares && (
+              <Nav.Item>
+                <LinkContainer to="/settings?tab=share-links">
+                  <Nav.Link eventKey="share-links">Share Links</Nav.Link>
+                </LinkContainer>
+              </Nav.Item>
+            )}
             {isAdmin && (
               <Nav.Item>
                 <LinkContainer to="/settings?tab=users">

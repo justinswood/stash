@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Dropdown } from "react-bootstrap";
-import { ShareType } from "src/core/generated-graphql";
+import { Capability, ShareType } from "src/core/generated-graphql";
+import { useCapability } from "src/hooks/useCapability";
 import { CreateShareModal } from "./CreateShareModal";
 
 interface IProps {
@@ -21,6 +22,14 @@ export const ShareButton: React.FC<IProps> = ({
   label,
 }) => {
   const [show, setShow] = useState(false);
+  const { allowed } = useCapability(Capability.ManageShares);
+
+  // Hidden rather than disabled: an account without MANAGE_SHARES cannot create
+  // a link at all, so a greyed-out control would only invite the question of
+  // how to enable it. Enforcement is server-side regardless.
+  if (!allowed) {
+    return null;
+  }
 
   const text = label ?? "Share…";
 
