@@ -57,7 +57,7 @@ func (qb *studioFilterHandler) criterionHandler() criterionHandler {
 		stringCriterionHandler(studioFilter.Details, studioTable+".details"),
 		qb.urlsCriterionHandler(studioFilter.URL),
 		intCriterionHandler(studioFilter.Rating100, studioTable+".rating", nil),
-		boolCriterionHandler(studioFilter.Favorite, studioTable+".favorite", nil),
+		qb.favoriteCriterionHandler(studioFilter.Favorite),
 		boolCriterionHandler(studioFilter.IgnoreAutoTag, studioTable+".ignore_auto_tag", nil),
 
 		criterionHandlerFunc(func(ctx context.Context, f *filterBuilder) {
@@ -243,4 +243,20 @@ func (qb *studioFilterHandler) tagsCriterionHandler(tags *models.HierarchicalMul
 	}
 
 	return h.handler(tags)
+}
+
+// favoriteCriterionHandler filters on the *current user's* favourites
+// (migration 83) rather than the legacy global column.
+func (qb *studioFilterHandler) favoriteCriterionHandler(favorite *bool) criterionHandlerFunc {
+	return func(ctx context.Context, f *filterBuilder) {
+		if favorite == nil {
+			return
+		}
+		expr := favoriteExistsSQL(ctx, studioFavoritesTable, "studio_id", "studios.id")
+		if *favorite {
+			f.addWhere(expr)
+		} else {
+			f.addWhere("NOT (" + expr + ")")
+		}
+	}
 }

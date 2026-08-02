@@ -212,6 +212,14 @@ func (qb *TagStore) Create(ctx context.Context, newObject *models.Tag) error {
 		}
 	}
 
+	// favourites are per-user (migration 83); a favourite set at creation
+	// belongs to the acting user, not the row
+	if newObject.Favorite {
+		if err := setFavorite(ctx, tagFavoritesTable, "tag_id", id, true); err != nil {
+			return err
+		}
+	}
+
 	updated, err := qb.find(ctx, id)
 	if err != nil {
 		return fmt.Errorf("finding after create: %w", err)
@@ -223,6 +231,16 @@ func (qb *TagStore) Create(ctx context.Context, newObject *models.Tag) error {
 }
 
 func (qb *TagStore) UpdatePartial(ctx context.Context, id int, partial models.TagPartial) (*models.Tag, error) {
+	// favourites are per-user (migration 83), so this goes to the join table
+	// for the acting user rather than the legacy column. Cleared from the
+	// partial so fromPartial does not also write the column.
+	if partial.Favorite.Set {
+		if err := setFavorite(ctx, tagFavoritesTable, "tag_id", id, partial.Favorite.Value); err != nil {
+			return nil, err
+		}
+		partial.Favorite = models.OptionalBool{}
+	}
+
 	r := tagRowRecord{
 		updateRecord{
 			Record: make(exp.Record),
@@ -400,6 +418,20 @@ func (qb *TagStore) getMany(ctx context.Context, q *goqu.SelectDataset) ([]*mode
 		return nil
 	}); err != nil {
 		return nil, err
+	}
+
+	// favourites are per-user (migration 83); the legacy `favorite` column is
+	// no longer authoritative, so overwrite whatever the row scan produced
+	ids := make([]int, 0, len(ret))
+	for _, o := range ret {
+		ids = append(ids, o.ID)
+	}
+	favs, err := loadFavorites(ctx, tagFavoritesTable, "tag_id", ids)
+	if err != nil {
+		return nil, err
+	}
+	for _, o := range ret {
+		o.Favorite = favs[o.ID]
 	}
 
 	return ret, nil

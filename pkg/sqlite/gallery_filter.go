@@ -402,20 +402,15 @@ func (qb *galleryFilterHandler) performerTagsCriterionHandler(tags *models.Hiera
 
 func (qb *galleryFilterHandler) performerFavoriteCriterionHandler(performerfavorite *bool) criterionHandlerFunc {
 	return func(ctx context.Context, f *filterBuilder) {
-		if performerfavorite != nil {
-			f.addLeftJoin("performers_galleries", "", "galleries.id = performers_galleries.gallery_id")
-
-			if *performerfavorite {
-				// contains at least one favorite
-				f.addLeftJoin("performers", "", "performers.id = performers_galleries.performer_id")
-				f.addWhere("performers.favorite = 1")
-			} else {
-				// contains zero favorites
-				f.addLeftJoin(`(SELECT performers_galleries.gallery_id as id FROM performers_galleries 
-JOIN performers ON performers.id = performers_galleries.performer_id
-GROUP BY performers_galleries.gallery_id HAVING SUM(performers.favorite) = 0)`, "nofaves", "galleries.id = nofaves.id")
-				f.addWhere("performers_galleries.gallery_id IS NULL OR nofaves.id IS NOT NULL")
-			}
+		if performerfavorite == nil {
+			return
+		}
+		// per-user favourites (migration 83)
+		expr := performerFavoriteExistsSQL(ctx, "performers_galleries", "gallery_id", "galleries.id")
+		if *performerfavorite {
+			f.addWhere(expr)
+		} else {
+			f.addWhere("NOT (" + expr + ")")
 		}
 	}
 }

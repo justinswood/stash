@@ -80,7 +80,7 @@ func (qb *performerFilterHandler) criterionHandler() criterionHandler {
 		stringCriterionHandler(filter.Disambiguation, tableName+".disambiguation"),
 		stringCriterionHandler(filter.Details, tableName+".details"),
 
-		boolCriterionHandler(filter.FilterFavorites, tableName+".favorite", nil),
+		qb.favoriteCriterionHandler(filter.FilterFavorites),
 		boolCriterionHandler(filter.IgnoreAutoTag, tableName+".ignore_auto_tag", nil),
 
 		yearFilterCriterionHandler(filter.BirthYear, tableName+".birthdate"),
@@ -679,6 +679,22 @@ func (qb *performerFilterHandler) appearsWithCriterionHandler(performers *models
 			f.addWith(fmt.Sprintf("%s AS (%s)", derivedPerformerPerformersTable, strings.Join(unions, " UNION ")))
 
 			f.addInnerJoin(derivedPerformerPerformersTable, "", fmt.Sprintf("performers.id = %s.performer_id", derivedPerformerPerformersTable))
+		}
+	}
+}
+
+// favoriteCriterionHandler filters on the *current user's* favourites
+// (migration 83) rather than the legacy global column.
+func (qb *performerFilterHandler) favoriteCriterionHandler(favorite *bool) criterionHandlerFunc {
+	return func(ctx context.Context, f *filterBuilder) {
+		if favorite == nil {
+			return
+		}
+		expr := favoriteExistsSQL(ctx, performerFavoritesTable, "performer_id", "performers.id")
+		if *favorite {
+			f.addWhere(expr)
+		} else {
+			f.addWhere("NOT (" + expr + ")")
 		}
 	}
 }

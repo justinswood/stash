@@ -263,20 +263,15 @@ func (qb *imageFilterHandler) performerCountCriterionHandler(performerCount *mod
 
 func (qb *imageFilterHandler) performerFavoriteCriterionHandler(performerfavorite *bool) criterionHandlerFunc {
 	return func(ctx context.Context, f *filterBuilder) {
-		if performerfavorite != nil {
-			f.addLeftJoin("performers_images", "", "images.id = performers_images.image_id")
-
-			if *performerfavorite {
-				// contains at least one favorite
-				f.addLeftJoin("performers", "", "performers.id = performers_images.performer_id")
-				f.addWhere("performers.favorite = 1")
-			} else {
-				// contains zero favorites
-				f.addLeftJoin(`(SELECT performers_images.image_id as id FROM performers_images
-JOIN performers ON performers.id = performers_images.performer_id
-GROUP BY performers_images.image_id HAVING SUM(performers.favorite) = 0)`, "nofaves", "images.id = nofaves.id")
-				f.addWhere("performers_images.image_id IS NULL OR nofaves.id IS NOT NULL")
-			}
+		if performerfavorite == nil {
+			return
+		}
+		// per-user favourites (migration 83)
+		expr := performerFavoriteExistsSQL(ctx, "performers_images", "image_id", "images.id")
+		if *performerfavorite {
+			f.addWhere(expr)
+		} else {
+			f.addWhere("NOT (" + expr + ")")
 		}
 	}
 }

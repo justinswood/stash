@@ -65,7 +65,7 @@ func (qb *tagFilterHandler) criterionHandler() criterionHandler {
 		stringCriterionHandler(tagFilter.SortName, tagTable+".sort_name"),
 		qb.aliasCriterionHandler(tagFilter.Aliases),
 
-		boolCriterionHandler(tagFilter.Favorite, tagTable+".favorite", nil),
+		qb.favoriteCriterionHandler(tagFilter.Favorite),
 		stringCriterionHandler(tagFilter.Description, tagTable+".description"),
 		boolCriterionHandler(tagFilter.IgnoreAutoTag, tagTable+".ignore_auto_tag", nil),
 
@@ -225,6 +225,22 @@ func (qb *tagFilterHandler) markerCountCriterionHandler(markerCount *models.IntC
 			clause, args := getIntCriterionWhereClause("count(distinct scene_markers.id)", *markerCount)
 
 			f.addHaving(clause, args...)
+		}
+	}
+}
+
+// favoriteCriterionHandler filters on the *current user's* favourites
+// (migration 83) rather than the legacy global column.
+func (qb *tagFilterHandler) favoriteCriterionHandler(favorite *bool) criterionHandlerFunc {
+	return func(ctx context.Context, f *filterBuilder) {
+		if favorite == nil {
+			return
+		}
+		expr := favoriteExistsSQL(ctx, tagFavoritesTable, "tag_id", "tags.id")
+		if *favorite {
+			f.addWhere(expr)
+		} else {
+			f.addWhere("NOT (" + expr + ")")
 		}
 	}
 }
