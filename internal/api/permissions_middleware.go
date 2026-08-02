@@ -125,12 +125,16 @@ func requiredCapabilityForMutation(field string) models.Capability {
 
 // queryCapabilities maps queries that expose the host rather than the library.
 var queryCapabilities = map[string]models.Capability{
-	// operational state
-	"logs":         models.CapViewSystem,
-	"jobQueue":     models.CapViewSystem,
-	"findJob":      models.CapViewSystem,
-	"systemStatus": models.CapViewSystem,
-	"dlnaStatus":   models.CapViewSystem,
+	// operational state.
+	//
+	// NOTE: systemStatus, jobQueue and findJob are deliberately absent. The app
+	// fetches all three on every page load for every account — systemStatus to
+	// decide whether to render Setup/Migrate, jobQueue on a poll — and a hard
+	// denial there leaves the UI spinning forever with no visible error. Their
+	// resolvers redact instead: systemStatus blanks the host paths, and the job
+	// queries return empty for accounts without VIEW_SYSTEM.
+	"logs":       models.CapViewSystem,
+	"dlnaStatus": models.CapViewSystem,
 
 	// the host filesystem. `directory` walks arbitrary paths, and the file and
 	// folder finders return real paths — the most sensitive reads in the schema.

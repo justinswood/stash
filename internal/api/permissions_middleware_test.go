@@ -158,16 +158,32 @@ func TestRequiredCapabilityForQuery(t *testing.T) {
 			why:   "returns real filesystem paths, which are not library content",
 		},
 		{
-			field: "logs",
-			want:  models.CapViewSystem,
-			why:   "logs leak paths, config and request detail",
+			// Regression guard, and a correction. This was CapViewSystem, on the
+			// reasoning that only Setup/Migrate called it. That was wrong: the app
+			// fetches it on every page load for every account, and denying it left
+			// every non-admin login stuck on a loading spinner with no error shown.
+			// It now redacts the host paths in its resolver instead.
+			field: "systemStatus",
+			want:  models.CapViewLibrary,
+			why:   "the app cannot boot without it; its resolver blanks the host paths instead",
 		},
 		{
-			field: "systemStatus",
+			// Same failure: the UI polls the job queue for every account, so a
+			// denial here produced a repeating error and wedged the page. The
+			// resolver returns an empty queue without VIEW_SYSTEM.
+			field: "jobQueue",
+			want:  models.CapViewLibrary,
+			why:   "polled continuously by every account; the resolver returns empty instead",
+		},
+		{
+			field: "findJob",
+			want:  models.CapViewLibrary,
+			why:   "paired with jobQueue; the resolver returns null without VIEW_SYSTEM",
+		},
+		{
+			field: "logs",
 			want:  models.CapViewSystem,
-			why: "safe to restrict: the Setup and Migrate flows that call it run with " +
-				"no credentials configured, or with the database not yet open, and both " +
-				"of those already resolve to the admin preset",
+			why:   "unlike the job queue, nothing fetches logs unless you open the Logs panel",
 		},
 		{
 			field: "findUsers",

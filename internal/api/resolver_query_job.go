@@ -6,9 +6,23 @@ import (
 
 	"github.com/stashapp/stash/internal/manager"
 	"github.com/stashapp/stash/pkg/job"
+	"github.com/stashapp/stash/pkg/models"
 )
 
+// The job queue is polled continuously by the UI for every account, so
+// returning a permission error here surfaces as a repeating error toast and can
+// wedge the page. Accounts without VIEW_SYSTEM instead see an empty queue,
+// which is both truthful for them and harmless.
+
 func (r *queryResolver) JobQueue(ctx context.Context) ([]*Job, error) {
+	caps, err := r.currentCapabilities(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !caps.Has(models.CapViewSystem) {
+		return []*Job{}, nil
+	}
+
 	queue := manager.GetInstance().JobManager.GetQueue()
 
 	var ret []*Job
@@ -20,6 +34,14 @@ func (r *queryResolver) JobQueue(ctx context.Context) ([]*Job, error) {
 }
 
 func (r *queryResolver) FindJob(ctx context.Context, input FindJobInput) (*Job, error) {
+	caps, err := r.currentCapabilities(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !caps.Has(models.CapViewSystem) {
+		return nil, nil
+	}
+
 	jobID, err := strconv.Atoi(input.ID)
 	if err != nil {
 		return nil, err
