@@ -75,3 +75,7 @@ docker/production/config/plugins/
 
 # Local Claude Code instructions
 CLAUDE.md
+.claude/
+
+# Local-only design working files
+design_handoff_stash_dashboard/
