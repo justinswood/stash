@@ -30,6 +30,7 @@ import { PerformerAppearsWithPanel } from "./performerAppearsWithPanel";
 import { PerformerEditPanel } from "./PerformerEditPanel";
 import { PerformerMergeModal } from "../PerformerMergeDialog";
 import { PerformerSubmitButton } from "./PerformerSubmitButton";
+import { PerformerImageSearchButton } from "./PerformerImageSearchButton";
 import { ShareButton } from "src/components/ShareLinks/ShareButton";
 import { ShareType } from "src/core/generated-graphql";
 import { useRatingKeybinds } from "src/hooks/keybinds";
@@ -540,6 +541,11 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
                         customButtons={
                           <>
                             {renderMergeButton()}
+                            <div>
+                              <PerformerImageSearchButton
+                                name={performer.name}
+                              />
+                            </div>
                             <div>
                               <PerformerSubmitButton performer={performer} />
                             </div>

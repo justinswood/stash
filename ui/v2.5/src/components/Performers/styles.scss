@@ -366,3 +366,13 @@
     }
   }
 }
+
+// The Find Images split button is the only btn-group on this row, and its two
+// halves have to touch to read as one control. `.details-edit .btn` in
+// Shared/styles.scss puts `margin-right: 0.5rem` on every button in the row,
+// which lands *between* the body and its caret and detaches them into two
+// separate pills under Refract's rounded button styling. Refract itself sets no
+// margin here, so an id-scoped rule is enough — no !important needed.
+#performer-page .details-edit .btn-group > .btn {
+  margin-right: 0;
+}
