@@ -11,6 +11,7 @@ export enum View {
   TagMarkers = "tag_markers",
   TagGalleries = "tag_galleries",
   TagScenes = "tag_scenes",
+  TagPerformerScenes = "tag_performer_scenes",
   TagImages = "tag_images",
   TagPerformers = "tag_performers",
 

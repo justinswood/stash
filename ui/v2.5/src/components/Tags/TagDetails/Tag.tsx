@@ -21,6 +21,7 @@ import { useToast } from "src/hooks/Toast";
 import { useConfigurationContext } from "src/hooks/Config";
 import { tagRelationHook } from "src/core/tags";
 import { TagScenesPanel } from "./TagScenesPanel";
+import { TagPerformerScenesPanel } from "./TagPerformerScenesPanel";
 import { TagMarkersPanel } from "./TagMarkersPanel";
 import { TagImagesPanel } from "./TagImagesPanel";
 import { TagPerformersPanel } from "./TagPerformersPanel";
@@ -59,6 +60,7 @@ interface ITagParams {
 const validTabs = [
   "default",
   "scenes",
+  "performer-scenes",
   "images",
   "galleries",
   "groups",
@@ -96,6 +98,23 @@ const TagTabs: React.FC<{
     (showAllDetails ? tag.performer_count_all : tag.performer_count) ?? 0;
   const studioCount =
     (showAllDetails ? tag.studio_count_all : tag.studio_count) ?? 0;
+
+  // Every other count above is precomputed on the tag row, but there is no
+  // "scenes whose performers carry this tag" column, so this one needs its own
+  // query. per_page: 0 makes it count-only — no scenes are materialised.
+  const { data: performerSceneData } = GQL.useFindScenesQuery({
+    variables: {
+      filter: { per_page: 0 },
+      scene_filter: {
+        performer_tags: {
+          value: [tag.id],
+          modifier: GQL.CriterionModifier.IncludesAll,
+          depth: showAllDetails ? -1 : 0,
+        },
+      },
+    },
+  });
+  const performerSceneCount = performerSceneData?.findScenes.count ?? 0;
 
   const populatedDefaultTab = useMemo(() => {
     let ret: TabKey = "scenes";
@@ -172,6 +191,23 @@ const TagTabs: React.FC<{
         {contentSwitch}
         <TagScenesPanel
           active={tabKey === "scenes"}
+          tag={tag}
+          showSubTagContent={showAllDetails}
+        />
+      </Tab>
+      <Tab
+        eventKey="performer-scenes"
+        title={
+          <TabTitleCounter
+            messageID="performer_scenes"
+            count={performerSceneCount}
+            abbreviateCounter={abbreviateCounter}
+          />
+        }
+      >
+        {contentSwitch}
+        <TagPerformerScenesPanel
+          active={tabKey === "performer-scenes"}
           tag={tag}
           showSubTagContent={showAllDetails}
         />

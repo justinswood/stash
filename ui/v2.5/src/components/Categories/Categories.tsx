@@ -19,6 +19,46 @@ const noop = () => {};
 // use TagCardGrid's measured sizing.
 const CATEGORY_CARD_WIDTH = 300;
 
+// A category describes the *performer*, so the useful scene figure is "scenes
+// whose performers carry this tag", not "scenes carrying this tag". The tag row
+// has no column for that, so each card counts it itself — a per_page: 0 query
+// that returns the count without materialising any scenes (~3ms each).
+//
+// This also repoints the scene-count badge. Left alone it links to
+// /scenes?c=(tags…), a filtered scene list with no tabs, which is a dead end
+// from here: it shows the 2 directly-tagged scenes rather than the 52 reachable
+// through the performers.
+const CategoryCard: React.FC<{ tag: GQL.TagListDataFragment }> = ({ tag }) => {
+  const performerScenesURL = `/tags/${tag.id}/performer-scenes`;
+
+  const { data } = GQL.useFindScenesQuery({
+    variables: {
+      filter: { per_page: 0 },
+      scene_filter: {
+        performer_tags: {
+          value: [tag.id],
+          modifier: GQL.CriterionModifier.IncludesAll,
+          depth: 0,
+        },
+      },
+    },
+  });
+
+  return (
+    <TagCard
+      tag={tag}
+      linkTo={performerScenesURL}
+      sceneCount={data?.findScenes.count}
+      sceneCountLinkTo={performerScenesURL}
+      cardWidth={CATEGORY_CARD_WIDTH}
+      zoomIndex={1}
+      selecting={false}
+      selected={false}
+      onSelectedChanged={noop}
+    />
+  );
+};
+
 const CategoriesGrid: React.FC<{ parentId: string }> = ({ parentId }) => {
   const intl = useIntl();
   const [query, setQuery] = useState("");
@@ -108,15 +148,7 @@ const CategoriesGrid: React.FC<{ parentId: string }> = ({ parentId }) => {
            stable layout and removes the feedback path entirely. */
         <div className="row justify-content-center">
           {filtered.map((tag) => (
-            <TagCard
-              key={tag.id}
-              tag={tag}
-              cardWidth={CATEGORY_CARD_WIDTH}
-              zoomIndex={1}
-              selecting={false}
-              selected={false}
-              onSelectedChanged={noop}
-            />
+            <CategoryCard key={tag.id} tag={tag} />
           ))}
         </div>
       )}

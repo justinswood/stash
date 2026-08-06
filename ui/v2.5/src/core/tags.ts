@@ -2,6 +2,7 @@ import { gql } from "@apollo/client";
 import * as GQL from "src/core/generated-graphql";
 import { getClient } from "src/core/StashService";
 import {
+  PerformerTagsCriterionOption,
   TagsCriterion,
   TagsCriterionOption,
 } from "src/models/list-filter/criteria/tags";
@@ -39,6 +40,55 @@ export const useTagFilterHook = (
       tagCriterion.modifier = GQL.CriterionModifier.IncludesAll;
     } else {
       tagCriterion = new TagsCriterion(TagsCriterionOption);
+      tagCriterion.value = {
+        items: [tagValue],
+        excluded: [],
+        depth: showSubTagContent ? -1 : 0,
+      };
+      tagCriterion.modifier = GQL.CriterionModifier.IncludesAll;
+      filter.criteria.push(tagCriterion);
+    }
+
+    return filter;
+  };
+};
+
+// As useTagFilterHook, but constrains on the tags of a item's *performers*
+// rather than the item's own tags — "scenes whose performers carry this tag".
+// A tag applied to a performer's profile is not inherited by their scenes, so
+// the two filters return genuinely different sets rather than one being a
+// subset of the other.
+export const usePerformerTagFilterHook = (
+  tag: GQL.TagDataFragment,
+  showSubTagContent?: boolean
+) => {
+  return (filter: ListFilterModel) => {
+    const tagValue = { id: tag.id, label: tag.name };
+    let tagCriterion = filter.criteria.find((c) => {
+      return c.criterionOption.type === "performer_tags";
+    }) as TagsCriterion | undefined;
+
+    if (tagCriterion) {
+      if (
+        tagCriterion.modifier === GQL.CriterionModifier.IncludesAll ||
+        tagCriterion.modifier === GQL.CriterionModifier.Includes
+      ) {
+        // add the tag if not present
+        if (
+          !tagCriterion.value.items.find((p) => {
+            return p.id === tag.id;
+          })
+        ) {
+          tagCriterion.value.items.push(tagValue);
+        }
+      } else {
+        // overwrite
+        tagCriterion.value.items = [tagValue];
+      }
+
+      tagCriterion.modifier = GQL.CriterionModifier.IncludesAll;
+    } else {
+      tagCriterion = new TagsCriterion(PerformerTagsCriterionOption);
       tagCriterion.value = {
         items: [tagValue],
         excluded: [],

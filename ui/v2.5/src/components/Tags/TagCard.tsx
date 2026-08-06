@@ -20,11 +20,19 @@ interface IProps {
   selecting?: boolean;
   selected?: boolean;
   onSelectedChanged?: (selected: boolean, shiftKey: boolean) => void;
+  // Overrides the card's link target. Defaults to the tag's own page; the
+  // Categories page uses it to open a specific tab directly.
+  linkTo?: string;
+  // Overrides the scene count badge's number and link. The badge otherwise
+  // reports scenes carrying the tag directly, which is the wrong figure on a
+  // page where the tag describes performers rather than scenes.
+  sceneCount?: number;
+  sceneCountLinkTo?: string;
 }
 
 const TagCardPopovers: React.FC<IProps> = PatchComponent(
   "TagCard.Popovers",
-  ({ tag }) => {
+  ({ tag, sceneCount, sceneCountLinkTo }) => {
     return (
       <>
         <hr />
@@ -32,8 +40,8 @@ const TagCardPopovers: React.FC<IProps> = PatchComponent(
           <PopoverCountButton
             className="scene-count"
             type="scene"
-            count={tag.scene_count}
-            url={NavUtils.makeTagScenesUrl(tag)}
+            count={sceneCount ?? tag.scene_count}
+            url={sceneCountLinkTo ?? NavUtils.makeTagScenesUrl(tag)}
             showZero={false}
           />
           <PopoverCountButton
@@ -233,13 +241,20 @@ const TagCardTitle: React.FC<IProps> = PatchComponent(
 );
 
 export const TagCard: React.FC<IProps> = PatchComponent("TagCard", (props) => {
-  const { tag, cardWidth, zoomIndex, selecting, selected, onSelectedChanged } =
-    props;
+  const {
+    tag,
+    cardWidth,
+    zoomIndex,
+    selecting,
+    selected,
+    onSelectedChanged,
+    linkTo,
+  } = props;
 
   return (
     <GridCard
       className={`tag-card zoom-${zoomIndex}`}
-      url={`/tags/${tag.id}`}
+      url={linkTo ?? `/tags/${tag.id}`}
       width={cardWidth}
       title={<TagCardTitle {...props} />}
       linkClassName="tag-card-header"

@@ -1357,6 +1357,7 @@
     "update_performers": "Update Performers",
     "updating_untagged_performers_description": "Updating untagged performers will try to match any performers that lack a stashid and update the metadata."
   },
+  "performer_scenes": "Performer Scenes",
   "performer_tags": "Performer Tags",
   "performers": "Performers",
   "photographer": "Photographer",
