@@ -15,7 +15,24 @@ func TestPresetsReproduceLegacyRoleBehaviour(t *testing.T) {
 		mustNot []Capability
 	}{
 		UserRoleReadOnly: {
-			must: []Capability{CapViewLibrary, CapOwnHistory, CapChangeOwnPassword},
+			must: []Capability{
+				CapViewLibrary, CapOwnHistory, CapChangeOwnPassword,
+
+				// DELIBERATE DEPARTURE from the pre-capability behaviour. Saved
+				// filters and UI configuration used to fall under "the rest
+				// require USER", so a READ_ONLY account could not save a filter
+				// or arrange its own front page.
+				//
+				// That was tolerable only while both were global: the account
+				// inherited whatever the admin had set up. Migration 84 made
+				// saved filters per-user and the UI configuration followed, so
+				// withholding this now would leave a READ_ONLY account with no
+				// filters, a default front page, and no way to change either.
+				//
+				// It grants nothing over the library — these mutations only
+				// change what their own caller sees.
+				CapOwnViewSettings,
+			},
 			mustNot: []Capability{
 				CapEditMetadata, CapScrape, CapManageShares, CapManageOwnAPIKeys,
 				CapDeleteContent, CapManageUsers, CapConfigure, CapRunTasks,
@@ -26,6 +43,9 @@ func TestPresetsReproduceLegacyRoleBehaviour(t *testing.T) {
 			must: []Capability{
 				CapViewLibrary, CapOwnHistory, CapChangeOwnPassword,
 				CapEditMetadata, CapScrape, CapManageOwnAPIKeys,
+				// USER could already save filters under the old model; this
+				// keeps that, it is only new for READ_ONLY.
+				CapOwnViewSettings,
 			},
 			mustNot: []Capability{
 				// the USER role never deleted content or touched the system

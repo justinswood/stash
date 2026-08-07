@@ -23,6 +23,8 @@ enum Capability {
   OWN_HISTORY
   "Change one's own password."
   CHANGE_OWN_PASSWORD
+  "Manage one's own saved filters and interface configuration, including the front page."
+  OWN_VIEW_SETTINGS
   "Create and update library metadata."
   EDIT_METADATA
   "Run scrapers, which fetch external URLs on the server's behalf."

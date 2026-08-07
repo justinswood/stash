@@ -22,6 +22,7 @@ const capabilityLabel: Partial<Record<Capability, string>> = {
   [Capability.ViewLibrary]: "Browse the library",
   [Capability.OwnHistory]: "Record own watch history",
   [Capability.ChangeOwnPassword]: "Change own password",
+  [Capability.OwnViewSettings]: "Manage own saved filters and front page",
   [Capability.EditMetadata]: "Edit metadata",
   [Capability.Scrape]: "Run scrapers",
   [Capability.ManageShares]: "Create and revoke share links",

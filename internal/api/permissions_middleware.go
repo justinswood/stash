@@ -40,6 +40,17 @@ var ownHistoryMutations = map[string]bool{
 var mutationCapabilities = map[string]models.Capability{
 	"changePassword": models.CapChangeOwnPassword,
 
+	// Personal view state, not library metadata. Saved filters are per-user
+	// (migration 84) and the UI configuration is per-user too, so these only
+	// ever change what the caller sees. Left on the CapEditMetadata default, a
+	// READ_ONLY account would have no saved filters and no way to make any.
+	// Note destroySavedFilter does not end in "Destroy", so the suffix rule
+	// below would not have routed it to CapDeleteContent either way — but
+	// renaming it would, which would stop users deleting their own filters.
+	"saveFilter":         models.CapOwnViewSettings,
+	"destroySavedFilter": models.CapOwnViewSettings,
+	"setDefaultFilter":   models.CapOwnViewSettings,
+
 	// account management
 	"userGroupCreate":  models.CapManageUsers,
 	"userGroupUpdate":  models.CapManageUsers,
@@ -54,8 +65,17 @@ var mutationCapabilities = map[string]models.Capability{
 	"configureDLNA":      models.CapConfigure,
 	"configureScraping":  models.CapConfigure,
 	"configureDefaults":  models.CapConfigure,
-	"configureUI":        models.CapConfigure,
-	"configureUISetting": models.CapConfigure,
+
+	// configureUI and configureUISetting write the caller's OWN interface
+	// configuration since migration 85 — front page, default filters, theme,
+	// display preferences — and touch no instance setting. On CapConfigure they
+	// were admin-only, which after that migration would leave every non-admin
+	// with a default front page and no way to change it.
+	//
+	// The instance-wide configure* mutations above stay on CapConfigure. Only
+	// these two became personal.
+	"configureUI":        models.CapOwnViewSettings,
+	"configureUISetting": models.CapOwnViewSettings,
 	"generateAPIKey":     models.CapConfigure,
 	"setup":              models.CapConfigure,
 	"enableDLNA":         models.CapConfigure,

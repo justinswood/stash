@@ -29,6 +29,16 @@ const (
 	// CapChangeOwnPassword is rotating one's own password. Held by every role so
 	// that a compromised account can always be secured by its owner.
 	CapChangeOwnPassword Capability = "CHANGE_OWN_PASSWORD"
+	// CapOwnViewSettings is managing one's own saved filters and interface
+	// configuration, including the front page layout.
+	//
+	// Held by every role, including READ_ONLY. These are personal view state,
+	// not library metadata: a saved filter changes what its owner sees and
+	// nothing else, so requiring CapEditMetadata for it would mean an account
+	// trusted to browse could not arrange its own view. Since migration 84 made
+	// saved filters per-user, withholding this would leave such an account with
+	// no filters at all and no way to create any.
+	CapOwnViewSettings Capability = "OWN_VIEW_SETTINGS"
 
 	// --- added by the USER preset ---
 
@@ -77,6 +87,7 @@ var AllCapabilities = []Capability{
 	CapViewLibrary,
 	CapOwnHistory,
 	CapChangeOwnPassword,
+	CapOwnViewSettings,
 	CapEditMetadata,
 	CapScrape,
 	CapManageShares,
@@ -142,6 +153,7 @@ var (
 		CapViewLibrary,
 		CapOwnHistory,
 		CapChangeOwnPassword,
+		CapOwnViewSettings,
 	}
 	userCaps = append(append([]Capability{}, readOnlyCaps...),
 		CapEditMetadata,
