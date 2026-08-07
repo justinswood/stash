@@ -32,7 +32,54 @@ func (r *queryResolver) Configuration(ctx context.Context) (*ConfigResult, error
 		}
 	}
 
+	// The interface configuration — front page layout, default filters, theme
+	// and display preferences — is per-account since migration 85. Before that
+	// every account was served the admin's, so a second user's home page
+	// rendered the admin's front page rows.
+	ui, err := r.userUIConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result.UI = ui
+
 	return result, nil
+}
+
+// userUIConfig returns the requesting account's interface configuration.
+//
+// An account that has never customised anything gets an empty map rather than
+// the instance-wide blob: inheriting it would put one user's front page and
+// default filters in front of another, which is the whole reason this became
+// per-user. The frontend already generates stock defaults from an empty config
+// (see generateDefaultFrontPageContent), so empty is a working state, not a
+// broken one.
+//
+// With no user in context — an instance with authentication disabled — the
+// instance blob is still the answer, because there are no accounts to separate
+// and that file is where such an install has always kept its settings.
+func (r *queryResolver) userUIConfig(ctx context.Context) (map[string]interface{}, error) {
+	u, err := r.getCurrentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if u == nil {
+		return makeConfigUIResult(), nil
+	}
+
+	var stored map[string]interface{}
+	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
+		var err error
+		stored, err = r.repository.UserUIConfig.Get(ctx, u.ID)
+		return err
+	}); err != nil {
+		return nil, err
+	}
+
+	if stored == nil {
+		return map[string]interface{}{}, nil
+	}
+
+	return stored, nil
 }
 
 func (r *queryResolver) Directory(ctx context.Context, path, locale *string) (*Directory, error) {

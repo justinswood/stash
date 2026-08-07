@@ -658,7 +658,57 @@ func (r *mutationResolver) GenerateAPIKey(ctx context.Context, input GenerateAPI
 	return newAPIKey, nil
 }
 
+// ConfigureUI writes the requesting account's interface configuration.
+//
+// Per-account since migration 85. Writing to the instance config file here
+// would put one user's front page, default filters and theme in front of every
+// other account — the behaviour this replaced.
+//
+// With no user in context (authentication disabled) it still writes the
+// instance file, which is where such an install keeps its settings.
 func (r *mutationResolver) ConfigureUI(ctx context.Context, input map[string]interface{}, partial map[string]interface{}) (map[string]interface{}, error) {
+	u, err := r.getCurrentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if u == nil {
+		return r.configureInstanceUI(input, partial)
+	}
+
+	var result map[string]interface{}
+	if err := r.withTxn(ctx, func(ctx context.Context) error {
+		existing, err := r.repository.UserUIConfig.Get(ctx, u.ID)
+		if err != nil {
+			return err
+		}
+		if existing == nil {
+			existing = map[string]interface{}{}
+		}
+
+		switch {
+		case input != nil:
+			// #5483 - convert JSON numbers to float64 or int64
+			result = convertMapJSONNumbers(input)
+		case partial != nil:
+			// #5483 - convert JSON numbers to float64 or int64
+			utils.MergeMaps(existing, convertMapJSONNumbers(partial))
+			result = existing
+		default:
+			result = existing
+		}
+
+		return r.repository.UserUIConfig.Set(ctx, u.ID, result)
+	}); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// configureInstanceUI is the pre-migration-85 behaviour, kept for instances
+// running without authentication, which have no account to attribute settings
+// to.
+func (r *mutationResolver) configureInstanceUI(input map[string]interface{}, partial map[string]interface{}) (map[string]interface{}, error) {
 	c := config.GetInstance()
 
 	if input != nil {
@@ -683,10 +733,38 @@ func (r *mutationResolver) ConfigureUI(ctx context.Context, input map[string]int
 	return c.GetUIConfiguration(), nil
 }
 
-func (r *mutationResolver) ConfigureUISetting(ctx context.Context, key string, value interface{}) (map[string]interface{}, error) {
-	c := config.GetInstance()
+// currentUIConfig is the account's stored configuration, or the instance blob
+// when there is no account. Used by the read-modify-write callers below.
+func (r *mutationResolver) currentUIConfig(ctx context.Context) (map[string]interface{}, error) {
+	u, err := r.getCurrentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if u == nil {
+		return config.GetInstance().GetUIConfiguration(), nil
+	}
 
-	cfg := utils.NestedMap(c.GetUIConfiguration())
+	var stored map[string]interface{}
+	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
+		var err error
+		stored, err = r.repository.UserUIConfig.Get(ctx, u.ID)
+		return err
+	}); err != nil {
+		return nil, err
+	}
+	if stored == nil {
+		stored = map[string]interface{}{}
+	}
+	return stored, nil
+}
+
+func (r *mutationResolver) ConfigureUISetting(ctx context.Context, key string, value interface{}) (map[string]interface{}, error) {
+	current, err := r.currentUIConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := utils.NestedMap(current)
 
 	// #5483 - convert JSON numbers to float64 or int64
 	if m, ok := value.(map[string]interface{}); ok {

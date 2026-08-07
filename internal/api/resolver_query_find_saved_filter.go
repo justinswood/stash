@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/stashapp/stash/internal/manager/config"
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/utils"
 )
@@ -41,11 +40,15 @@ func (r *queryResolver) FindSavedFilters(ctx context.Context, mode *models.Filte
 }
 
 func (r *queryResolver) FindDefaultFilter(ctx context.Context, mode models.FilterMode) (ret *models.SavedFilter, err error) {
-	// deprecated - read from the config in the meantime
-	config := config.GetInstance()
-
-	uiConfig := config.GetUIConfiguration()
-	if uiConfig == nil {
+	// deprecated - read from the UI configuration in the meantime.
+	// That configuration is per-account since migration 85, so a default filter
+	// set by one user no longer decides what every other account sees when it
+	// opens a list page.
+	uiConfig, err := r.userUIConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(uiConfig) == 0 {
 		return nil, nil
 	}
 

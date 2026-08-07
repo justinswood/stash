@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/stashapp/stash/internal/manager/config"
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/utils"
 )
@@ -70,12 +69,12 @@ func (r *mutationResolver) DestroySavedFilter(ctx context.Context, input Destroy
 }
 
 func (r *mutationResolver) SetDefaultFilter(ctx context.Context, input SetDefaultFilterInput) (bool, error) {
-	// deprecated - write to the config in the meantime
-	config := config.GetInstance()
-
-	uiConfig := config.GetUIConfiguration()
-	if uiConfig == nil {
-		uiConfig = make(map[string]interface{})
+	// deprecated - write to the UI configuration in the meantime, which is
+	// per-account since migration 85 so that one user's default filter does not
+	// become every account's.
+	uiConfig, err := r.currentUIConfig(ctx)
+	if err != nil {
+		return false, err
 	}
 
 	m := utils.NestedMap(uiConfig)
@@ -83,9 +82,7 @@ func (r *mutationResolver) SetDefaultFilter(ctx context.Context, input SetDefaul
 	if input.FindFilter == nil && input.ObjectFilter == nil && input.UIOptions == nil {
 		// clearing
 		m.Delete("defaultFilters." + strings.ToLower(input.Mode.String()))
-		config.SetUIConfiguration(m)
-
-		if err := config.Write(); err != nil {
+		if _, err := r.ConfigureUI(ctx, m, nil); err != nil {
 			return false, err
 		}
 
@@ -109,9 +106,7 @@ func (r *mutationResolver) SetDefaultFilter(ctx context.Context, input SetDefaul
 
 	m.Set("defaultFilters."+strings.ToLower(input.Mode.String()), subMap)
 
-	config.SetUIConfiguration(m)
-
-	if err := config.Write(); err != nil {
+	if _, err := r.ConfigureUI(ctx, m, nil); err != nil {
 		return false, err
 	}
 
