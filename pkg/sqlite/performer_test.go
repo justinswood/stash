@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/stashapp/stash/pkg/models"
+	"github.com/stashapp/stash/pkg/sqlite"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -365,6 +366,11 @@ func Test_PerformerStore_Update(t *testing.T) {
 		runWithRollbackTxn(t, tt.name, func(t *testing.T, ctx context.Context) {
 			assert := assert.New(t)
 
+			// Favourites are per-user (migration 83), so a favourite only
+			// round-trips for an acting user. Act as one, as a logged-in
+			// request does.
+			ctx = sqlite.WithHistoryUser(ctx, testUserID)
+
 			copy := *tt.updatedObject.Performer
 
 			if err := qb.Update(ctx, &tt.updatedObject); (err != nil) != tt.wantErr {
@@ -610,6 +616,10 @@ func Test_PerformerStore_UpdatePartial(t *testing.T) {
 
 		runWithRollbackTxn(t, tt.name, func(t *testing.T, ctx context.Context) {
 			assert := assert.New(t)
+
+			// Favourites are per-user (migration 83) — act as a logged-in user
+			// so the favourite in the partial has an owner.
+			ctx = sqlite.WithHistoryUser(ctx, testUserID)
 
 			got, err := qb.UpdatePartial(ctx, tt.id, tt.partial)
 			if (err != nil) != tt.wantErr {

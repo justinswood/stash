@@ -305,6 +305,13 @@ func (qb *StudioStore) Update(ctx context.Context, updatedObject *models.Studio)
 		}
 	}
 
+	// favourites are per-user (migration 83). See PerformerStore.Update — a
+	// full-object update must carry the acting user's favourite, and is a no-op
+	// when no user is in context.
+	if err := setFavorite(ctx, studioFavoritesTable, "studio_id", updatedObject.ID, updatedObject.Favorite); err != nil {
+		return err
+	}
+
 	return nil
 }
 

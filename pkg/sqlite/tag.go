@@ -314,6 +314,13 @@ func (qb *TagStore) Update(ctx context.Context, updatedObject *models.Tag) error
 		}
 	}
 
+	// favourites are per-user (migration 83). See PerformerStore.Update — a
+	// full-object update must carry the acting user's favourite, and is a no-op
+	// when no user is in context.
+	if err := setFavorite(ctx, tagFavoritesTable, "tag_id", updatedObject.ID, updatedObject.Favorite); err != nil {
+		return err
+	}
+
 	return nil
 }
 

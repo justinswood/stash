@@ -405,6 +405,15 @@ func (qb *PerformerStore) Update(ctx context.Context, updatedObject *models.Upda
 		return err
 	}
 
+	// favourites are per-user (migration 83). A full-object update replaces the
+	// acting user's favourite state, matching Create and UpdatePartial — without
+	// this the favourite silently vanishes on any update that goes through this
+	// path. With no user in context setFavorite is a no-op, so an import or any
+	// other background work still cannot favourite on somebody's behalf.
+	if err := setFavorite(ctx, performerFavoritesTable, "performer_id", updatedObject.ID, updatedObject.Favorite); err != nil {
+		return err
+	}
+
 	return nil
 }
 

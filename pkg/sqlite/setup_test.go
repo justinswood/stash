@@ -623,6 +623,12 @@ func TestMain(m *testing.M) {
 	os.Exit(ret)
 }
 
+// testUserID is the account favourites are attributed to in tests. Favourites
+// are per-user (migration 83): without a user in context every favourite write
+// is a no-op and every read returns false, so any test asserting a favourite
+// round-trip must act as somebody.
+var testUserID int
+
 func withTxn(f func(ctx context.Context) error) error {
 	return txn.WithTxn(context.Background(), db, f)
 }
@@ -754,6 +760,10 @@ func populateDB() error {
 
 		if err := linkGroupsParent(ctx, db.Group); err != nil {
 			return fmt.Errorf("error linking tags parent: %s", err.Error())
+		}
+
+		if err := createTestUser(ctx); err != nil {
+			return fmt.Errorf("error creating test user: %s", err.Error())
 		}
 
 		for _, ms := range markerSpecs {
@@ -2042,4 +2052,20 @@ func linkGroupsParent(ctx context.Context, qb models.GroupReaderWriter) error {
 
 func addTagImage(ctx context.Context, qb models.TagWriter, tagIndex int) error {
 	return qb.UpdateImage(ctx, tagIDs[tagIndex], []byte("image"))
+}
+
+// createTestUser makes the account that owns favourites in tests. The
+// per-user favourite join tables carry a foreign key to users, so a favourite
+// cannot be recorded without a real row here.
+func createTestUser(ctx context.Context) error {
+	u := models.User{
+		Username:     "test-fixture-user",
+		PasswordHash: "not-a-real-hash",
+		Role:         models.UserRoleAdmin,
+	}
+	if err := db.User.Create(ctx, &u); err != nil {
+		return err
+	}
+	testUserID = u.ID
+	return nil
 }
