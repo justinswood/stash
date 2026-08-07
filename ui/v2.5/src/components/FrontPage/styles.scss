@@ -492,3 +492,29 @@
   color: white;
   opacity: 0.75;
 }
+
+// Front page scene rows: hide the metadata strip above each card image — the
+// performer avatar circles, the duration pill and the tag count.
+//
+// The strip is NOT in SceneCard.tsx. refract.js builds it at runtime
+// (injectPerformerCircles) and appends it to .card-section, so none of these
+// class names appear anywhere in the React source and grepping for them there
+// finds nothing. .stash-card-counts is appended *into* .stash-performer-circles
+// (refract.js:3285), so hiding the outer row removes the whole strip — avatars,
+// duration, tag count and the O-count badge that shares the cluster.
+//
+// The body.stash-liquid-glass prefix is load-bearing, not decoration. The theme
+// styles this as `body.stash-liquid-glass .stash-performer-circles`
+// (08_misc_mid.css:3008) at specificity (0,2,1); a plain
+// `.scene-recommendations .stash-performer-circles` is (0,2,0) and silently
+// loses. Matching the theme's prefix gets (0,3,1) and wins without !important.
+//
+// Hidden rather than skipped at the injection site because
+// injectPerformerCircles also strips the file extension from the card title —
+// not injecting would leave ".mp4" showing on every front page card.
+//
+// Scoped to .scene-recommendations (set by SceneRecommendationRow) so the
+// /scenes grid and the scene tabs on performer/studio/tag pages keep the strip.
+body.stash-liquid-glass .scene-recommendations .stash-performer-circles {
+  display: none;
+}
