@@ -9,6 +9,7 @@ import * as GQL from "src/core/generated-graphql";
 import {
   useFindPerformer,
   usePerformerUpdate,
+  usePerformerSetRating,
   usePerformerDestroy,
   mutateMetadataAutoTag,
 } from "src/core/StashService";
@@ -316,6 +317,7 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
     );
 
     const [updatePerformer] = usePerformerUpdate();
+  const [setPerformerRating] = usePerformerSetRating();
     const [deletePerformer, { loading: isDestroying }] = usePerformerDestroy();
 
     async function onAutoTag() {
@@ -428,13 +430,9 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
 
     function setRating(v: number | null) {
       if (performer.id) {
-        updatePerformer({
-          variables: {
-            input: {
-              id: performer.id,
-              rating100: v,
-            },
-          },
+        // per-user rating: needs only OWN_VIEW_SETTINGS, not EDIT_METADATA
+        setPerformerRating({
+          variables: { id: performer.id, rating100: v },
         });
       }
     }

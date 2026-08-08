@@ -10,6 +10,7 @@ import * as GQL from "src/core/generated-graphql";
 import {
   useFindStudio,
   useStudioUpdate,
+  useStudioSetRating,
   useStudioDestroy,
   mutateMetadataAutoTag,
 } from "src/core/StashService";
@@ -284,6 +285,7 @@ const StudioPage: React.FC<IProps> = ({ studio, tabKey }) => {
   const [encodingImage, setEncodingImage] = useState<boolean>(false);
 
   const [updateStudio] = useStudioUpdate();
+  const [setStudioRating] = useStudioSetRating();
   const [deleteStudio] = useStudioDestroy({ id: studio.id });
 
   const showAllCounts = uiConfig?.showChildStudioContent;
@@ -415,13 +417,9 @@ const StudioPage: React.FC<IProps> = ({ studio, tabKey }) => {
 
   function setRating(v: number | null) {
     if (studio.id) {
-      updateStudio({
-        variables: {
-          input: {
-            id: studio.id,
-            rating100: v,
-          },
-        },
+      // per-user rating: needs only OWN_VIEW_SETTINGS, not EDIT_METADATA
+      setStudioRating({
+        variables: { id: studio.id, rating100: v },
       });
     }
   }

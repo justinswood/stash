@@ -126,6 +126,13 @@ func requiredCapabilityForMutation(field string) models.Capability {
 	if c, ok := mutationCapabilities[field]; ok {
 		return c
 	}
+	// Per-user ratings (migration 86). A rating changes only what its own
+	// setter sees, so it must not require CapEditMetadata — that left a
+	// READ_ONLY account unable to rate anything. Must be checked BEFORE the
+	// suffix rules below for the same reason userAPIKeyRevoke is.
+	if strings.HasSuffix(field, "SetRating") {
+		return models.CapOwnViewSettings
+	}
 	// Share links publish content to the open internet without authentication.
 	if strings.HasPrefix(field, "shareLink") {
 		return models.CapManageShares

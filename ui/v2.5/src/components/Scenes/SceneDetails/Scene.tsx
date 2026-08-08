@@ -16,6 +16,7 @@ import {
   useSceneIncrementO,
   useSceneGenerateScreenshot,
   useSceneUpdate,
+  useSceneSetRating,
   queryFindScenes,
   queryFindScenesByID,
   useSceneIncrementPlayCount,
@@ -187,6 +188,8 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
   const intl = useIntl();
   const history = useHistory();
   const [updateScene] = useSceneUpdate();
+  // ratings are per-user and need only OWN_VIEW_SETTINGS, not EDIT_METADATA
+  const [setSceneRating] = useSceneSetRating();
   const [generateScreenshot] = useSceneGenerateScreenshot();
   const { configuration } = useConfigurationContext();
 
@@ -222,12 +225,10 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
   };
 
   function setRating(v: number | null) {
-    updateScene({
+    setSceneRating({
       variables: {
-        input: {
-          id: scene.id,
-          rating100: v,
-        },
+        id: scene.id,
+        rating100: v,
       },
     });
   }

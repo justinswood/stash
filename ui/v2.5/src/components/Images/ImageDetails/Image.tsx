@@ -7,6 +7,7 @@ import {
   useFindImage,
   useImageIncrementO,
   useImageUpdate,
+  useImageSetRating,
   mutateMetadataScan,
   useImageDecrementO,
   useImageResetO,
@@ -56,6 +57,7 @@ const ImagePage: React.FC<IProps> = ({ image }) => {
   const [resetO] = useImageResetO(image.id);
 
   const [updateImage] = useImageUpdate();
+  const [setImageRating] = useImageSetRating();
 
   const [organizedLoading, setOrganizedLoading] = useState(false);
 
@@ -139,13 +141,9 @@ const ImagePage: React.FC<IProps> = ({ image }) => {
   };
 
   function setRating(v: number | null) {
-    updateImage({
-      variables: {
-        input: {
-          id: image.id,
-          rating100: v,
-        },
-      },
+    // per-user rating: needs only OWN_VIEW_SETTINGS, not EDIT_METADATA
+    setImageRating({
+      variables: { id: image.id, rating100: v },
     });
   }
 

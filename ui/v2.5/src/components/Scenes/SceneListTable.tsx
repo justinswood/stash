@@ -8,7 +8,7 @@ import { objectTitle } from "src/core/files";
 import { galleryTitle } from "src/core/galleries";
 import SceneQueue from "src/models/sceneQueue";
 import { RatingSystem } from "../Shared/Rating/RatingSystem";
-import { useSceneUpdate } from "src/core/StashService";
+import { useSceneSetRating } from "src/core/StashService";
 import { IColumn, ListTable } from "../List/ListTable";
 import { useTableColumns } from "src/hooks/useTableColumns";
 import { FileSize } from "../Shared/FileSize";
@@ -27,17 +27,13 @@ export const SceneListTable: React.FC<ISceneListTableProps> = (
 ) => {
   const intl = useIntl();
 
-  const [updateScene] = useSceneUpdate();
+  const [setSceneRating] = useSceneSetRating();
 
   function setRating(v: number | null, sceneId: string) {
     if (sceneId) {
-      updateScene({
-        variables: {
-          input: {
-            id: sceneId,
-            rating100: v,
-          },
-        },
+      // per-user rating: needs only OWN_VIEW_SETTINGS, not EDIT_METADATA
+      setSceneRating({
+        variables: { id: sceneId, rating100: v },
       });
     }
   }

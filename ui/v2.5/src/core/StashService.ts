@@ -594,6 +594,20 @@ export const useSceneUpdate = () =>
     },
   });
 
+// Per-user rating mutations (migration 86). Separate from the object update
+// mutations because a rating requires only OWN_VIEW_SETTINGS, not
+// EDIT_METADATA — a READ_ONLY account can rate for itself but cannot edit the
+// library. Each returns the object, so Apollo normalises the new rating into
+// the cache and no explicit cache update is needed here; the surrounding
+// filtered lists are not evicted because a rating change does not alter
+// membership of anything except a rating filter, which refetches on navigation.
+export const useSceneSetRating = () => GQL.useSceneSetRatingMutation();
+export const usePerformerSetRating = () => GQL.usePerformerSetRatingMutation();
+export const useGallerySetRating = () => GQL.useGallerySetRatingMutation();
+export const useImageSetRating = () => GQL.useImageSetRatingMutation();
+export const useGroupSetRating = () => GQL.useGroupSetRatingMutation();
+export const useStudioSetRating = () => GQL.useStudioSetRatingMutation();
+
 export const useBulkSceneUpdate = (input: GQL.BulkSceneUpdateInput) =>
   GQL.useBulkSceneUpdateMutation({
     variables: { input },

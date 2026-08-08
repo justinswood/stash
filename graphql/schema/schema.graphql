@@ -316,6 +316,24 @@ type Mutation {
   scenesDestroy(input: ScenesDestroyInput!): Boolean!
   scenesUpdate(input: [SceneUpdateInput!]!): [Scene]
 
+  """
+  Sets the requesting user's own rating for an object. Pass a null rating100
+  to clear it.
+
+  Ratings are per-user (migration 86), so this only ever changes what the
+  caller sees. It is therefore separate from the object's update mutation,
+  which edits shared library metadata and requires EDIT_METADATA — routing
+  ratings through that would mean an account trusted only to browse could not
+  rate anything for itself. These require OWN_VIEW_SETTINGS instead, which
+  every role holds.
+  """
+  sceneSetRating(id: ID!, rating100: Int): Scene
+  performerSetRating(id: ID!, rating100: Int): Performer
+  gallerySetRating(id: ID!, rating100: Int): Gallery
+  imageSetRating(id: ID!, rating100: Int): Image
+  groupSetRating(id: ID!, rating100: Int): Group
+  studioSetRating(id: ID!, rating100: Int): Studio
+
   "Increments the o-counter for a scene. Returns the new value"
   sceneIncrementO(id: ID!): Int! @deprecated(reason: "Use sceneAddO instead")
   "Decrements the o-counter for a scene. Returns the new value"

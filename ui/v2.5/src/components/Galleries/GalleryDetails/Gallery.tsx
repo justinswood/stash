@@ -14,6 +14,7 @@ import {
   mutateResetGalleryCover,
   useFindGallery,
   useGalleryUpdate,
+  useGallerySetRating,
 } from "src/core/StashService";
 import { ErrorMessage } from "src/components/Shared/ErrorMessage";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
@@ -78,6 +79,7 @@ export const GalleryPage: React.FC<IProps> = ({ gallery, add }) => {
   const path = useMemo(() => galleryPath(gallery), [gallery]);
 
   const [updateGallery] = useGalleryUpdate();
+  const [setGalleryRating] = useGallerySetRating();
 
   const [organizedLoading, setOrganizedLoading] = useState(false);
 
@@ -346,13 +348,9 @@ export const GalleryPage: React.FC<IProps> = ({ gallery, add }) => {
   }
 
   function setRating(v: number | null) {
-    updateGallery({
-      variables: {
-        input: {
-          id: gallery.id,
-          rating100: v,
-        },
-      },
+    // per-user rating: needs only OWN_VIEW_SETTINGS, not EDIT_METADATA
+    setGalleryRating({
+      variables: { id: gallery.id, rating100: v },
     });
   }
 

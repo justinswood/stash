@@ -8,7 +8,10 @@ import * as GQL from "src/core/generated-graphql";
 import { Icon } from "../Shared/Icon";
 import NavUtils from "src/utils/navigation";
 import { faHeart } from "@fortawesome/free-solid-svg-icons";
-import { usePerformerUpdate } from "src/core/StashService";
+import {
+  usePerformerUpdate,
+  usePerformerSetRating,
+} from "src/core/StashService";
 import { useTableColumns } from "src/hooks/useTableColumns";
 import { RatingSystem } from "../Shared/Rating/RatingSystem";
 import cx from "classnames";
@@ -36,16 +39,13 @@ export const PerformerListTable: React.FC<IPerformerListTableProps> = (
   const intl = useIntl();
 
   const [updatePerformer] = usePerformerUpdate();
+  const [setPerformerRating] = usePerformerSetRating();
 
   function setRating(v: number | null, performerId: string) {
     if (performerId) {
-      updatePerformer({
-        variables: {
-          input: {
-            id: performerId,
-            rating100: v,
-          },
-        },
+      // per-user rating: needs only OWN_VIEW_SETTINGS, not EDIT_METADATA
+      setPerformerRating({
+        variables: { id: performerId, rating100: v },
       });
     }
   }

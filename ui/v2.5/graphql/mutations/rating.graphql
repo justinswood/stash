@@ -1,0 +1,45 @@
+# Per-user rating mutations (migration 86).
+#
+# Separate from the object update mutations because a rating belongs to the
+# requesting account alone: routing it through sceneUpdate and friends means it
+# requires EDIT_METADATA, which leaves a READ_ONLY account unable to rate
+# anything for itself. These require OWN_VIEW_SETTINGS, which every role holds.
+#
+# Each returns the full object so Apollo normalises the new rating into its
+# cache without the call site writing a cache update by hand.
+
+mutation SceneSetRating($id: ID!, $rating100: Int) {
+  sceneSetRating(id: $id, rating100: $rating100) {
+    ...SlimSceneData
+  }
+}
+
+mutation PerformerSetRating($id: ID!, $rating100: Int) {
+  performerSetRating(id: $id, rating100: $rating100) {
+    ...PerformerData
+  }
+}
+
+mutation GallerySetRating($id: ID!, $rating100: Int) {
+  gallerySetRating(id: $id, rating100: $rating100) {
+    ...SlimGalleryData
+  }
+}
+
+mutation ImageSetRating($id: ID!, $rating100: Int) {
+  imageSetRating(id: $id, rating100: $rating100) {
+    ...SlimImageData
+  }
+}
+
+mutation GroupSetRating($id: ID!, $rating100: Int) {
+  groupSetRating(id: $id, rating100: $rating100) {
+    ...GroupData
+  }
+}
+
+mutation StudioSetRating($id: ID!, $rating100: Int) {
+  studioSetRating(id: $id, rating100: $rating100) {
+    ...StudioData
+  }
+}
