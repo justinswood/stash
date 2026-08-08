@@ -304,6 +304,14 @@ func (qb *PerformerStore) Create(ctx context.Context, newObject *models.CreatePe
 		}
 	}
 
+	// ratings are per-user (migration 86); a rating set at creation belongs to
+	// the acting user, not the row
+	if newObject.Performer.Rating != nil {
+		if err := setRating(ctx, performerRatingsTable, performerIDColumn, id, newObject.Performer.Rating); err != nil {
+			return err
+		}
+	}
+
 	updated, err := qb.find(ctx, id)
 	if err != nil {
 		return fmt.Errorf("finding after create: %w", err)
@@ -315,6 +323,19 @@ func (qb *PerformerStore) Create(ctx context.Context, newObject *models.CreatePe
 }
 
 func (qb *PerformerStore) UpdatePartial(ctx context.Context, id int, partial models.PerformerPartial) (*models.Performer, error) {
+	// ratings are per-user (migration 86); see SceneStore.UpdatePartial
+	if partial.Rating.Set {
+		var v *int
+		if !partial.Rating.Null {
+			rv := partial.Rating.Value
+			v = &rv
+		}
+		if err := setRating(ctx, performerRatingsTable, performerIDColumn, id, v); err != nil {
+			return nil, err
+		}
+		partial.Rating = models.OptionalInt{}
+	}
+
 	// favourites are per-user (migration 83), so this goes to the join table
 	// for the acting user rather than the legacy column. Cleared from the
 	// partial so fromPartial does not also write the column.
@@ -414,6 +435,13 @@ func (qb *PerformerStore) Update(ctx context.Context, updatedObject *models.Upda
 		return err
 	}
 
+	// ratings are per-user (migration 86). A full-object update replaces the
+	// acting user's rating, matching Create and UpdatePartial. With no user in
+	// context setRating is a no-op, so an import cannot rate on somebody's
+	// behalf.
+	if err := setRating(ctx, performerRatingsTable, performerIDColumn, updatedObject.ID, updatedObject.Rating); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -532,6 +560,16 @@ func (qb *PerformerStore) getMany(ctx context.Context, q *goqu.SelectDataset) ([
 	}
 	for _, o := range ret {
 		o.Favorite = favs[o.ID]
+	}
+
+	// ratings are per-user (migration 86); the row's legacy rating column is
+	// not authoritative. Done here because getMany is the funnel every read
+	// path goes through.
+	if err := applyRatings(ctx, performerRatingsTable, performerIDColumn, ret,
+		func(o *models.Performer) int { return o.ID },
+		func(o *models.Performer, r *int) { o.Rating = r },
+	); err != nil {
+		return nil, err
 	}
 
 	return ret, nil
@@ -678,7 +716,7 @@ func (qb *PerformerStore) makeQuery(ctx context.Context, performerFilter *models
 	restrictPerformers(ctx, &query)
 
 	var err error
-	query.sortAndPagination, err = qb.getPerformerSort(findFilter)
+	query.sortAndPagination, err = qb.getPerformerSort(ctx, findFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -819,7 +857,7 @@ var performerSortOptions = sortOptions{
 	"weight",
 }
 
-func (qb *PerformerStore) getPerformerSort(findFilter *models.FindFilterType) (string, error) {
+func (qb *PerformerStore) getPerformerSort(ctx context.Context, findFilter *models.FindFilterType) (string, error) {
 	var sort string
 	var direction string
 	if findFilter == nil {
@@ -855,6 +893,10 @@ func (qb *PerformerStore) getPerformerSort(findFilter *models.FindFilterType) (s
 		sortQuery += qb.sortByLastPlayedAt(direction)
 	case "last_o_at":
 		sortQuery += qb.sortByLastOAt(direction)
+	case "rating":
+		// per-user rating (migration 86); correlated subquery so unrated
+		// performers still appear rather than being dropped by a join.
+		sortQuery += ratingSortSQL(ctx, performerRatingsTable, performerIDColumn, "performers.id", direction)
 	default:
 		sortQuery += getSort(sort, direction, "performers")
 	}

@@ -352,6 +352,14 @@ func (qb *SceneStore) Create(ctx context.Context, newObject *models.Scene, fileI
 		}
 	}
 
+	// ratings are per-user (migration 86); a rating set at creation belongs to
+	// the acting user, not the row
+	if newObject.Rating != nil {
+		if err := setRating(ctx, sceneRatingsTable, sceneIDColumn, id, newObject.Rating); err != nil {
+			return err
+		}
+	}
+
 	updated, err := qb.find(ctx, id)
 	if err != nil {
 		return fmt.Errorf("finding after create: %w", err)
@@ -363,6 +371,21 @@ func (qb *SceneStore) Create(ctx context.Context, newObject *models.Scene, fileI
 }
 
 func (qb *SceneStore) UpdatePartial(ctx context.Context, id int, partial models.ScenePartial) (*models.Scene, error) {
+	// ratings are per-user (migration 86), so this goes to the join table for
+	// the acting user rather than the legacy column. Cleared from the partial
+	// so fromPartial does not also write the column.
+	if partial.Rating.Set {
+		var v *int
+		if !partial.Rating.Null {
+			rv := partial.Rating.Value
+			v = &rv
+		}
+		if err := setRating(ctx, sceneRatingsTable, sceneIDColumn, id, v); err != nil {
+			return nil, err
+		}
+		partial.Rating = models.OptionalInt{}
+	}
+
 	r := sceneRowRecord{
 		updateRecord{
 			Record: make(exp.Record),
@@ -469,6 +492,15 @@ func (qb *SceneStore) Update(ctx context.Context, updatedObject *models.Scene) e
 		if err := scenesFilesTableMgr.replaceJoins(ctx, updatedObject.ID, fileIDs); err != nil {
 			return err
 		}
+	}
+
+	// ratings are per-user (migration 86). A full-object update replaces the
+	// acting user's rating, matching Create and UpdatePartial — the gap that
+	// existed for favourites until it was caught by a failing test. With no
+	// user in context setRating is a no-op, so an import cannot rate on
+	// somebody's behalf.
+	if err := setRating(ctx, sceneRatingsTable, sceneIDColumn, updatedObject.ID, updatedObject.Rating); err != nil {
+		return err
 	}
 
 	return nil
@@ -598,6 +630,16 @@ func (qb *SceneStore) getMany(ctx context.Context, q *goqu.SelectDataset) ([]*mo
 		ret = append(ret, s)
 		return nil
 	}); err != nil {
+		return nil, err
+	}
+
+	// ratings are per-user (migration 86); the row's legacy rating column is
+	// not authoritative. Done here because getMany is the funnel every read
+	// path goes through.
+	if err := applyRatings(ctx, sceneRatingsTable, sceneIDColumn, ret,
+		func(s *models.Scene) int { return s.ID },
+		func(s *models.Scene, r *int) { s.Rating = r },
+	); err != nil {
 		return nil, err
 	}
 
@@ -1015,7 +1057,7 @@ func (qb *SceneStore) makeQuery(ctx context.Context, sceneFilter *models.SceneFi
 
 	restrictScenes(ctx, &query)
 
-	if err := qb.setSceneSort(&query, findFilter); err != nil {
+	if err := qb.setSceneSort(ctx, &query, findFilter); err != nil {
 		return nil, err
 	}
 	query.sortAndPagination += getPagination(findFilter)
@@ -1148,7 +1190,7 @@ var sceneSortOptions = sortOptions{
 	"performer_age",
 }
 
-func (qb *SceneStore) setSceneSort(query *queryBuilder, findFilter *models.FindFilterType) error {
+func (qb *SceneStore) setSceneSort(ctx context.Context, query *queryBuilder, findFilter *models.FindFilterType) error {
 	if findFilter == nil || findFilter.Sort == nil || *findFilter.Sort == "" {
 		return nil
 	}
@@ -1259,6 +1301,11 @@ func (qb *SceneStore) setSceneSort(query *queryBuilder, findFilter *models.FindF
 		query.sortAndPagination += getCountSort(sceneTable, scenesViewDatesTable, sceneIDColumn, direction)
 	case "last_played_at":
 		query.sortAndPagination += fmt.Sprintf(" ORDER BY (SELECT MAX(view_date) FROM %s AS sort WHERE sort.%s = %s.id) %s", scenesViewDatesTable, sceneIDColumn, sceneTable, getSortDirection(direction))
+	case "rating":
+		// per-user rating (migration 86). A correlated subquery rather than a
+		// join so that unrated scenes still appear in the sort instead of
+		// being dropped from the result.
+		query.sortAndPagination += ratingSortSQL(ctx, sceneRatingsTable, sceneIDColumn, "scenes.id", direction)
 	case "last_o_at":
 		query.sortAndPagination += fmt.Sprintf(" ORDER BY (SELECT MAX(o_date) FROM %s AS sort WHERE sort.%s = %s.id) %s", scenesODatesTable, sceneIDColumn, sceneTable, getSortDirection(direction))
 	case "o_counter":

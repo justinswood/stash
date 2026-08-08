@@ -629,8 +629,18 @@ func TestMain(m *testing.M) {
 // round-trip must act as somebody.
 var testUserID int
 
+// withTxn runs f as the fixture user. Per-user state (favourites, ratings,
+// saved filters) is invisible without one, so a test reading a fixture's rating
+// with a bare context sees nil and looks broken. Tests that specifically need
+// the no-user case — background tasks, DLNA — strip it with
+// sqlite.WithHistoryUser(ctx, 0).
 func withTxn(f func(ctx context.Context) error) error {
-	return txn.WithTxn(context.Background(), db, f)
+	return txn.WithTxn(context.Background(), db, func(ctx context.Context) error {
+		if testUserID > 0 {
+			ctx = sqlite.WithHistoryUser(ctx, testUserID)
+		}
+		return f(ctx)
+	})
 }
 
 func withRollbackTxn(f func(ctx context.Context) error) error {
@@ -698,6 +708,16 @@ func runTests(m *testing.M) int {
 
 func populateDB() error {
 	if err := withTxn(func(ctx context.Context) error {
+		// The fixture user has to exist before anything else is created, and
+		// the rest of the fixtures have to be created *as* them: favourites
+		// (migration 83) and ratings (86) live in join tables keyed on user, so
+		// with no acting user a fixture's Favorite/Rating would be written to
+		// the dead legacy column and read back as unset.
+		if err := createTestUser(ctx); err != nil {
+			return fmt.Errorf("error creating test user: %s", err.Error())
+		}
+		ctx = sqlite.WithHistoryUser(ctx, testUserID)
+
 		if err := createFolders(ctx); err != nil {
 			return fmt.Errorf("creating folders: %w", err)
 		}
@@ -760,10 +780,6 @@ func populateDB() error {
 
 		if err := linkGroupsParent(ctx, db.Group); err != nil {
 			return fmt.Errorf("error linking tags parent: %s", err.Error())
-		}
-
-		if err := createTestUser(ctx); err != nil {
-			return fmt.Errorf("error creating test user: %s", err.Error())
 		}
 
 		for _, ms := range markerSpecs {

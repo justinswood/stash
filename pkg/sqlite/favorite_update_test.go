@@ -85,12 +85,15 @@ func TestPerformerUpdateWithoutUserDoesNotFavourite(t *testing.T) {
 		require.NoError(t, db.Performer.Create(sqlite.WithHistoryUser(ctx, testUserID),
 			&models.CreatePerformerInput{Performer: &p}))
 
-		// ctx here carries no user, which is how scan, autotag, import and DLNA
-		// run. Such a task must not favourite on somebody's behalf — an import
-		// carrying favorite:true from a JSON file would otherwise write it to
-		// whoever happened to be first in the users table.
+		// Strip the fixture user the harness attaches: this is how scan,
+		// autotag, import and DLNA run. Such a task must not favourite on
+		// somebody's behalf — an import carrying favorite:true from a JSON file
+		// would otherwise write it to whoever happened to be first in the
+		// users table.
+		bgCtx := sqlite.WithHistoryUser(ctx, 0)
+
 		p.Favorite = true
-		require.NoError(t, db.Performer.Update(ctx, &models.UpdatePerformerInput{Performer: &p}))
+		require.NoError(t, db.Performer.Update(bgCtx, &models.UpdatePerformerInput{Performer: &p}))
 
 		got, err := db.Performer.Find(sqlite.WithHistoryUser(ctx, testUserID), p.ID)
 		require.NoError(t, err)

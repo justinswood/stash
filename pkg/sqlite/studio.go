@@ -215,6 +215,14 @@ func (qb *StudioStore) Create(ctx context.Context, newObject *models.Studio) err
 		}
 	}
 
+	// ratings are per-user (migration 86); a rating set at creation belongs to
+	// the acting user, not the row
+	if newObject.Rating != nil {
+		if err := setRating(ctx, studioRatingsTable, studioIDColumn, id, newObject.Rating); err != nil {
+			return err
+		}
+	}
+
 	updated, err := qb.find(ctx, id)
 	if err != nil {
 		return fmt.Errorf("finding after create: %w", err)
@@ -233,6 +241,20 @@ func (qb *StudioStore) UpdatePartial(ctx context.Context, input models.StudioPar
 			return nil, err
 		}
 		input.Favorite = models.OptionalBool{}
+	}
+
+	// ratings are per-user (migration 86); note StudioPartial carries its own
+	// id, unlike the other stores' partials
+	if input.Rating.Set {
+		var v *int
+		if !input.Rating.Null {
+			rv := input.Rating.Value
+			v = &rv
+		}
+		if err := setRating(ctx, studioRatingsTable, studioIDColumn, input.ID, v); err != nil {
+			return nil, err
+		}
+		input.Rating = models.OptionalInt{}
 	}
 
 	r := studioRowRecord{
@@ -312,6 +334,13 @@ func (qb *StudioStore) Update(ctx context.Context, updatedObject *models.Studio)
 		return err
 	}
 
+	// ratings are per-user (migration 86). A full-object update replaces the
+	// acting user's rating, matching Create and UpdatePartial. With no user in
+	// context setRating is a no-op, so an import cannot rate on somebody's
+	// behalf.
+	if err := setRating(ctx, studioRatingsTable, studioIDColumn, updatedObject.ID, updatedObject.Rating); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -497,6 +526,16 @@ func (qb *StudioStore) getMany(ctx context.Context, q *goqu.SelectDataset) ([]*m
 		o.Favorite = favs[o.ID]
 	}
 
+	// ratings are per-user (migration 86); the row's legacy rating column is
+	// not authoritative. Done here because getMany is the funnel every read
+	// path goes through.
+	if err := applyRatings(ctx, studioRatingsTable, studioIDColumn, ret,
+		func(o *models.Studio) int { return o.ID },
+		func(o *models.Studio, r *int) { o.Rating = r },
+	); err != nil {
+		return nil, err
+	}
+
 	return ret, nil
 }
 
@@ -670,7 +709,7 @@ func (qb *StudioStore) makeQuery(ctx context.Context, studioFilter *models.Studi
 	}
 
 	var err error
-	query.sortAndPagination, err = qb.getStudioSort(findFilter)
+	query.sortAndPagination, err = qb.getStudioSort(ctx, findFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -732,7 +771,7 @@ var studioSortOptions = sortOptions{
 	"updated_at",
 }
 
-func (qb *StudioStore) getStudioSort(findFilter *models.FindFilterType) (string, error) {
+func (qb *StudioStore) getStudioSort(ctx context.Context, findFilter *models.FindFilterType) (string, error) {
 	var sort string
 	var direction string
 	if findFilter == nil {
@@ -762,6 +801,10 @@ func (qb *StudioStore) getStudioSort(findFilter *models.FindFilterType) (string,
 		sortQuery += getCountSort(studioTable, galleryTable, studioIDColumn, direction)
 	case "child_count":
 		sortQuery += getCountSort(studioTable, studioTable, studioParentIDColumn, direction)
+	case "rating":
+		// per-user rating (migration 86); correlated subquery so unrated
+		// studios still appear rather than being dropped by a join.
+		sortQuery += ratingSortSQL(ctx, studioRatingsTable, studioIDColumn, "studios.id", direction)
 	default:
 		sortQuery += getSort(sort, direction, "studios")
 	}

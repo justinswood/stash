@@ -206,6 +206,25 @@ func intCriterionHandler(c *models.IntCriterionInput, column string, addJoinFn f
 	}
 }
 
+// perUserRatingCriterionHandler filters on the acting user's rating rather than
+// the legacy shared column (migration 86). The column has to be resolved at
+// execution time rather than when the handler is built, because it embeds the
+// user id from the request context.
+//
+// With no user the expression is literal NULL, so every comparison is unknown
+// and the filter matches nothing — a background task must not select on
+// somebody else's stars.
+func perUserRatingCriterionHandler(c *models.IntCriterionInput, joinTable, fkColumn, idColumn string) criterionHandlerFunc {
+	return func(ctx context.Context, f *filterBuilder) {
+		if c == nil {
+			return
+		}
+		clause, args := getIntCriterionWhereClause(
+			ratingValueSQL(ctx, joinTable, fkColumn, idColumn), *c)
+		f.addWhere(clause, args...)
+	}
+}
+
 func floatCriterionHandler(c *models.FloatCriterionInput, column string, addJoinFn func(f *filterBuilder)) criterionHandlerFunc {
 	return func(ctx context.Context, f *filterBuilder) {
 		if c != nil {

@@ -269,6 +269,14 @@ func (qb *GalleryStore) Create(ctx context.Context, newObject *models.Gallery, f
 		}
 	}
 
+	// ratings are per-user (migration 86); a rating set at creation belongs to
+	// the acting user, not the row
+	if newObject.Rating != nil {
+		if err := setRating(ctx, galleryRatingsTable, galleryIDColumn, id, newObject.Rating); err != nil {
+			return err
+		}
+	}
+
 	updated, err := qb.find(ctx, id)
 	if err != nil {
 		return fmt.Errorf("finding after create: %w", err)
@@ -319,10 +327,30 @@ func (qb *GalleryStore) Update(ctx context.Context, updatedObject *models.Galler
 		}
 	}
 
+	// ratings are per-user (migration 86). A full-object update replaces the
+	// acting user's rating, matching Create and UpdatePartial. With no user in
+	// context setRating is a no-op, so an import cannot rate on somebody's
+	// behalf.
+	if err := setRating(ctx, galleryRatingsTable, galleryIDColumn, updatedObject.ID, updatedObject.Rating); err != nil {
+		return err
+	}
 	return nil
 }
 
 func (qb *GalleryStore) UpdatePartial(ctx context.Context, id int, partial models.GalleryPartial) (*models.Gallery, error) {
+	// ratings are per-user (migration 86); see SceneStore.UpdatePartial
+	if partial.Rating.Set {
+		var v *int
+		if !partial.Rating.Null {
+			rv := partial.Rating.Value
+			v = &rv
+		}
+		if err := setRating(ctx, galleryRatingsTable, galleryIDColumn, id, v); err != nil {
+			return nil, err
+		}
+		partial.Rating = models.OptionalInt{}
+	}
+
 	r := galleryRowRecord{
 		updateRecord{
 			Record: make(exp.Record),
@@ -490,6 +518,16 @@ func (qb *GalleryStore) getMany(ctx context.Context, q *goqu.SelectDataset) ([]*
 		ret = append(ret, s)
 		return nil
 	}); err != nil {
+		return nil, err
+	}
+
+	// ratings are per-user (migration 86); the row's legacy rating column is
+	// not authoritative. Done here because getMany is the funnel every read
+	// path goes through.
+	if err := applyRatings(ctx, galleryRatingsTable, galleryIDColumn, ret,
+		func(o *models.Gallery) int { return o.ID },
+		func(o *models.Gallery, r *int) { o.Rating = r },
+	); err != nil {
 		return nil, err
 	}
 
@@ -736,7 +774,7 @@ func (qb *GalleryStore) makeQuery(ctx context.Context, galleryFilter *models.Gal
 
 	restrictGalleries(ctx, &query)
 
-	if err := qb.setGallerySort(&query, findFilter); err != nil {
+	if err := qb.setGallerySort(ctx, &query, findFilter); err != nil {
 		return nil, err
 	}
 	query.sortAndPagination += getPagination(findFilter)
@@ -788,7 +826,7 @@ var gallerySortOptions = sortOptions{
 	"updated_at",
 }
 
-func (qb *GalleryStore) setGallerySort(query *queryBuilder, findFilter *models.FindFilterType) error {
+func (qb *GalleryStore) setGallerySort(ctx context.Context, query *queryBuilder, findFilter *models.FindFilterType) error {
 	if findFilter == nil || findFilter.Sort == nil || *findFilter.Sort == "" {
 		return nil
 	}
@@ -854,6 +892,10 @@ func (qb *GalleryStore) setGallerySort(query *queryBuilder, findFilter *models.F
 		addFileTable()
 		addFolderTable()
 		query.sortAndPagination += " ORDER BY COALESCE(galleries.title, files.basename, basename(COALESCE(folders.path, ''))) COLLATE NATURAL_CI " + direction + ", file_folder.path COLLATE NATURAL_CI " + direction
+	case "rating":
+		// per-user rating (migration 86); correlated subquery so unrated
+		// galleries still appear rather than being dropped by a join.
+		query.sortAndPagination += ratingSortSQL(ctx, galleryRatingsTable, galleryIDColumn, "galleries.id", direction)
 	default:
 		query.sortAndPagination += getSort(sort, direction, "galleries")
 	}

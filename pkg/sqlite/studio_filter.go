@@ -56,7 +56,7 @@ func (qb *studioFilterHandler) criterionHandler() criterionHandler {
 		stringCriterionHandler(studioFilter.Name, studioTable+".name"),
 		stringCriterionHandler(studioFilter.Details, studioTable+".details"),
 		qb.urlsCriterionHandler(studioFilter.URL),
-		intCriterionHandler(studioFilter.Rating100, studioTable+".rating", nil),
+		perUserRatingCriterionHandler(studioFilter.Rating100, studioRatingsTable, studioIDColumn, studioTable+".id"),
 		qb.favoriteCriterionHandler(studioFilter.Favorite),
 		boolCriterionHandler(studioFilter.IgnoreAutoTag, studioTable+".ignore_auto_tag", nil),
 

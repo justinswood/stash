@@ -92,7 +92,7 @@ func (qb *sceneFilterHandler) criterionHandler() criterionHandler {
 
 		qb.phashDistanceCriterionHandler(sceneFilter.PhashDistance),
 
-		intCriterionHandler(sceneFilter.Rating100, "scenes.rating", nil),
+		perUserRatingCriterionHandler(sceneFilter.Rating100, sceneRatingsTable, sceneIDColumn, "scenes.id"),
 		qb.oCountCriterionHandler(sceneFilter.OCounter),
 		boolCriterionHandler(sceneFilter.Organized, "scenes.organized", nil),
 

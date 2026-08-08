@@ -132,7 +132,7 @@ func (qb *performerFilterHandler) criterionHandler() criterionHandler {
 		stringCriterionHandler(filter.CareerLength, tableName+".career_length"),
 		stringCriterionHandler(filter.Tattoos, tableName+".tattoos"),
 		stringCriterionHandler(filter.Piercings, tableName+".piercings"),
-		intCriterionHandler(filter.Rating100, tableName+".rating", nil),
+		perUserRatingCriterionHandler(filter.Rating100, performerRatingsTable, performerIDColumn, tableName+".id"),
 		stringCriterionHandler(filter.HairColor, tableName+".hair_color"),
 		qb.urlsCriterionHandler(filter.URL),
 		intCriterionHandler(filter.Weight, tableName+".weight", nil),

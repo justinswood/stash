@@ -192,6 +192,14 @@ func (qb *GroupStore) Create(ctx context.Context, newObject *models.Group) error
 		return err
 	}
 
+	// ratings are per-user (migration 86); a rating set at creation belongs to
+	// the acting user, not the row
+	if newObject.Rating != nil {
+		if err := setRating(ctx, groupRatingsTable, groupIDColumn, id, newObject.Rating); err != nil {
+			return err
+		}
+	}
+
 	updated, err := qb.find(ctx, id)
 	if err != nil {
 		return fmt.Errorf("finding after create: %w", err)
@@ -203,6 +211,19 @@ func (qb *GroupStore) Create(ctx context.Context, newObject *models.Group) error
 }
 
 func (qb *GroupStore) UpdatePartial(ctx context.Context, id int, partial models.GroupPartial) (*models.Group, error) {
+	// ratings are per-user (migration 86); see SceneStore.UpdatePartial
+	if partial.Rating.Set {
+		var v *int
+		if !partial.Rating.Null {
+			rv := partial.Rating.Value
+			v = &rv
+		}
+		if err := setRating(ctx, groupRatingsTable, groupIDColumn, id, v); err != nil {
+			return nil, err
+		}
+		partial.Rating = models.OptionalInt{}
+	}
+
 	r := groupRowRecord{
 		updateRecord{
 			Record: make(exp.Record),
@@ -264,6 +285,13 @@ func (qb *GroupStore) Update(ctx context.Context, updatedObject *models.Group) e
 		return err
 	}
 
+	// ratings are per-user (migration 86). A full-object update replaces the
+	// acting user's rating, matching Create and UpdatePartial. With no user in
+	// context setRating is a no-op, so an import cannot rate on somebody's
+	// behalf.
+	if err := setRating(ctx, groupRatingsTable, groupIDColumn, updatedObject.ID, updatedObject.Rating); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -358,6 +386,16 @@ func (qb *GroupStore) getMany(ctx context.Context, q *goqu.SelectDataset) ([]*mo
 		return nil, err
 	}
 
+	// ratings are per-user (migration 86); the row's legacy rating column is
+	// not authoritative. Done here because getMany is the funnel every read
+	// path goes through.
+	if err := applyRatings(ctx, groupRatingsTable, groupIDColumn, ret,
+		func(o *models.Group) int { return o.ID },
+		func(o *models.Group, r *int) { o.Rating = r },
+	); err != nil {
+		return nil, err
+	}
+
 	return ret, nil
 }
 
@@ -444,7 +482,7 @@ func (qb *GroupStore) makeQuery(ctx context.Context, groupFilter *models.GroupFi
 		return nil, err
 	}
 
-	if err := qb.setGroupSort(&query, findFilter); err != nil {
+	if err := qb.setGroupSort(ctx, &query, findFilter); err != nil {
 		return nil, err
 	}
 
@@ -496,7 +534,7 @@ var groupSortOptions = sortOptions{
 	"updated_at",
 }
 
-func (qb *GroupStore) setGroupSort(query *queryBuilder, findFilter *models.FindFilterType) error {
+func (qb *GroupStore) setGroupSort(ctx context.Context, query *queryBuilder, findFilter *models.FindFilterType) error {
 	var sort string
 	var direction string
 	if findFilter == nil {
@@ -529,6 +567,10 @@ func (qb *GroupStore) setGroupSort(query *queryBuilder, findFilter *models.FindF
 		query.sortAndPagination += getCountSort(groupTable, groupsScenesTable, groupIDColumn, direction)
 	case "o_counter":
 		query.sortAndPagination += qb.sortByOCounter(direction)
+	case "rating":
+		// per-user rating (migration 86); correlated subquery so unrated
+		// groups still appear rather than being dropped by a join.
+		query.sortAndPagination += ratingSortSQL(ctx, groupRatingsTable, groupIDColumn, "groups.id", direction)
 	default:
 		query.sortAndPagination += getSort(sort, direction, "groups")
 	}

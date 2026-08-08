@@ -276,6 +276,14 @@ func (qb *ImageStore) Create(ctx context.Context, newObject *models.Image, fileI
 		}
 	}
 
+	// ratings are per-user (migration 86); a rating set at creation belongs to
+	// the acting user, not the row
+	if newObject.Rating != nil {
+		if err := setRating(ctx, imageRatingsTable, imageIDColumn, id, newObject.Rating); err != nil {
+			return err
+		}
+	}
+
 	updated, err := qb.find(ctx, id)
 	if err != nil {
 		return fmt.Errorf("finding after create: %w", err)
@@ -287,6 +295,19 @@ func (qb *ImageStore) Create(ctx context.Context, newObject *models.Image, fileI
 }
 
 func (qb *ImageStore) UpdatePartial(ctx context.Context, id int, partial models.ImagePartial) (*models.Image, error) {
+	// ratings are per-user (migration 86); see SceneStore.UpdatePartial
+	if partial.Rating.Set {
+		var v *int
+		if !partial.Rating.Null {
+			rv := partial.Rating.Value
+			v = &rv
+		}
+		if err := setRating(ctx, imageRatingsTable, imageIDColumn, id, v); err != nil {
+			return nil, err
+		}
+		partial.Rating = models.OptionalInt{}
+	}
+
 	r := imageRowRecord{
 		updateRecord{
 			Record: make(exp.Record),
@@ -373,6 +394,14 @@ func (qb *ImageStore) Update(ctx context.Context, updatedObject *models.Image) e
 		if err := imagesFilesTableMgr.replaceJoins(ctx, updatedObject.ID, fileIDs); err != nil {
 			return err
 		}
+	}
+
+	// ratings are per-user (migration 86). A full-object update replaces the
+	// acting user's rating, matching Create and UpdatePartial. With no user in
+	// context setRating is a no-op, so an import cannot rate on somebody's
+	// behalf.
+	if err := setRating(ctx, imageRatingsTable, imageIDColumn, updatedObject.ID, updatedObject.Rating); err != nil {
+		return err
 	}
 	return nil
 }
@@ -477,6 +506,16 @@ func (qb *ImageStore) getMany(ctx context.Context, q *goqu.SelectDataset) ([]*mo
 		ret = append(ret, i)
 		return nil
 	}); err != nil {
+		return nil, err
+	}
+
+	// ratings are per-user (migration 86); the row's legacy rating column is
+	// not authoritative. Done here because getMany is the funnel every read
+	// path goes through.
+	if err := applyRatings(ctx, imageRatingsTable, imageIDColumn, ret,
+		func(o *models.Image) int { return o.ID },
+		func(o *models.Image, r *int) { o.Rating = r },
+	); err != nil {
 		return nil, err
 	}
 
@@ -861,7 +900,7 @@ func (qb *ImageStore) makeQuery(ctx context.Context, imageFilter *models.ImageFi
 
 	restrictImages(ctx, &query)
 
-	if err := qb.setImageSortAndPagination(&query, findFilter); err != nil {
+	if err := qb.setImageSortAndPagination(ctx, &query, findFilter); err != nil {
 		return nil, err
 	}
 
@@ -976,7 +1015,7 @@ var imageSortOptions = sortOptions{
 	"updated_at",
 }
 
-func (qb *ImageStore) setImageSortAndPagination(q *queryBuilder, findFilter *models.FindFilterType) error {
+func (qb *ImageStore) setImageSortAndPagination(ctx context.Context, q *queryBuilder, findFilter *models.FindFilterType) error {
 	sortClause := ""
 
 	if findFilter != nil && findFilter.Sort != nil && *findFilter.Sort != "" {
@@ -1042,6 +1081,10 @@ func (qb *ImageStore) setImageSortAndPagination(q *queryBuilder, findFilter *mod
 			addFilesJoin()
 			addFolderJoin()
 			sortClause = " ORDER BY COALESCE(images.title, files.basename) COLLATE NATURAL_CI " + direction + ", folders.path COLLATE NATURAL_CI " + direction
+		case "rating":
+			// per-user rating (migration 86); correlated subquery so unrated
+			// images still appear rather than being dropped by a join.
+			sortClause = ratingSortSQL(ctx, imageRatingsTable, imageIDColumn, "images.id", direction)
 		default:
 			sortClause = getSort(sort, direction, "images")
 		}
