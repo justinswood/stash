@@ -40,6 +40,18 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 COPY --from=frontend /stash /stash/
 ARG GITHASH
 ARG STASH_VERSION
+# Optional build-time Go flags. Empty by default, so this changes nothing for a
+# normal build. It exists so a memory-constrained host can cap the compiler's
+# parallelism, which is what drives peak memory: `go build` compiles NumCPU
+# packages at once, and on a 4-CPU box already carrying a large dockerd and
+# dozens of containers that spike is what reaches the OOM killer.
+#
+#   docker build --build-arg GOFLAGS=-p=2 ...
+#
+# Roughly halves peak compile memory for roughly double the compile time on
+# this stage.
+ARG GOFLAGS=""
+ENV GOFLAGS=$GOFLAGS
 RUN --mount=type=cache,target=/go/pkg/mod \
   --mount=type=cache,target=/root/.cache/go-build \
   make flags-release flags-pie stash
