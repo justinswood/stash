@@ -371,19 +371,64 @@ func (f *filterBuilder) generateHavingClauses() (string, []interface{}) {
 	return clause, args
 }
 
+// generateWithClauses generates the WITH (CTE) clauses for this filter and any
+// sub-filter(s).
+//
+// Recursing into sub-filters is required, not optional. A criterion nested
+// inside an OR/AND/NOT registers its CTE on the *sub*-filter, while its JOIN is
+// collected by getAllJoins — which does recurse. Omitting the sub-filter's CTEs
+// therefore emitted a join against a table that was never defined, and the
+// query died with "no such table: performer_tags". That is exactly why a
+// performer_tags criterion worked on its own but crashed the moment it was
+// placed inside an OR, while a plain OR of ordinary criteria was fine.
+//
+// Identical clauses are collapsed. The same criterion on both sides of an
+// operator generates byte-identical SQL, and SQLite rejects a duplicate CTE
+// name. Note the dedup is on the SQL text: two *different* criteria that both
+// define a CTE of the same name (say two performer_tags criteria with different
+// tag sets) would still collide. That is a pre-existing limitation of naming
+// CTEs after the criterion rather than uniquely, and it fails loudly in SQLite
+// rather than returning wrong rows.
 func (f *filterBuilder) generateWithClauses() (string, []interface{}) {
 	var clauses []string
 	var args []interface{}
-	for _, w := range f.withClauses {
-		clauses = append(clauses, w.sql)
-		args = append(args, w.args...)
+	seen := make(map[string]bool)
+
+	var collect func(fb *filterBuilder)
+	collect = func(fb *filterBuilder) {
+		if fb == nil {
+			return
+		}
+		for _, w := range fb.withClauses {
+			if w.sql == "" || seen[w.sql] {
+				continue
+			}
+			seen[w.sql] = true
+			clauses = append(clauses, w.sql)
+			args = append(args, w.args...)
+		}
+		collect(fb.subFilter)
 	}
+	collect(f)
 
 	if len(clauses) > 0 {
 		return strings.Join(clauses, ", "), args
 	}
 
 	return "", nil
+}
+
+// isRecursiveWith reports whether this filter or any sub-filter registered a
+// recursive CTE. Checked across the whole tree for the same reason the clauses
+// are collected across it: a nested criterion's WITH RECURSIVE would otherwise
+// be emitted as a plain WITH and fail to resolve its own self-reference.
+func (f *filterBuilder) isRecursiveWith() bool {
+	for fb := f; fb != nil; fb = fb.subFilter {
+		if fb.recursiveWith {
+			return true
+		}
+	}
+	return false
 }
 
 // getAllJoins returns all of the joins in this filter and any sub-filter(s).
