@@ -24,6 +24,7 @@ import { OperationButton } from "src/components/Shared/OperationButton";
 import * as FormUtils from "src/utils/form";
 import { genderList, stringToGender } from "src/utils/gender";
 import { IScrapedScene, TaggerStateContext } from "../context";
+import { ITaggerSource } from "../constants";
 import { OptionalField } from "../IncludeButton";
 import { SceneTaggerModalsState } from "./sceneTaggerModals";
 import PerformerResult from "./PerformerResult";
@@ -215,6 +216,9 @@ interface IStashSearchResultProps {
   stashScene: GQL.SlimSceneDataFragment;
   index: number;
   isActive: boolean;
+  // the source this result was scraped from, when it differs from the selected
+  // one - a cascade search may match against any configured source
+  source?: ITaggerSource;
 }
 
 const StashSearchResult: React.FC<IStashSearchResultProps> = ({
@@ -222,6 +226,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   stashScene,
   index,
   isActive,
+  source,
 }) => {
   const intl = useIntl();
 
@@ -240,6 +245,14 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     registerSaveCallback,
     unregisterSaveCallback,
   } = React.useContext(TaggerStateContext);
+
+  // Every stash_id written from this result must be attributed to the source
+  // that actually produced it, not to whatever is selected in the dropdown.
+  // A multi-source search tags each result individually, so the result's own
+  // source wins over the result set's and over the selection.
+  const resultSource = scene.source ?? source ?? currentSource;
+  const resultEndpoint =
+    resultSource?.sourceInput.stash_box_endpoint ?? undefined;
 
   const performerGenders = config.performerGenders || genderList;
 
@@ -327,8 +340,15 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     }
   }, [isActive, loading, stashScene, index, resolveScene, scene]);
 
-  const stashBoxBaseURL = currentSource?.sourceInput.stash_box_endpoint
-    ? getStashboxBase(currentSource.sourceInput.stash_box_endpoint)
+  // label the result with its source when it is not the selected one, so a
+  // merged multi-source list never hides where a candidate came from
+  const foreignSourceName =
+    scene.source && scene.source.id !== currentSource?.id
+      ? scene.source.displayName
+      : undefined;
+
+  const stashBoxBaseURL = resultEndpoint
+    ? getStashboxBase(resultEndpoint)
     : undefined;
   const stashBoxURL = useMemo(() => {
     if (stashBoxBaseURL) {
@@ -402,11 +422,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     }
 
     const includeStashID = !excludedFieldList.includes("stash_ids");
-    if (
-      includeStashID &&
-      currentSource?.sourceInput.stash_box_endpoint &&
-      scene.remote_site_id
-    ) {
+    if (includeStashID && resultEndpoint && scene.remote_site_id) {
       sceneCreateInput.stash_ids = [
         ...(stashScene?.stash_ids
           .map((s) => {
@@ -416,11 +432,9 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
               updated_at: s.updated_at,
             };
           })
-          .filter(
-            (s) => s.endpoint !== currentSource.sourceInput.stash_box_endpoint
-          ) ?? []),
+          .filter((s) => s.endpoint !== resultEndpoint) ?? []),
         {
-          endpoint: currentSource.sourceInput.stash_box_endpoint,
+          endpoint: resultEndpoint,
           stash_id: scene.remote_site_id,
           updated_at: new Date().toISOString(),
         },
@@ -430,7 +444,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
       delete sceneCreateInput.stash_ids;
     }
 
-    await saveScene(sceneCreateInput, includeStashID);
+    await saveScene(sceneCreateInput, includeStashID, resultEndpoint);
   }
 
   // Register save callback for batch save when this result is active
@@ -445,11 +459,15 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   }, [isActive, stashScene.id, registerSaveCallback, unregisterSaveCallback]);
 
   function showPerformerModal(t: GQL.ScrapedPerformer) {
-    createPerformerModal(t, (toCreate) => {
-      if (toCreate) {
-        createNewPerformer(t, toCreate);
-      }
-    });
+    createPerformerModal(
+      t,
+      (toCreate) => {
+        if (toCreate) {
+          createNewPerformer(t, toCreate);
+        }
+      },
+      resultEndpoint
+    );
   }
 
   async function onCreateTag(
@@ -459,7 +477,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     const toCreate: GQL.TagCreateInput = createInput ?? { name: t.name };
 
     // If the tag has a remote_site_id and we have an endpoint, include the stash_id
-    const endpoint = currentSource?.sourceInput.stash_box_endpoint;
+    const endpoint = resultEndpoint;
     if (!createInput && t.remote_site_id && endpoint) {
       toCreate.stash_ids = [
         {
@@ -484,13 +502,17 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   }
 
   function showTagModal(t: GQL.ScrapedTag) {
-    createTagModal(t, (result) => {
-      if (result.create) {
-        onCreateTag(t, result.create);
-      } else if (result.update) {
-        onUpdateTag(t, result.update);
-      }
-    });
+    createTagModal(
+      t,
+      (result) => {
+        if (result.create) {
+          onCreateTag(t, result.create);
+        } else if (result.update) {
+          onUpdateTag(t, result.update);
+        }
+      },
+      resultEndpoint
+    );
   }
 
   async function studioModalCallback(
@@ -505,7 +527,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
             ...parentInput,
             id: toCreate.parent_id,
           };
-          await updateStudio(parentUpdateData);
+          await updateStudio(parentUpdateData, resultEndpoint);
         } else {
           const parentID = await createNewStudio(studio.parent, parentInput);
           toCreate.parent_id = parentID;
@@ -517,9 +539,13 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   }
 
   function showStudioModal(t: GQL.ScrapedStudio) {
-    createStudioModal(t, (toCreate, parentInput) => {
-      studioModalCallback(t, toCreate, parentInput);
-    });
+    createStudioModal(
+      t,
+      (toCreate, parentInput) => {
+        studioModalCallback(t, toCreate, parentInput);
+      },
+      resultEndpoint
+    );
   }
 
   // constants to get around dot-notation eslint rule
@@ -718,11 +744,9 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
             selectedID={studioID}
             setSelectedID={(id) => setStudioID(id)}
             onCreate={() => showStudioModal(scene.studio!)}
-            endpoint={
-              currentSource?.sourceInput.stash_box_endpoint ?? undefined
-            }
+            endpoint={resultEndpoint}
             onLink={async () => {
-              await linkStudio(scene.studio!, studioID!);
+              await linkStudio(scene.studio!, studioID!, resultEndpoint);
             }}
           />
         </div>
@@ -747,11 +771,13 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
               setSelectedID={(id) => setPerformerID(performerIndex, id)}
               onCreate={() => showPerformerModal(performer)}
               onLink={async () => {
-                await linkPerformer(performer, performerIDs[performerIndex]!);
+                await linkPerformer(
+                  performer,
+                  performerIDs[performerIndex]!,
+                  resultEndpoint
+                );
               }}
-              endpoint={
-                currentSource?.sourceInput.stash_box_endpoint ?? undefined
-              }
+              endpoint={resultEndpoint}
               key={`${performer.name ?? performer.remote_site_id ?? ""}`}
               ageFromDate={
                 !scene.date || excludedFields.date
@@ -848,6 +874,11 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
             {maybeRenderDateField()}
             {getDurationStatus(scene, stashSceneFile?.duration)}
             {getFingerprintStatus(scene, stashScene)}
+            {foreignSourceName && (
+              <div className="tagger-result-source">
+                <Badge variant="secondary">{foreignSourceName}</Badge>
+              </div>
+            )}
           </div>
         </div>
         {isActive && (
@@ -879,11 +910,15 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
 export interface ISceneSearchResults {
   target: GQL.SlimSceneDataFragment;
   scenes: IScrapedScene[];
+  // the source these results came from, when a cascade matched against
+  // something other than the selected source
+  source?: ITaggerSource;
 }
 
 export const SceneSearchResults: React.FC<ISceneSearchResults> = ({
   target,
   scenes: unsortedScenes,
+  source,
 }) => {
   const [selectedResult, setSelectedResult] = useState<number | undefined>();
 
@@ -929,6 +964,7 @@ export const SceneSearchResults: React.FC<ISceneSearchResults> = ({
             isActive={i === selectedResult}
             scene={s}
             stashScene={target}
+            source={source}
           />
         </li>
       ))}

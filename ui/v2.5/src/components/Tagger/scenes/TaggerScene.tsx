@@ -2,7 +2,7 @@ import React, { useState, useContext, PropsWithChildren, useMemo } from "react";
 import * as GQL from "src/core/generated-graphql";
 import { Link, useHistory } from "react-router-dom";
 import { Button, Collapse, Form, InputGroup } from "react-bootstrap";
-import { FormattedMessage } from "react-intl";
+import { FormattedMessage, useIntl } from "react-intl";
 
 import { sortPerformers } from "src/core/performers";
 import { Icon } from "src/components/Shared/Icon";
@@ -113,6 +113,8 @@ interface ITaggerScene {
   errorMessage?: string;
   doSceneQuery?: (queryString: string) => void;
   scrapeSceneFragment?: (scene: GQL.SlimSceneDataFragment) => void;
+  // searches every configured source and merges the candidates into one list
+  cascadeSearch?: (queryString: string) => Promise<void>;
   loading?: boolean;
   showLightboxImage: (imagePath: string) => void;
   queue?: SceneQueue;
@@ -126,6 +128,7 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
   loading,
   doSceneQuery,
   scrapeSceneFragment,
+  cascadeSearch,
   errorMessage,
   children,
   showLightboxImage,
@@ -133,9 +136,11 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
   index,
   onDismiss,
 }) => {
+  const intl = useIntl();
   const { config } = useContext(TaggerStateContext);
   const [queryString, setQueryString] = useState<string>("");
   const [queryLoading, setQueryLoading] = useState(false);
+  const [cascadeLoading, setCascadeLoading] = useState(false);
 
   const { paths, file: basename } = parsePath(objectPath(scene));
   const defaultQueryString = prepareQueryString(
@@ -171,6 +176,37 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
     }
   }
 
+  async function cascade() {
+    if (!cascadeSearch) return;
+
+    try {
+      setCascadeLoading(true);
+      await cascadeSearch(queryString || defaultQueryString);
+    } finally {
+      setCascadeLoading(false);
+    }
+  }
+
+  function renderCascadeButton(className?: string) {
+    if (!cascadeSearch) return;
+
+    return (
+      <OperationButton
+        className={className}
+        variant="secondary"
+        disabled={loading}
+        operation={cascade}
+        loading={cascadeLoading}
+        setLoading={setCascadeLoading}
+        title={intl.formatMessage({
+          id: "component_tagger.verb_search_all_sources_tooltip",
+        })}
+      >
+        <FormattedMessage id="component_tagger.verb_search_all_sources" />
+      </OperationButton>
+    );
+  }
+
   function renderQueryForm() {
     if (!doSceneQuery) return;
 
@@ -200,6 +236,7 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
           >
             <FormattedMessage id="actions.search" />
           </OperationButton>
+          {renderCascadeButton()}
         </InputGroup.Append>
       </InputGroup>
     );
@@ -262,16 +299,22 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
         <div className="col-md-6 my-1">
           <div>
             {renderQueryForm()}
-            {scrapeSceneFragment ? (
+            {scrapeSceneFragment || (!doSceneQuery && cascadeSearch) ? (
               <div className="mt-2 text-right">
-                <OperationButton
-                  disabled={loading}
-                  operation={async () => {
-                    await scrapeSceneFragment(scene);
-                  }}
-                >
-                  <FormattedMessage id="actions.scrape_scene_fragment" />
-                </OperationButton>
+                {/* the cascade button lives in the query form when there is
+                    one; this is the fallback for sources that cannot name
+                    query */}
+                {!doSceneQuery && renderCascadeButton("mr-2")}
+                {scrapeSceneFragment && (
+                  <OperationButton
+                    disabled={loading}
+                    operation={async () => {
+                      await scrapeSceneFragment(scene);
+                    }}
+                  >
+                    <FormattedMessage id="actions.scrape_scene_fragment" />
+                  </OperationButton>
+                )}
                 {onDismiss && (
                   <Button
                     variant="danger"

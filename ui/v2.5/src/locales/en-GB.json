@@ -223,6 +223,7 @@
       "fp_matches": "Duration is a match",
       "fp_matches_multi": "Duration matches {matchCount}/{durationsLength} fingerprints",
       "hash_matches": "{hash_type} is a match",
+      "match_failed_all_sources": "No results found in any source",
       "match_failed_already_tagged": "Scene already tagged",
       "match_failed_no_result": "No results found",
       "match_success": "Scene successfully tagged",
@@ -237,6 +238,8 @@
     "verb_save_all": "Save All ({count})",
     "verb_scrape_all": "Scrape All",
     "verb_search_all": "Search All",
+    "verb_search_all_sources": "Search All Sources",
+    "verb_search_all_sources_tooltip": "Search every configured source and merge the results into one list, ranked by how well each candidate matches this file",
     "verb_submit_fp": "Submit {fpCount, plural, one{# Fingerprint} other{# Fingerprints}}",
     "verb_toggle_config": "{toggle} {configuration}",
     "verb_toggle_unmatched": "{toggle} unmatched scenes"

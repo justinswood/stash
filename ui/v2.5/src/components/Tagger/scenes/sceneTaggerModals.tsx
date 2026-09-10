@@ -19,15 +19,23 @@ type TagModalCallback = (result: {
 }) => void;
 
 export interface ISceneTaggerModalsContextState {
+  // endpoint overrides the selected source's endpoint, so an object created
+  // from a cascade result is stamped with the stash-box that produced it
   createPerformerModal: (
     performer: GQL.ScrapedPerformerDataFragment,
-    callback: PerformerModalCallback
+    callback: PerformerModalCallback,
+    endpoint?: string
   ) => void;
   createStudioModal: (
     studio: GQL.ScrapedSceneStudioDataFragment,
-    callback: StudioModalCallback
+    callback: StudioModalCallback,
+    endpoint?: string
   ) => void;
-  createTagModal: (tag: GQL.ScrapedTag, callback: TagModalCallback) => void;
+  createTagModal: (
+    tag: GQL.ScrapedTag,
+    callback: TagModalCallback,
+    endpoint?: string
+  ) => void;
 }
 
 export const SceneTaggerModalsState =
@@ -55,6 +63,8 @@ export const SceneTaggerModals: React.FC = ({ children }) => {
   >();
 
   const [tagToCreate, setTagToCreate] = useState<GQL.ScrapedTag | undefined>();
+  // endpoint of the source that produced the object being created
+  const [modalEndpoint, setModalEndpoint] = useState<string | undefined>();
   const [tagCallback, setTagCallback] = useState<
     | ((result: {
         create?: GQL.TagCreateInput;
@@ -85,8 +95,10 @@ export const SceneTaggerModals: React.FC = ({ children }) => {
 
   function createPerformerModal(
     performer: GQL.ScrapedPerformerDataFragment,
-    callback: PerformerModalCallback
+    callback: PerformerModalCallback,
+    endpoint?: string
   ) {
+    setModalEndpoint(endpoint);
     setPerformerToCreate(performer);
     // can't set the function directly - needs to be via a wrapping function
     setPerformerCallback(() => callback);
@@ -115,8 +127,10 @@ export const SceneTaggerModals: React.FC = ({ children }) => {
 
   function createStudioModal(
     studio: GQL.ScrapedSceneStudioDataFragment,
-    callback: StudioModalCallback
+    callback: StudioModalCallback,
+    endpoint?: string
   ) {
+    setModalEndpoint(endpoint);
     setStudioToCreate(studio);
     // can't set the function directly - needs to be via a wrapping function
     setStudioCallback(() => callback);
@@ -134,12 +148,18 @@ export const SceneTaggerModals: React.FC = ({ children }) => {
     setTagCallback(undefined);
   }
 
-  function createTagModal(tag: GQL.ScrapedTag, callback: TagModalCallback) {
+  function createTagModal(
+    tag: GQL.ScrapedTag,
+    callback: TagModalCallback,
+    endpoint?: string
+  ) {
+    setModalEndpoint(endpoint);
     setTagToCreate(tag);
     setTagCallback(() => callback);
   }
 
-  const endpoint = currentSource?.sourceInput.stash_box_endpoint ?? undefined;
+  const endpoint =
+    modalEndpoint ?? currentSource?.sourceInput.stash_box_endpoint ?? undefined;
 
   return (
     <SceneTaggerModalsState.Provider

@@ -25,8 +25,14 @@ const Scene: React.FC<{
   onDismiss?: () => void;
 }> = ({ scene, searchResult, queue, index, showLightboxImage, onDismiss }) => {
   const intl = useIntl();
-  const { currentSource, doSceneQuery, doSceneFragmentScrape, loading } =
-    useContext(TaggerStateContext);
+  const {
+    currentSource,
+    sources,
+    doSceneQuery,
+    doSceneCascadeSearch,
+    doSceneFragmentScrape,
+    loading,
+  } = useContext(TaggerStateContext);
   const { configuration } = useConfigurationContext();
 
   const cont = configuration?.interface.continuePlaylistDefault ?? false;
@@ -42,6 +48,10 @@ const Scene: React.FC<{
   const errorMessage = useMemo(() => {
     if (searchResult?.error) {
       return searchResult.error;
+    } else if (searchResult?.cascadeExhausted) {
+      return intl.formatMessage({
+        id: "component_tagger.results.match_failed_all_sources",
+      });
     } else if (searchResult && searchResult.results?.length === 0) {
       return intl.formatMessage({
         id: "component_tagger.results.match_failed_no_result",
@@ -69,13 +79,24 @@ const Scene: React.FC<{
             }
           : undefined
       }
+      cascadeSearch={
+        sources.length > 1
+          ? async (v) => {
+              await doSceneCascadeSearch(scene.id, v);
+            }
+          : undefined
+      }
       showLightboxImage={showLightboxImage}
       queue={queue}
       index={index}
       onDismiss={onDismiss}
     >
       {searchResult && searchResult.results?.length ? (
-        <SceneSearchResults scenes={searchResult.results} target={scene} />
+        <SceneSearchResults
+          scenes={searchResult.results}
+          target={scene}
+          source={searchResult.source}
+        />
       ) : undefined}
     </TaggerScene>
   );
@@ -111,6 +132,7 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
   } = useContext(TaggerStateContext);
   const [showConfig, setShowConfig] = useState(false);
   const [hideUnmatched, setHideUnmatched] = useState(false);
+  const [batchCascading, setBatchCascading] = useState(false);
   const [hiddenScenes, setHiddenScenes] = useState<Set<string>>(new Set());
 
   const intl = useIntl();
@@ -229,7 +251,7 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
       return;
     }
 
-    if (loadingBatchSearch) {
+    if (loadingBatchSearch && !batchCascading) {
       return (
         <Button
           className="ml-1"
@@ -255,6 +277,52 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
           }}
         >
           {intl.formatMessage({ id: "component_tagger.verb_search_all" })}
+        </OperationButton>
+      </div>
+    );
+  }
+
+  // Searches every listed scene against every configured source, merging each
+  // scene's candidates into one list ranked by how well they match that file.
+  // Saves switching the source dropdown and re-running the search by hand.
+  function renderCascadeSearchButton() {
+    if (sources.length < 2 || scenes.length === 0) {
+      return;
+    }
+
+    if (loadingBatchSearch && batchCascading) {
+      return (
+        <Button
+          className="ml-1"
+          variant="danger"
+          onClick={() => {
+            stopBatchSearch();
+          }}
+        >
+          <LoadingIndicator message="" inline small />
+          <span className="ml-2">
+            {intl.formatMessage({ id: "actions.stop" })}
+          </span>
+        </Button>
+      );
+    }
+
+    return (
+      <div className="ml-1">
+        <OperationButton
+          disabled={loading || loadingMulti || loadingBatchSearch}
+          operation={async () => {
+            setBatchCascading(true);
+            try {
+              await doBatchSearch(scenes, true);
+            } finally {
+              setBatchCascading(false);
+            }
+          }}
+        >
+          {intl.formatMessage({
+            id: "component_tagger.verb_search_all_sources",
+          })}
         </OperationButton>
       </div>
     );
@@ -356,6 +424,7 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
               {maybeRenderShowHideUnmatchedButton()}
               {maybeRenderSubmitFingerprintsButton()}
               {renderBatchSearchButton()}
+              {renderCascadeSearchButton()}
               {renderFragmentScrapeButton()}
               {renderBatchSaveButton()}
               {renderConfigButton()}

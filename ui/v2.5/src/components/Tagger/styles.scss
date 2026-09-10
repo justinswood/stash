@@ -421,3 +421,14 @@ li.active .optional-field.excluded .scene-link {
   display: inline-block;
   text-decoration: underline dotted;
 }
+
+// Marks a search result that came from a source other than the selected one.
+// A multi-source search merges every source's results into one ranked list, so
+// each candidate has to say where it came from.
+.tagger-result-source {
+  margin-top: 0.25rem;
+
+  .badge {
+    font-weight: normal;
+  }
+}

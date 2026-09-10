@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { initialConfig, ITaggerConfig } from "src/components/Tagger/constants";
 import * as GQL from "src/core/generated-graphql";
 import {
@@ -38,6 +38,7 @@ export interface ITaggerContextState {
   searchResults: Record<string, ISceneQueryResult>;
   setCurrentSource: (src?: ITaggerSource) => void;
   doSceneQuery: (sceneID: string, searchStr: string) => Promise<void>;
+  doSceneCascadeSearch: (sceneID: string, searchStr: string) => Promise<void>;
   doSceneFragmentScrape: (sceneID: string) => Promise<void>;
   doMultiSceneFragmentScrape: (sceneIDs: string[]) => Promise<void>;
   stopMultiScrape: () => void;
@@ -51,14 +52,22 @@ export interface ITaggerContextState {
   ) => Promise<string | undefined>;
   linkPerformer: (
     performer: GQL.ScrapedPerformer,
-    performerID: string
+    performerID: string,
+    endpoint?: string
   ) => Promise<void>;
   createNewStudio: (
     studio: GQL.ScrapedStudio,
     toCreate: GQL.StudioCreateInput
   ) => Promise<string | undefined>;
-  updateStudio: (studio: GQL.StudioUpdateInput) => Promise<void>;
-  linkStudio: (studio: GQL.ScrapedStudio, studioID: string) => Promise<void>;
+  updateStudio: (
+    studio: GQL.StudioUpdateInput,
+    endpoint?: string
+  ) => Promise<void>;
+  linkStudio: (
+    studio: GQL.ScrapedStudio,
+    studioID: string,
+    endpoint?: string
+  ) => Promise<void>;
   updateTag: (
     tag: GQL.ScrapedTag,
     updateInput: GQL.TagUpdateInput
@@ -72,7 +81,8 @@ export interface ITaggerContextState {
   pendingFingerprints: string[];
   saveScene: (
     sceneCreateInput: GQL.SceneUpdateInput,
-    queueFingerprint: boolean
+    queueFingerprint: boolean,
+    endpoint?: string
   ) => Promise<void>;
   registerSaveCallback: (
     sceneID: string,
@@ -85,7 +95,8 @@ export interface ITaggerContextState {
   batchSaveProgress: number;
   batchSaveCount: number;
   doBatchSearch: (
-    scenes: GQL.SlimSceneDataFragment[]
+    scenes: GQL.SlimSceneDataFragment[],
+    cascade?: boolean
   ) => Promise<void>;
   stopBatchSearch: () => void;
   loadingBatchSearch: boolean;
@@ -107,6 +118,7 @@ export const TaggerStateContext = React.createContext<ITaggerContextState>({
   searchResults: {},
   setCurrentSource: () => {},
   doSceneQuery: dummyFn,
+  doSceneCascadeSearch: dummyFn,
   doSceneFragmentScrape: dummyFn,
   doMultiSceneFragmentScrape: dummyFn,
   stopMultiScrape: () => {},
@@ -134,11 +146,22 @@ export const TaggerStateContext = React.createContext<ITaggerContextState>({
   batchSearchProgress: 0,
 });
 
-export type IScrapedScene = GQL.ScrapedScene & { resolved?: boolean };
+export type IScrapedScene = GQL.ScrapedScene & {
+  resolved?: boolean;
+  // the source that produced this result. Results from every source are merged
+  // into one ranked list, so attribution has to travel with the result itself
+  // rather than with the result set.
+  source?: ITaggerSource;
+};
 
 export interface ISceneQueryResult {
   results?: IScrapedScene[];
   error?: string;
+  // set when every source was searched and none of them returned anything
+  cascadeExhausted?: boolean;
+  // the source these results were scraped from, for a single-source search.
+  // A multi-source search leaves this unset and tags each result instead.
+  source?: ITaggerSource;
 }
 
 export const TaggerContext: React.FC = ({ children }) => {
@@ -152,6 +175,7 @@ export const TaggerContext: React.FC = ({ children }) => {
   >({});
 
   const stopping = useRef(false);
+  const stoppingCascade = useRef(false);
 
   const { configuration: stashConfig } = useConfigurationContext();
   const { config, setConfig } = useTaggerConfig();
@@ -292,15 +316,17 @@ export const TaggerContext: React.FC = ({ children }) => {
     }
   }
 
-  function queueFingerprintSubmission(sceneId: string) {
-    const endpoint = currentSource?.sourceInput.stash_box_endpoint;
-    if (!config || !endpoint) return;
+  // endpoint defaults to the selected source, but a result found by a cascade
+  // must submit its fingerprint to the stash-box that actually matched it
+  function queueFingerprintSubmission(sceneId: string, endpoint?: string) {
+    const ep = endpoint ?? currentSource?.sourceInput.stash_box_endpoint;
+    if (!config || !ep) return;
 
     setConfig({
       ...config,
       fingerprintQueue: {
         ...config.fingerprintQueue,
-        [endpoint]: [...(config.fingerprintQueue[endpoint] ?? []), sceneId],
+        [ep]: [...(config.fingerprintQueue[ep] ?? []), sceneId],
       },
     });
   }
@@ -313,43 +339,56 @@ export const TaggerContext: React.FC = ({ children }) => {
     });
   }
 
-  async function sceneQuerySearch(sceneID: string, searchVal: string) {
-    if (!currentSource) {
+  // Scrapes by name against one source and returns the outcome without
+  // touching state, so a multi-source search can accumulate across sources
+  // rather than each call clobbering the last.
+  async function scrapeByQuery(
+    searchVal: string,
+    src: ITaggerSource
+  ): Promise<ISceneQueryResult> {
+    try {
+      const results = await queryScrapeSceneQuery(src.sourceInput, searchVal);
+      // scenes are already resolved if they come from stash-box
+      const resolved = src.sourceInput.stash_box_endpoint !== undefined;
+
+      if (results.error) {
+        return { error: results.error.message, source: src };
+      }
+      if (results.errors) {
+        return { error: results.errors.toString(), source: src };
+      }
+      return {
+        results: results.data.scrapeSingleScene.map((r) => ({
+          ...r,
+          resolved,
+          source: src,
+        })),
+        source: src,
+      };
+    } catch (err: unknown) {
+      return { error: errorToString(err), source: src };
+    }
+  }
+
+  async function sceneQuerySearch(
+    sceneID: string,
+    searchVal: string,
+    source?: ITaggerSource
+  ) {
+    const src = source ?? currentSource;
+    if (!src) {
       return;
     }
 
     clearSearchResults(sceneID);
 
-    let newResult: ISceneQueryResult;
-
-    try {
-      const results = await queryScrapeSceneQuery(
-        currentSource.sourceInput,
-        searchVal
-      );
-      // scenes are already resolved if they come from stash-box
-      const resolved =
-        currentSource.sourceInput.stash_box_endpoint !== undefined;
-
-      if (results.error) {
-        newResult = { error: results.error.message };
-      } else if (results.errors) {
-        newResult = { error: results.errors.toString() };
-      } else {
-        newResult = {
-          results: results.data.scrapeSingleScene.map((r) => ({
-            ...r,
-            resolved,
-          })),
-        };
-      }
-    } catch (err: unknown) {
-      newResult = { error: errorToString(err) };
-    }
+    const newResult = await scrapeByQuery(searchVal, src);
 
     setSearchResults((current) => {
       return { ...current, [sceneID]: newResult };
     });
+
+    return newResult;
   }
 
   async function doSceneQuery(sceneID: string, searchVal: string) {
@@ -367,41 +406,134 @@ export const TaggerContext: React.FC = ({ children }) => {
     }
   }
 
-  async function sceneFragmentScrape(sceneID: string) {
-    if (!currentSource) {
+  // The order sources are searched: the selected source first, since that is
+  // the user's stated preference, then the rest in dropdown order.
+  const cascadeSources = useMemo(() => {
+    if (!currentSource) return sources;
+    return [currentSource, ...sources.filter((s) => s.id !== currentSource.id)];
+  }, [sources, currentSource]);
+
+  // Searches EVERY source and merges what they return into one list, each
+  // result carrying the source that produced it.
+  //
+  // This deliberately does not stop at the first source that returns
+  // something, the way the identify task does. Identify matches on
+  // fingerprints, where a hit is exact and "found something" means "found the
+  // right thing". A name query is fuzzy: stash-box returns up to ten loose
+  // matches for any string at all - measured, it returns five results for pure
+  // gibberish - so "the first source with a result" would always be the first
+  // source tried, and no other source would ever be reached.
+  //
+  // Merging instead lets compareScenesForSort rank every candidate against the
+  // local file's own phash and duration, which is source-agnostic, so a real
+  // match from any source floats above another source's fuzzy noise.
+  async function searchAllSources(sceneID: string, searchVal: string) {
+    clearSearchResults(sceneID);
+
+    const merged: IScrapedScene[] = [];
+    const errors: string[] = [];
+
+    for (const source of cascadeSources) {
+      if (stoppingCascade.current) break;
+
+      let result: ISceneQueryResult;
+      if (source.supportSceneQuery) {
+        result = await scrapeByQuery(searchVal, source);
+      } else if (source.supportSceneFragment) {
+        result = await scrapeByFragment(sceneID, source);
+      } else {
+        continue;
+      }
+
+      if (result.error) {
+        errors.push(`${source.displayName}: ${result.error}`);
+      } else if (result.results?.length) {
+        merged.push(...result.results);
+      }
+
+      // publish as we go so results appear source by source rather than after
+      // every source has been waited on
+      const soFar: ISceneQueryResult = { results: [...merged] };
+      setSearchResults((current) => {
+        return { ...current, [sceneID]: soFar };
+      });
+    }
+
+    // A source that failed is not the same as a source that found nothing, so
+    // report the failures rather than letting "no results" imply every source
+    // answered. When some source did return candidates the errors are dropped:
+    // the user has results to work with and one dead scraper is just noise.
+    const final: ISceneQueryResult =
+      merged.length === 0 && errors.length > 0
+        ? { error: errors.join("; ") }
+        : { results: merged, cascadeExhausted: merged.length === 0 };
+
+    setSearchResults((current) => {
+      return { ...current, [sceneID]: final };
+    });
+
+    return final;
+  }
+
+  async function doSceneCascadeSearch(sceneID: string, searchVal: string) {
+    if (!cascadeSources.length) {
+      return;
+    }
+
+    try {
+      stoppingCascade.current = false;
+      setLoading(true);
+      await searchAllSources(sceneID, searchVal);
+    } catch (err) {
+      Toast.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // fragment-scrape counterpart of scrapeByQuery - no state, returns outcome
+  async function scrapeByFragment(
+    sceneID: string,
+    src: ITaggerSource
+  ): Promise<ISceneQueryResult> {
+    try {
+      const results = await queryScrapeScene(src.sourceInput, sceneID);
+
+      if (results.error) {
+        return { error: results.error.message, source: src };
+      }
+      if (results.errors) {
+        return { error: results.errors.toString(), source: src };
+      }
+      return {
+        results: results.data.scrapeSingleScene.map((r) => ({
+          ...r,
+          // scenes are already resolved if they are scraped via fragment
+          resolved: true,
+          source: src,
+        })),
+        source: src,
+      };
+    } catch (err: unknown) {
+      return { error: errorToString(err), source: src };
+    }
+  }
+
+  async function sceneFragmentScrape(sceneID: string, source?: ITaggerSource) {
+    const src = source ?? currentSource;
+    if (!src) {
       return;
     }
 
     clearSearchResults(sceneID);
 
-    let newResult: ISceneQueryResult;
-
-    try {
-      const results = await queryScrapeScene(
-        currentSource.sourceInput,
-        sceneID
-      );
-
-      if (results.error) {
-        newResult = { error: results.error.message };
-      } else if (results.errors) {
-        newResult = { error: results.errors.toString() };
-      } else {
-        newResult = {
-          results: results.data.scrapeSingleScene.map((r) => ({
-            ...r,
-            // scenes are already resolved if they are scraped via fragment
-            resolved: true,
-          })),
-        };
-      }
-    } catch (err: unknown) {
-      newResult = { error: errorToString(err) };
-    }
+    const newResult = await scrapeByFragment(sceneID, src);
 
     setSearchResults((current) => {
       return { ...current, [sceneID]: newResult };
     });
+
+    return newResult;
   }
 
   async function doSceneFragmentScrape(sceneID: string) {
@@ -455,11 +587,13 @@ export const TaggerContext: React.FC = ({ children }) => {
               (r) => ({
                 ...r,
                 resolved: true,
+                source: currentSource,
               })
             );
 
             newSearchResults[sceneID] = {
               results: newResults,
+              source: currentSource,
             };
           });
 
@@ -538,10 +672,17 @@ export const TaggerContext: React.FC = ({ children }) => {
   const [loadingBatchSearch, setLoadingBatchSearch] = useState(false);
   const [batchSearchProgress, setBatchSearchProgress] = useState(0);
 
-  async function doBatchSearch(scenes: GQL.SlimSceneDataFragment[]) {
-    if (!currentSource || scenes.length === 0) return;
+  // when cascade is set, each scene is searched against every source in turn
+  // until one matches, rather than against the selected source alone
+  async function doBatchSearch(
+    scenes: GQL.SlimSceneDataFragment[],
+    cascade?: boolean
+  ) {
+    if (scenes.length === 0) return;
+    if (cascade ? !cascadeSources.length : !currentSource) return;
 
     stoppingBatchSearch.current = false;
+    stoppingCascade.current = false;
     setLoadingBatchSearch(true);
     setBatchSearchProgress(0);
 
@@ -559,7 +700,11 @@ export const TaggerContext: React.FC = ({ children }) => {
       );
 
       try {
-        await sceneQuerySearch(scene.id, queryString);
+        if (cascade) {
+          await searchAllSources(scene.id, queryString);
+        } else {
+          await sceneQuerySearch(scene.id, queryString);
+        }
       } catch (err) {
         Toast.error(err);
       }
@@ -579,6 +724,7 @@ export const TaggerContext: React.FC = ({ children }) => {
 
   function stopBatchSearch() {
     stoppingBatchSearch.current = true;
+    stoppingCascade.current = true;
   }
 
   async function resolveScene(
@@ -586,7 +732,12 @@ export const TaggerContext: React.FC = ({ children }) => {
     index: number,
     scene: IScrapedScene
   ) {
-    if (!currentSource || scene.resolved || !searchResults[sceneID].results) {
+    // Resolve against the source that produced this particular result. A
+    // multi-source search merges results from several sources into one list,
+    // so the result's own source is authoritative; the set-level source only
+    // exists for a single-source search.
+    const src = scene.source ?? searchResults[sceneID]?.source ?? currentSource;
+    if (!src || scene.resolved || !searchResults[sceneID].results) {
       return Promise.resolve();
     }
 
@@ -600,16 +751,19 @@ export const TaggerContext: React.FC = ({ children }) => {
       };
 
       const result = await queryScrapeSceneQueryFragment(
-        currentSource.sourceInput,
+        src.sourceInput,
         sceneInput
       );
 
       if (result.data.scrapeSingleScene.length) {
         const resolvedScene = result.data.scrapeSingleScene[0];
 
-        // set the scene in the results and mark as resolved
+        // set the scene in the results and mark as resolved. The resolved
+        // payload comes back from the API without a source, so carry the
+        // original result's source across or the save path loses its
+        // attribution.
         const newResult = [...searchResults[sceneID].results!];
-        newResult[index] = { ...resolvedScene, resolved: true };
+        newResult[index] = { ...resolvedScene, resolved: true, source: src };
         setSearchResults({
           ...searchResults,
           [sceneID]: { ...searchResults[sceneID], results: newResult },
@@ -629,7 +783,8 @@ export const TaggerContext: React.FC = ({ children }) => {
 
   async function saveScene(
     sceneCreateInput: GQL.SceneUpdateInput,
-    queueFingerprint: boolean
+    queueFingerprint: boolean,
+    endpoint?: string
   ) {
     try {
       await updateScene({
@@ -643,7 +798,7 @@ export const TaggerContext: React.FC = ({ children }) => {
       });
 
       if (queueFingerprint) {
-        queueFingerprintSubmission(sceneCreateInput.id);
+        queueFingerprintSubmission(sceneCreateInput.id, endpoint);
       }
       clearSearchResults(sceneCreateInput.id);
     } catch (err) {
@@ -771,13 +926,11 @@ export const TaggerContext: React.FC = ({ children }) => {
 
   async function linkPerformer(
     performer: GQL.ScrapedPerformer,
-    performerID: string
+    performerID: string,
+    endpoint?: string
   ) {
-    if (
-      !performer.remote_site_id ||
-      !currentSource?.sourceInput.stash_box_endpoint
-    )
-      return;
+    const ep = endpoint ?? currentSource?.sourceInput.stash_box_endpoint;
+    if (!performer.remote_site_id || !ep) return;
 
     try {
       const queryResult = await queryFindPerformer(performerID);
@@ -794,7 +947,7 @@ export const TaggerContext: React.FC = ({ children }) => {
 
         stashIDs.push({
           stash_id: performer.remote_site_id,
-          endpoint: currentSource?.sourceInput.stash_box_endpoint,
+          endpoint: ep,
           updated_at: new Date().toISOString(),
         });
 
@@ -894,7 +1047,10 @@ export const TaggerContext: React.FC = ({ children }) => {
     }
   }
 
-  async function updateExistingStudio(input: GQL.StudioUpdateInput) {
+  async function updateExistingStudio(
+    input: GQL.StudioUpdateInput,
+    endpoint?: string
+  ) {
     try {
       const inputCopy = { ...input };
       inputCopy.stash_ids = await mergeStudioStashIDs(
@@ -910,7 +1066,10 @@ export const TaggerContext: React.FC = ({ children }) => {
       const studioID = result.data?.studioUpdate?.id;
 
       const stashID = input.stash_ids?.find((e) => {
-        return e.endpoint === currentSource?.sourceInput.stash_box_endpoint;
+        return (
+          e.endpoint ===
+          (endpoint ?? currentSource?.sourceInput.stash_box_endpoint)
+        );
       })?.stash_id;
 
       if (stashID) {
@@ -944,12 +1103,13 @@ export const TaggerContext: React.FC = ({ children }) => {
     }
   }
 
-  async function linkStudio(studio: GQL.ScrapedStudio, studioID: string) {
-    if (
-      !studio.remote_site_id ||
-      !currentSource?.sourceInput.stash_box_endpoint
-    )
-      return;
+  async function linkStudio(
+    studio: GQL.ScrapedStudio,
+    studioID: string,
+    endpoint?: string
+  ) {
+    const ep = endpoint ?? currentSource?.sourceInput.stash_box_endpoint;
+    if (!studio.remote_site_id || !ep) return;
 
     try {
       const queryResult = await queryFindStudio(studioID);
@@ -966,7 +1126,7 @@ export const TaggerContext: React.FC = ({ children }) => {
 
         stashIDs.push({
           stash_id: studio.remote_site_id,
-          endpoint: currentSource?.sourceInput.stash_box_endpoint,
+          endpoint: ep,
           updated_at: new Date().toISOString(),
         });
 
@@ -1064,6 +1224,7 @@ export const TaggerContext: React.FC = ({ children }) => {
           setCurrentSource(src);
         },
         doSceneQuery,
+        doSceneCascadeSearch,
         doSceneFragmentScrape,
         doMultiSceneFragmentScrape,
         stopMultiScrape,
