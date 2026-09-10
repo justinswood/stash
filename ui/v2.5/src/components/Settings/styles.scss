@@ -447,3 +447,11 @@
     display: inline-block;
   }
 }
+
+// The category-tag picker is a multi-select holding up to ten tags. `.setting`
+// is a space-between flex row, so without a floor the control column collapses
+// to roughly the width of one tag pill and the list becomes unreadable.
+.performer-category-tags-select {
+  max-width: 100%;
+  min-width: 20rem;
+}

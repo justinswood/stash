@@ -881,6 +881,14 @@
       "use_stash_hosted_funscript": {
         "description": "When enabled, funscripts will be served directly from Stash to your Handy device without using the third party Handy server. Requires that Stash be accessible from your Handy device, and that an API key is generated if stash has credentials configured.",
         "heading": "Serve funscripts directly"
+      },
+      "performer_category_bar": {
+        "heading": "Performer Category Bar",
+        "all": "All",
+        "tags": {
+          "heading": "Category tags",
+          "description": "Tags shown as one-click category chips above the performers list. Pick up to {max}; the bar is hidden when none are set."
+        }
       }
     }
   },

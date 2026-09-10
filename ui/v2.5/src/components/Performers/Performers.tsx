@@ -8,6 +8,7 @@ import { applyHideMaleTransPerformers } from "src/core/performers";
 import Performer from "./PerformerDetails/Performer";
 import PerformerCreate from "./PerformerDetails/PerformerCreate";
 import { PerformerList } from "./PerformerList";
+import { PerformerCategoryBar } from "./PerformerCategoryBar";
 import { View } from "../List/views";
 
 const Performers: React.FC = () => {
@@ -23,7 +24,16 @@ const Performers: React.FC = () => {
     };
   }, [showMaleTransPerformers]);
 
-  return <PerformerList view={View.Performers} filterHook={filterHook} />;
+  // The category bar is only on the main performers list. Performer lists
+  // embedded elsewhere (a studio's or tag's performers tab) already carry a
+  // filter of their own, and a second one on top would fight it.
+  return (
+    <PerformerList
+      view={View.Performers}
+      filterHook={filterHook}
+      preListContent={<PerformerCategoryBar />}
+    />
+  );
 };
 
 const PerformerRoutes: React.FC = () => {

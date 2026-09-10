@@ -159,6 +159,10 @@ export const FormatPenisLength = (penis_length?: number | null) => {
 
 interface IPerformerList {
   filterHook?: (filter: ListFilterModel) => ListFilterModel;
+  // Rendered inside ItemListContext, above the toolbar. Anything here can use
+  // useFilter() to read and drive the list's real filter - the category bar
+  // depends on that, and it would throw if rendered outside the context.
+  preListContent?: React.ReactNode;
   view?: View;
   alterQuery?: boolean;
   extraCriteria?: IPerformerCardExtraCriteria;
@@ -167,7 +171,14 @@ interface IPerformerList {
 
 export const PerformerList: React.FC<IPerformerList> = PatchComponent(
   "PerformerList",
-  ({ filterHook, view, alterQuery, extraCriteria, extraOperations = [] }) => {
+  ({
+    filterHook,
+    preListContent,
+    view,
+    alterQuery,
+    extraCriteria,
+    extraOperations = [],
+  }) => {
     const intl = useIntl();
     const history = useHistory();
     const [mergePerformers, setMergePerformers] = useState<
@@ -370,6 +381,7 @@ export const PerformerList: React.FC<IPerformerList> = PatchComponent(
         view={view}
         selectable
       >
+        {preListContent}
         <ItemList
           view={view}
           otherOperations={otherOperations}

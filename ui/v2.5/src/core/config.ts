@@ -43,9 +43,18 @@ export type FrontPageContent = ISavedFilterRow | ICustomFilter;
 
 export const defaultMaxOptionsShown = 200;
 
+// Most category chips the performers page will render. The bar is a
+// single-glance shortcut row, not a tag browser - past this it wraps into
+// several lines and stops being scannable, which is the whole point of it.
+export const performerCategoryBarMax = 10;
+
 export interface IUIConfig {
   // unknown to prevent direct access - use getFrontPageContent
   frontPageContent?: unknown;
+
+  // Tag IDs shown as category chips above the performers list. Order on screen
+  // is alphabetical, not the order picked. Capped at performerCategoryBarMax.
+  performerCategoryTags?: string[];
 
   showChildTagContent?: boolean;
   showChildStudioContent?: boolean;

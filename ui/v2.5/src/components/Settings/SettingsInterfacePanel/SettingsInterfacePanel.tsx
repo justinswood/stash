@@ -11,8 +11,10 @@ import {
   ModalSetting,
   NumberSetting,
   SelectSetting,
+  Setting,
   StringSetting,
 } from "../Inputs";
+import { TagIDSelect } from "src/components/Tags/TagSelect";
 import { useSettings } from "../context";
 import TextUtils from "src/utils/text";
 import * as GQL from "src/core/generated-graphql";
@@ -42,7 +44,10 @@ import {
   defaultImageWallDirection,
   defaultImageWallMargin,
 } from "src/utils/imageWall";
-import { defaultMaxOptionsShown } from "src/core/config";
+import {
+  defaultMaxOptionsShown,
+  performerCategoryBarMax,
+} from "src/core/config";
 import { PatchComponent } from "src/patch";
 
 const allMenuItems = [
@@ -346,6 +351,31 @@ export const SettingsInterfacePanel: React.FC = PatchComponent(
               })}
             </option>
           </SelectSetting>
+        </SettingSection>
+
+        <SettingSection headingID="config.ui.performer_category_bar.heading">
+          <Setting
+            id="performer-category-tags"
+            headingID="config.ui.performer_category_bar.tags.heading"
+            subHeading={intl.formatMessage(
+              { id: "config.ui.performer_category_bar.tags.description" },
+              { max: performerCategoryBarMax }
+            )}
+          >
+            <div className="performer-category-tags-select">
+              <TagIDSelect
+                isMulti
+                ids={ui.performerCategoryTags ?? []}
+                onSelect={(items) =>
+                  saveUI({
+                    performerCategoryTags: items
+                      .map((i) => i.id)
+                      .slice(0, performerCategoryBarMax),
+                  })
+                }
+              />
+            </div>
+          </Setting>
         </SettingSection>
 
         <SettingSection headingID="config.ui.scene_card.heading">

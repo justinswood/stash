@@ -376,3 +376,20 @@
 #performer-page .details-edit .btn-group > .btn {
   margin-right: 0;
 }
+
+// One-click category chips above the performers list. Wraps rather than
+// scrolls: the row is capped at performerCategoryBarMax entries, so at most it
+// becomes two short lines on a narrow viewport.
+.performer-category-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+
+  .performer-category-chip {
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    padding: 0.2rem 0.85rem;
+    white-space: nowrap;
+  }
+}
