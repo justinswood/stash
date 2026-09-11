@@ -62,12 +62,34 @@ function openSearch(site: ISearchSite, name: string) {
 
 interface IProps {
   name?: string;
+  // Render the search sites as items under a header inside an existing
+  // dropdown - the performer sidebar's More menu - instead of as a split button
+  // of their own. A split button cannot nest inside a menu.
+  asDropdownItems?: boolean;
 }
 
-export const PerformerImageSearchButton: React.FC<IProps> = ({ name }) => {
+export const PerformerImageSearchButton: React.FC<IProps> = ({
+  name,
+  asDropdownItems,
+}) => {
   const intl = useIntl();
 
   if (!name) return null;
+
+  if (asDropdownItems) {
+    return (
+      <>
+        <Dropdown.Header>
+          {intl.formatMessage({ id: "actions.find_images" })}
+        </Dropdown.Header>
+        {searchSites.map((site) => (
+          <Dropdown.Item key={site.id} onClick={() => openSearch(site, name)}>
+            {site.label}
+          </Dropdown.Item>
+        ))}
+      </>
+    );
+  }
 
   return (
     <SplitButton

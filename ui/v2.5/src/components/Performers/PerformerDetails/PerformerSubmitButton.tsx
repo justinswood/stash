@@ -1,4 +1,4 @@
-import { Button } from "react-bootstrap";
+import { Button, Dropdown } from "react-bootstrap";
 import React, { useState } from "react";
 import { FormattedMessage } from "react-intl";
 import * as GQL from "src/core/generated-graphql";
@@ -6,10 +6,14 @@ import { SubmitStashBoxDraft } from "src/components/Dialogs/SubmitDraft";
 
 interface IPerformerOperationsProps {
   performer: GQL.PerformerDataFragment;
+  // Render as an item in an existing dropdown - the performer sidebar's More
+  // menu - instead of a standalone button. The draft modal renders either way.
+  asDropdownItem?: boolean;
 }
 
 export const PerformerSubmitButton: React.FC<IPerformerOperationsProps> = ({
   performer,
+  asDropdownItem,
 }) => {
   const [showDraftModal, setShowDraftModal] = useState(false);
 
@@ -18,11 +22,17 @@ export const PerformerSubmitButton: React.FC<IPerformerOperationsProps> = ({
 
   if (boxes.length === 0) return null;
 
+  const label = <FormattedMessage id="actions.submit_stash_box" />;
+
   return (
     <>
-      <Button onClick={() => setShowDraftModal(true)}>
-        <FormattedMessage id="actions.submit_stash_box" />
-      </Button>
+      {asDropdownItem ? (
+        <Dropdown.Item onClick={() => setShowDraftModal(true)}>
+          {label}
+        </Dropdown.Item>
+      ) : (
+        <Button onClick={() => setShowDraftModal(true)}>{label}</Button>
+      )}
       <SubmitStashBoxDraft
         type="performer"
         boxes={boxes}

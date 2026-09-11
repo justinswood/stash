@@ -342,7 +342,8 @@
       display: none;
     }
 
-    .detail-header .performer-head {
+    .detail-header .performer-head,
+    .performer-sidebar .performer-head {
       text-align: center;
 
       // Push the favorite icon + external link buttons onto their own
@@ -393,3 +394,342 @@
     white-space: nowrap;
   }
 }
+
+// ── Performer page: sidebar layout (viewing mode) ──────────────────────────
+// A fixed 280px sidebar holds the portrait and all the metadata; the tabs own
+// the remaining width from the top of the page. Editing keeps the stacked
+// layout (Performer.tsx), so everything here is scoped to
+// .performer-sidebar-layout.
+//
+// Colours are the theme's tokens rather than the design handoff's hexes, so the
+// page follows the Refract accent preset and light mode like everything else.
+// The sidebar is deliberately not a .detail-header: see PerformerSidebarActions.
+//
+// The handoff's portrait spec (aspect-ratio 3/4 + object-fit: cover) is NOT
+// applied. Cropper.js measures this <img> to map a selection onto the stored
+// original (#24, #26), and a CSS crop would silently skew every saved crop. It
+// would also re-crop images that were cropped to 2:3 on purpose (#25).
+$performer-sidebar-top: 4.8rem;
+
+/* stylelint-disable selector-class-pattern */
+#performer-page.performer-sidebar-layout {
+  align-items: flex-start; // a stretched flex item never sticks
+  flex-wrap: nowrap;
+  gap: 1.25rem;
+
+  > .performer-sidebar {
+    background: var(--glass-bg, rgba(255, 255, 255, 0.06));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+    border-radius: var(--radius, 16px);
+    display: flex;
+    flex: 0 0 280px;
+    flex-direction: column;
+    gap: 18px;
+    // a stacking context for the opt-in blurred backdrop to sit behind the
+    // content in; unlike a filter or transform it does not trap the fixed
+    // More menu
+    isolation: isolate;
+    max-height: calc(100vh - #{$performer-sidebar-top} - 1rem);
+    overflow-y: auto;
+    padding: 24px 22px;
+    position: sticky;
+    top: $performer-sidebar-top;
+    width: 280px;
+  }
+
+  > .detail-body {
+    flex: 1 1 auto;
+    margin: 0;
+    min-width: 0;
+  }
+
+  .performer-sidebar {
+    .detail-header-image {
+      float: none;
+      height: auto;
+      padding: 0;
+      width: 100%;
+
+      // LightboxLink wraps the image in an inline-block .btn-link with button
+      // padding, which shrink-wraps it - measured, the image got 196px of a
+      // 224px column. A plain full-width block lets it fill the column.
+      > div > .btn-link {
+        display: block;
+        padding: 0;
+        width: 100%;
+      }
+
+      img {
+        border-radius: var(--radius-sm, 12px);
+        display: block;
+        height: auto;
+        // the stock `.detail-header-image img` rule caps this at 14rem, which
+        // is 196px at this theme's 14px root size
+        max-width: 100%;
+        width: 100%;
+      }
+    }
+
+    // Interface > "performer background image"; the stock positioning for it
+    // is scoped to .detail-header
+    .background-image-container {
+      border-radius: inherit;
+      inset: 0;
+      opacity: 0.2;
+      overflow: hidden;
+      pointer-events: none;
+      position: absolute;
+      z-index: -1;
+
+      .background-image {
+        filter: blur(16px);
+        height: 100%;
+        object-fit: cover;
+        width: 100%;
+      }
+    }
+
+    .performer-head {
+      // Name centred, socials on their own centred line under it, so short and
+      // long names look the same.
+      //
+      // Done with flex-basis rather than display: block because the theme pins
+      // `.name-icons { display: inline-flex !important }`, which beats any
+      // display we set without !important. flex-basis is a property the theme
+      // leaves alone. column-gap stands in for the leading space of the
+      // disambiguation, which a flex item drops.
+      h2 {
+        column-gap: 0.3em;
+        display: flex;
+        flex-wrap: wrap;
+        font-size: 1.375rem;
+        font-weight: 700;
+        justify-content: center;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        margin: 0;
+        overflow-wrap: anywhere;
+        row-gap: 0.35rem;
+        text-align: center;
+      }
+
+      .name-icons {
+        flex-basis: 100%;
+        justify-content: center;
+        margin-left: 0;
+      }
+
+      .alias-head {
+        color: var(--text-muted);
+        font-size: 0.78rem;
+      }
+    }
+
+    .performer-sidebar-actions {
+      display: flex;
+      gap: 8px;
+
+      > .btn,
+      > .dropdown {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+
+      .dropdown-toggle {
+        width: 100%;
+      }
+    }
+
+    // PerformerDetailsPanel, reshaped into the design's two-column list.
+    // display: contents on each .detail-item hands its title and value spans to
+    // the grid as cells, so DetailItem's markup is reused untouched.
+    .detail-group {
+      border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+      column-gap: 14px;
+      display: grid;
+      font-size: 0.78rem;
+      // minmax(0, ...) rather than 1fr: a bare 1fr track has an automatic
+      // minimum, so one unbreakable value would widen the whole grid
+      grid-template-columns: auto minmax(0, 1fr);
+      padding: 18px 0 0;
+      row-gap: 8px;
+    }
+
+    .detail-item {
+      display: contents;
+    }
+
+    .detail-item-title {
+      color: var(--text-muted);
+    }
+
+    .detail-item-value {
+      color: var(--text);
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .detail-item-value.age {
+      border-bottom: 1px dotted currentcolor;
+      justify-self: start;
+    }
+
+    // the flag follows the country name; the stock spacing rule for it is
+    // scoped to .detail-header
+    .detail-item-value.country .fi {
+      margin-left: 0.35rem;
+    }
+
+    // Long free text reads badly in a ~140px value column, so these stack
+    // label over value across the full width instead.
+    .detail-item.details,
+    .detail-item.tattoos,
+    .detail-item.piercings {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      grid-column: 1 / -1;
+      min-width: 0;
+    }
+
+    // Tags and stash IDs are chips with no label, below a hairline.
+    //
+    // min-width: 0 on every item spanning the grid: a grid item's automatic
+    // minimum is its min-content width, so an unbreakable StashDB UUID made
+    // this item 270px in a 224px column and put a horizontal scrollbar on the
+    // sidebar. With the box bounded, the theme's pill ellipsizes the UUID.
+    .detail-item.tags,
+    .detail-item.stash_ids {
+      border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+      display: block;
+      grid-column: 1 / -1;
+      margin-top: 10px;
+      min-width: 0;
+      padding-top: 16px;
+
+      .detail-item-title {
+        display: none;
+      }
+
+      // The value span is a row flexbox narrower than the item (168px of 224,
+      // measured), and the list inside it is a flex item whose automatic
+      // minimum is the unbreakable pill's width. Widen the span, and let the
+      // list shrink so the pill's own max-width: 100% can bound it.
+      .detail-item-value {
+        display: block;
+        margin: 0;
+        width: auto;
+      }
+
+      ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 0;
+        max-width: 100%;
+        min-width: 0;
+        padding: 0;
+      }
+    }
+
+    // stash IDs directly under tags share the tags' divider
+    .detail-item.tags + .detail-item.stash_ids {
+      border-top: 0;
+      margin-top: 0;
+      padding-top: 0;
+    }
+
+    .custom-fields {
+      grid-column: 1 / -1;
+      min-width: 0;
+    }
+
+    // PerformerDetailsExtended (content time, organized, timespan, top
+    // co-stars) as the design's stats footer. It is a nested .detail-group so
+    // it inherits the grid; one column stacks each label over its value.
+    .performer-details-extended {
+      grid-column: 1 / -1;
+      grid-template-columns: minmax(0, 1fr);
+      margin-top: 10px;
+      min-width: 0;
+      padding-top: 16px;
+      row-gap: 1px;
+
+      .detail-item-title {
+        font-size: 0.72rem;
+        margin-top: 7px;
+      }
+    }
+  }
+
+  // Tabs as an underlined row rather than the theme's pills. The theme's tab
+  // rules (07_scene_details.css) are all !important, and an !important
+  // declaration can only be overridden by another one; the #id then wins that
+  // contest regardless of source order.
+  /* stylelint-disable declaration-no-important */
+  .performer-tabs .nav-tabs {
+    border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12))
+      !important;
+    gap: 4px !important;
+    justify-content: flex-start !important;
+    padding: 0 !important;
+
+    .nav-link {
+      background: transparent !important;
+      border: 0 !important;
+      border-bottom: 2px solid transparent !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      color: var(--text-muted) !important;
+      font-size: 0.813rem !important;
+      font-weight: 500 !important;
+      padding: 10px 14px !important;
+      transition: background 100ms ease-in, color 100ms ease-in !important;
+
+      &:hover {
+        background: var(--glass-bg) !important;
+        color: var(--text) !important;
+      }
+
+      &.active {
+        border-bottom-color: var(--accent) !important;
+        color: var(--text) !important;
+        font-weight: 600 !important;
+      }
+
+      .badge {
+        background: rgba(var(--accent-rgb), 0.22) !important;
+        border-radius: var(--radius-pill, 9999px) !important;
+        color: var(--accent-light) !important;
+        font-size: 0.688rem !important;
+        margin-left: 4px;
+        padding: 1px 7px !important;
+      }
+    }
+  }
+  /* stylelint-enable declaration-no-important */
+
+  // Below lg the panes stack: the sidebar becomes an ordinary block above the
+  // tabs and stops being sticky or scrolling on its own.
+  @media (max-width: 991.98px) {
+    flex-direction: column;
+
+    > .performer-sidebar {
+      flex-basis: auto;
+      max-height: none;
+      overflow-y: visible;
+      position: relative;
+      width: 100%;
+    }
+
+    > .detail-body {
+      width: 100%;
+    }
+
+    .performer-sidebar .detail-header-image img {
+      margin: 0 auto;
+      max-width: 18.2rem; // the #14 mobile portrait size
+    }
+  }
+}
+/* stylelint-enable selector-class-pattern */

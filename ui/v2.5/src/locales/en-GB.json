@@ -155,7 +155,8 @@
     "unset": "Unset",
     "use_default": "Use default",
     "view_history": "View history",
-    "view_random": "View Random"
+    "view_random": "View Random",
+    "more": "More"
   },
   "actions_name": "Actions",
   "age": "Age",

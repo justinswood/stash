@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Tabs, Tab, Col, Row } from "react-bootstrap";
-import { FormattedMessage, useIntl } from "react-intl";
+import { Tabs, Tab } from "react-bootstrap";
+import { useIntl } from "react-intl";
 import { useHistory, Redirect, RouteComponentProps } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import cx from "classnames";
@@ -13,16 +13,12 @@ import {
   usePerformerDestroy,
   mutateMetadataAutoTag,
 } from "src/core/StashService";
-import { DetailsEditNavbar } from "src/components/Shared/DetailsEditNavbar";
 import { ErrorMessage } from "src/components/Shared/ErrorMessage";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { useToast } from "src/hooks/Toast";
 import { useConfigurationContext } from "src/hooks/Config";
 import { RatingSystem } from "src/components/Shared/Rating/RatingSystem";
-import {
-  CompressedPerformerDetailsPanel,
-  PerformerDetailsPanel,
-} from "./PerformerDetailsPanel";
+import { PerformerDetailsPanel } from "./PerformerDetailsPanel";
 import { PerformerScenesPanel } from "./PerformerScenesPanel";
 import { PerformerGalleriesPanel } from "./PerformerGalleriesPanel";
 import { PerformerGroupsPanel } from "./PerformerGroupsPanel";
@@ -30,13 +26,9 @@ import { PerformerImagesPanel } from "./PerformerImagesPanel";
 import { PerformerAppearsWithPanel } from "./performerAppearsWithPanel";
 import { PerformerEditPanel } from "./PerformerEditPanel";
 import { PerformerMergeModal } from "../PerformerMergeDialog";
-import { PerformerSubmitButton } from "./PerformerSubmitButton";
-import { PerformerImageSearchButton } from "./PerformerImageSearchButton";
-import { ShareButton } from "src/components/ShareLinks/ShareButton";
-import { ShareType } from "src/core/generated-graphql";
+import { PerformerSidebarActions } from "./PerformerSidebarActions";
 import { useRatingKeybinds } from "src/hooks/keybinds";
 import { DetailImage } from "src/components/Shared/DetailImage";
-import { useLoadStickyHeader } from "src/hooks/detailsPanel";
 import { useScrollToTopOnMount } from "src/hooks/scrollToTop";
 import { ExternalLinkButtons } from "src/components/Shared/ExternalLinksButton";
 import { BackgroundImage } from "src/components/Shared/DetailsPage/BackgroundImage";
@@ -45,7 +37,6 @@ import {
   useTabKey,
 } from "src/components/Shared/DetailsPage/Tabs";
 import { DetailTitle } from "src/components/Shared/DetailsPage/DetailTitle";
-import { ExpandCollapseButton } from "src/components/Shared/CollapseButton";
 import { FavoriteIcon } from "src/components/Shared/FavoriteIcon";
 import { AliasList } from "src/components/Shared/DetailsPage/AliasList";
 import { HeaderImage } from "src/components/Shared/DetailsPage/HeaderImage";
@@ -286,7 +277,6 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
     const [isMerging, setIsMerging] = useState<boolean>(false);
     const [image, setImage] = useState<string | null>();
     const [encodingImage, setEncodingImage] = useState<boolean>(false);
-    const loadStickyHeader = useLoadStickyHeader();
 
     const activeImage = useMemo(() => {
       const performerImage = performer.image_path;
@@ -327,15 +317,6 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
       } catch (e) {
         Toast.error(e);
       }
-    }
-
-    function renderMergeButton() {
-      return (
-        <Button variant="secondary" onClick={() => setIsMerging(true)}>
-          <FormattedMessage id="actions.merge" />
-          ...
-        </Button>
-      );
     }
 
     function renderMergeDialog() {
@@ -450,67 +431,62 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
       "full-width": !collapsed && !compactExpandedDetails,
     });
 
-    return (
-      <div id="performer-page" className="row">
-        <Helmet>
-          <title>{performer.name}</title>
-        </Helmet>
+    const nameIcons = (
+      <span className="name-icons">
+        <FavoriteIcon
+          favorite={performer.favorite}
+          onToggleFavorite={(v) => setFavorite(v)}
+        />
+        <ExternalLinkButtons urls={performer.urls ?? undefined} />
+      </span>
+    );
 
-        <div className={headerClassName}>
-          <BackgroundImage
-            imagePath={activeImage ?? undefined}
-            show={enableBackgroundImage && !isEditing}
-          />
-          <div className="detail-container">
-            <PerformerHeaderImage
-              activeImage={activeImage}
-              collapsed={collapsed}
-              encodingImage={encodingImage}
-              isEditing={isEditing}
-              lightboxImages={lightboxImages}
-              performer={performer}
-            />
-            <div className="row">
-              <div className="performer-head col">
-                <DetailTitle
-                  name={performer.name}
-                  disambiguation={performer.disambiguation ?? undefined}
-                  classNamePrefix="performer"
-                >
-                  {!isEditing && (
-                    <ExpandCollapseButton
-                      collapsed={collapsed}
-                      setCollapsed={(v) => setCollapsed(v)}
-                    />
-                  )}
-                  <span className="name-icons">
-                    <FavoriteIcon
-                      favorite={performer.favorite}
-                      onToggleFavorite={(v) => setFavorite(v)}
-                    />
-                    <ExternalLinkButtons urls={performer.urls ?? undefined} />
-                  </span>
-                </DetailTitle>
-                <AliasList aliases={performer.alias_list} />
-                <div className="quality-group">
-                  <RatingSystem
-                    value={performer.rating100}
-                    onSetRating={(value) => setRating(value)}
-                    clickToRate
-                    withoutContext
-                  />
-                  {!!performer.o_counter && (
-                    <OCounterButton value={performer.o_counter} />
-                  )}
-                </div>
-                {!isEditing && (
-                  <PerformerDetailsPanel
-                    performer={performer}
-                    collapsed={collapsed}
-                    fullWidth={!collapsed && !compactExpandedDetails}
-                  />
-                )}
-                {isEditing ? (
+    const ratingGroup = (
+      <div className="quality-group">
+        <RatingSystem
+          value={performer.rating100}
+          onSetRating={(value) => setRating(value)}
+          clickToRate
+          withoutContext
+        />
+        {!!performer.o_counter && (
+          <OCounterButton value={performer.o_counter} />
+        )}
+      </div>
+    );
+
+    // Editing keeps the original stacked layout. PerformerEditPanel is a
+    // full-width form with its own image controls and would be unusable
+    // squeezed into the 280px sidebar, so the sidebar is the viewing layout
+    // only.
+    if (isEditing) {
+      return (
+        <div id="performer-page" className="row">
+          <Helmet>
+            <title>{performer.name}</title>
+          </Helmet>
+
+          <div className={headerClassName}>
+            <div className="detail-container">
+              <PerformerHeaderImage
+                activeImage={activeImage}
+                collapsed={collapsed}
+                encodingImage={encodingImage}
+                isEditing={isEditing}
+                lightboxImages={lightboxImages}
+                performer={performer}
+              />
+              <div className="row">
+                <div className="performer-head col">
+                  <DetailTitle
+                    name={performer.name}
+                    disambiguation={performer.disambiguation ?? undefined}
+                    classNamePrefix="performer"
+                  >
+                    {nameIcons}
+                  </DetailTitle>
+                  <AliasList aliases={performer.alias_list} />
+                  {ratingGroup}
                   <PerformerEditPanel
                     performer={performer}
                     isVisible={isEditing}
@@ -519,66 +495,73 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
                     setImage={setImage}
                     setEncodingImage={setEncodingImage}
                   />
-                ) : (
-                  <Col>
-                    <Row xs={8}>
-                      <DetailsEditNavbar
-                        objectName={
-                          performer?.name ??
-                          intl.formatMessage({ id: "performer" })
-                        }
-                        onToggleEdit={() => toggleEditing()}
-                        onDelete={onDelete}
-                        onAutoTag={onAutoTag}
-                        autoTagDisabled={performer.ignore_auto_tag}
-                        isNew={false}
-                        isEditing={false}
-                        onSave={() => {}}
-                        onImageChange={() => {}}
-                        classNames="mb-2"
-                        customButtons={
-                          <>
-                            {renderMergeButton()}
-                            <div>
-                              <PerformerImageSearchButton
-                                name={performer.name}
-                              />
-                            </div>
-                            <div>
-                              <PerformerSubmitButton performer={performer} />
-                            </div>
-                            <div>
-                              <ShareButton
-                                shareType={ShareType.Performer}
-                                performerId={performer.id}
-                                label="Share…"
-                              />
-                            </div>
-                          </>
-                        }
-                      ></DetailsEditNavbar>
-                    </Row>
-                  </Col>
-                )}
+                </div>
               </div>
             </div>
           </div>
+          {renderMergeDialog()}
         </div>
+      );
+    }
 
-        {!isEditing && loadStickyHeader && (
-          <CompressedPerformerDetailsPanel performer={performer} />
-        )}
+    // Viewing: a fixed sidebar holds the portrait and all the metadata, and the
+    // tabs own the rest of the width from the top of the page. The old stacked
+    // header was 949px tall at 1600x1057 and pushed the tabs below the fold
+    // before a single scene was visible.
+    //
+    // The compressed sticky header is gone from this layout: the sidebar itself
+    // stays on screen, so a strip repeating its name/gender/age has nothing to
+    // do (the theme was already hiding it with display: none).
+    return (
+      <div id="performer-page" className="row performer-sidebar-layout">
+        <Helmet>
+          <title>{performer.name}</title>
+        </Helmet>
+
+        {/* Deliberately not .detail-header - see PerformerSidebarActions for
+            why that class's backdrop-filter would clip the More menu. */}
+        <aside className="performer-sidebar">
+          <BackgroundImage
+            imagePath={activeImage ?? undefined}
+            show={enableBackgroundImage}
+          />
+          <PerformerHeaderImage
+            activeImage={activeImage}
+            collapsed={false}
+            encodingImage={encodingImage}
+            isEditing={false}
+            lightboxImages={lightboxImages}
+            performer={performer}
+          />
+          <div className="performer-head">
+            <DetailTitle
+              name={performer.name}
+              disambiguation={performer.disambiguation ?? undefined}
+              classNamePrefix="performer"
+            >
+              {nameIcons}
+            </DetailTitle>
+            <AliasList aliases={performer.alias_list} />
+            {ratingGroup}
+          </div>
+          <PerformerSidebarActions
+            performer={performer}
+            onEdit={() => toggleEditing()}
+            onAutoTag={onAutoTag}
+            onMerge={() => setIsMerging(true)}
+            onDelete={onDelete}
+          />
+          <PerformerDetailsPanel performer={performer} collapsed={false} />
+        </aside>
 
         <div className="detail-body">
           <div className="performer-body">
             <div className="performer-tabs">
-              {!isEditing && (
-                <PerformerTabs
-                  tabKey={tabKey}
-                  performer={performer}
-                  abbreviateCounter={abbreviateCounter}
-                />
-              )}
+              <PerformerTabs
+                tabKey={tabKey}
+                performer={performer}
+                abbreviateCounter={abbreviateCounter}
+              />
             </div>
           </div>
         </div>
