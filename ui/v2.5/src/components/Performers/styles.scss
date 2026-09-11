@@ -405,10 +405,9 @@
 // page follows the Refract accent preset and light mode like everything else.
 // The sidebar is deliberately not a .detail-header: see PerformerSidebarActions.
 //
-// The handoff's portrait spec (aspect-ratio 3/4 + object-fit: cover) is NOT
-// applied. Cropper.js measures this <img> to map a selection onto the stored
-// original (#24, #26), and a CSS crop would silently skew every saved crop. It
-// would also re-crop images that were cropped to 2:3 on purpose (#25).
+// The handoff's fixed 3:4 portrait is not used: photos keep their own shape up
+// to a 2:3 height cap (see the portrait rule below). Forcing 3:4 would re-crop
+// the ~830 photos that were cropped to 2:3 on purpose (#25).
 $performer-sidebar-top: 4.8rem;
 
 /* stylelint-disable selector-class-pattern */
@@ -448,6 +447,7 @@ $performer-sidebar-top: 4.8rem;
       float: none;
       height: auto;
       padding: 0;
+      position: relative;
       width: 100%;
 
       // LightboxLink wraps the image in an inline-block .btn-link with button
@@ -459,14 +459,53 @@ $performer-sidebar-top: 4.8rem;
         width: 100%;
       }
 
+      // Height-capped at the 2:3 height of the column (224px x 1.5 = 336px,
+      // 24rem at the theme's 14px root), keeping the full column width. 2:3 is
+      // the library's median photo shape (834 of 1077 within 1.4-1.6) and the
+      // crop lock's (#25), so a normal photo is untouched; the ~110 taller ones
+      // (up to 2.18:1) are trimmed from the bottom for display, like performer
+      // cards (object-position: top keeps the face). The lightbox and the crop
+      // tool still get the whole image: Cropper.js hides this <img> and draws
+      // its own canvas from the original, so the display trim doesn't reach a
+      // saved crop - verified, its canvas keeps the photo's true ratio.
       img {
         border-radius: var(--radius-sm, 12px);
         display: block;
         height: auto;
-        // the stock `.detail-header-image img` rule caps this at 14rem, which
+        max-height: 24rem;
+        // the stock `.detail-header-image img` rule caps width at 14rem, which
         // is 196px at this theme's 14px root size
         max-width: 100%;
+        object-fit: cover;
+        object-position: top;
         width: 100%;
+      }
+
+      // Crop Image floats over the photo's bottom-right corner and shows on
+      // hover (always on touch screens, which cannot hover, and while it has
+      // keyboard focus). Only the idle button floats: once cropping starts the
+      // component adds .cropping, and Confirm/Cancel stay in the flow below the
+      // photo, clear of the crop handles. The selectors all keep
+      // :not(.cropping) so they share one specificity and source order decides.
+      .performer-image-cropper:not(.cropping) {
+        bottom: 8px;
+        margin: 0;
+        opacity: 0;
+        position: absolute;
+        right: 8px;
+        transition: opacity 150ms ease;
+        z-index: 1;
+      }
+
+      &:hover .performer-image-cropper:not(.cropping),
+      .performer-image-cropper:not(.cropping):focus-within {
+        opacity: 1;
+      }
+
+      @media (hover: none) {
+        .performer-image-cropper:not(.cropping) {
+          opacity: 1;
+        }
       }
     }
 
@@ -490,13 +529,7 @@ $performer-sidebar-top: 4.8rem;
     }
 
     .performer-head {
-      // Name centred, socials on their own centred line under it, so short and
-      // long names look the same.
-      //
-      // Done with flex-basis rather than display: block because the theme pins
-      // `.name-icons { display: inline-flex !important }`, which beats any
-      // display we set without !important. flex-basis is a property the theme
-      // leaves alone. column-gap stands in for the leading space of the
+      // Name centred. column-gap stands in for the leading space of the
       // disambiguation, which a flex item drops.
       h2 {
         column-gap: 0.3em;
@@ -513,12 +546,6 @@ $performer-sidebar-top: 4.8rem;
         text-align: center;
       }
 
-      .name-icons {
-        flex-basis: 100%;
-        justify-content: center;
-        margin-left: 0;
-      }
-
       .alias-head {
         color: var(--text-muted);
         font-size: 0.78rem;
@@ -528,15 +555,25 @@ $performer-sidebar-top: 4.8rem;
     .performer-sidebar-actions {
       display: flex;
       gap: 8px;
+      justify-content: center;
+    }
 
-      > .btn,
-      > .dropdown {
-        flex: 1 1 0;
-        min-width: 0;
+    // favourite, social links and rating at the foot of the sidebar
+    .performer-sidebar-footer {
+      align-items: center;
+      border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 14px;
+
+      // the theme's .name-icons indent assumes it follows the name
+      .name-icons {
+        margin-left: 0;
       }
 
-      .dropdown-toggle {
-        width: 100%;
+      .quality-group {
+        margin-top: 0;
       }
     }
 
@@ -728,6 +765,7 @@ $performer-sidebar-top: 4.8rem;
 
     .performer-sidebar .detail-header-image img {
       margin: 0 auto;
+      max-height: 27.3rem; // 2:3 of the width below
       max-width: 18.2rem; // the #14 mobile portrait size
     }
   }

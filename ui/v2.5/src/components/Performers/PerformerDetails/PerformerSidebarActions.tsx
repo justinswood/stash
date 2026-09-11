@@ -36,11 +36,15 @@ export const PerformerSidebarActions: React.FC<IProps> = ({
 
   return (
     <div className="performer-sidebar-actions">
-      <Button variant="primary" className="edit" onClick={onEdit}>
+      <Button variant="primary" size="sm" className="edit" onClick={onEdit}>
         <FormattedMessage id="actions.edit" />
       </Button>
       <Dropdown className="performer-sidebar-more">
-        <Dropdown.Toggle variant="secondary" id="performer-more-actions">
+        <Dropdown.Toggle
+          variant="secondary"
+          size="sm"
+          id="performer-more-actions"
+        >
           <FormattedMessage id="actions.more" /> ⋯
         </Dropdown.Toggle>
         <Dropdown.Menu align="right" popperConfig={{ strategy: "fixed" }}>

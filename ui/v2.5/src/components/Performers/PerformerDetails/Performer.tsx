@@ -538,11 +538,8 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
               name={performer.name}
               disambiguation={performer.disambiguation ?? undefined}
               classNamePrefix="performer"
-            >
-              {nameIcons}
-            </DetailTitle>
+            />
             <AliasList aliases={performer.alias_list} />
-            {ratingGroup}
           </div>
           <PerformerSidebarActions
             performer={performer}
@@ -552,6 +549,12 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
             onDelete={onDelete}
           />
           <PerformerDetailsPanel performer={performer} collapsed={false} />
+          {/* favourite, social links and rating live at the foot of the
+              sidebar, so the details start right under the name */}
+          <div className="performer-sidebar-footer">
+            {nameIcons}
+            {ratingGroup}
+          </div>
         </aside>
 
         <div className="detail-body">

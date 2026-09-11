@@ -138,8 +138,17 @@ export const PerformerImageCropper: React.FC<IPerformerImageCropperProps> = ({
     setCropping(false);
   }, [destroyCropper, setCropping]);
 
+  // .cropping lets the sidebar float only the idle Crop button over the photo;
+  // the Confirm/Cancel controls stay in the flow below it, clear of the crop
+  // handles
   return (
-    <div className="performer-image-cropper">
+    <div
+      className={
+        cropping
+          ? "performer-image-cropper cropping"
+          : "performer-image-cropper"
+      }
+    >
       {!cropping ? (
         <Button
           variant="secondary"
