@@ -236,7 +236,6 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
           >
             <FormattedMessage id="actions.search" />
           </OperationButton>
-          {renderCascadeButton()}
         </InputGroup.Append>
       </InputGroup>
     );
@@ -299,12 +298,11 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
         <div className="col-md-6 my-1">
           <div>
             {renderQueryForm()}
-            {scrapeSceneFragment || (!doSceneQuery && cascadeSearch) ? (
+            {scrapeSceneFragment || cascadeSearch ? (
               <div className="mt-2 text-right">
-                {/* the cascade button lives in the query form when there is
-                    one; this is the fallback for sources that cannot name
-                    query */}
-                {!doSceneQuery && renderCascadeButton("mr-2")}
+                {/* kept out of the query's input group: a button inside one
+                    loses its rounded corners on the joined side */}
+                {renderCascadeButton("mr-2")}
                 {scrapeSceneFragment && (
                   <OperationButton
                     disabled={loading}

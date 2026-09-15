@@ -16,6 +16,12 @@ import { useConfigurationContext } from "src/hooks/Config";
 import { faCog } from "@fortawesome/free-solid-svg-icons";
 import { useLightbox } from "src/hooks/Lightbox/hooks";
 
+// Results shown per scene, for every search - one source (up to 10 from a
+// stash-box) or all of them merged (30+). A real match reliably ranks inside
+// the top five (phash, then duration, against the local file), so the rest is
+// noise.
+const SCENE_RESULT_LIMIT = 5;
+
 const Scene: React.FC<{
   scene: GQL.SlimSceneDataFragment;
   searchResult?: ISceneQueryResult;
@@ -96,6 +102,7 @@ const Scene: React.FC<{
           scenes={searchResult.results}
           target={scene}
           source={searchResult.source}
+          limit={SCENE_RESULT_LIMIT}
         />
       ) : undefined}
     </TaggerScene>

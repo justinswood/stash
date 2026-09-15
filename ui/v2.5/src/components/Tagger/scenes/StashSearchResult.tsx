@@ -913,12 +913,16 @@ export interface ISceneSearchResults {
   // the source these results came from, when a cascade matched against
   // something other than the selected source
   source?: ITaggerSource;
+  // show only the best `limit` results. Applied AFTER ranking, so it keeps the
+  // closest matches rather than whichever source happened to answer first.
+  limit?: number;
 }
 
 export const SceneSearchResults: React.FC<ISceneSearchResults> = ({
   target,
   scenes: unsortedScenes,
   source,
+  limit,
 }) => {
   const [selectedResult, setSelectedResult] = useState<number | undefined>();
 
@@ -928,8 +932,9 @@ export const SceneSearchResults: React.FC<ISceneSearchResults> = ({
         .slice()
         .sort((scrapedSceneA, scrapedSceneB) =>
           compareScenesForSort(target, scrapedSceneA, scrapedSceneB)
-        ),
-    [unsortedScenes, target]
+        )
+        .slice(0, limit),
+    [unsortedScenes, target, limit]
   );
 
   useEffect(() => {
