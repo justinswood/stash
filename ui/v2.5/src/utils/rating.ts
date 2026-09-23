@@ -10,7 +10,14 @@ export enum RatingStarPrecision {
   Tenth = "tenth",
 }
 
-export const defaultRatingSystemType: RatingSystemType = RatingSystemType.Stars;
+// Decimal (0.1-10.0) rather than Stars. Ratings read as numbers everywhere.
+// This is the DEFAULT, so it applies only to accounts with no stored
+// ratingSystemOptions — anyone who has used Settings -> Interface -> Rating
+// system keeps their choice. defaultRatingStarPrecision deliberately stays
+// Full: it is unread in decimal mode, and changing it would alter
+// RatingBanner's isLegacy branch for anyone who switches back to stars.
+export const defaultRatingSystemType: RatingSystemType =
+  RatingSystemType.Decimal;
 export const defaultRatingStarPrecision: RatingStarPrecision =
   RatingStarPrecision.Full;
 

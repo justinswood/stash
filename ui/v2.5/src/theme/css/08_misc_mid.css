@@ -2969,9 +2969,9 @@ body.stash-liquid-glass .scene-card .card-section {
    so single-line titles leave a blank second line and everything below
    (date / performer circles) lines up across cards in the grid. */
 body.stash-liquid-glass .scene-card .card-section-title {
-    font-size: 1rem !important;
+    font-size: var(--fs-lg) !important;
     font-weight: 700 !important;
-    line-height: 1.3 !important;
+    line-height: var(--lh-snug) !important;
     margin-bottom: 0.15rem !important;
     color: var(--text) !important;
     display: -webkit-box !important;
@@ -2981,7 +2981,13 @@ body.stash-liquid-glass .scene-card .card-section-title {
     overflow: hidden;
     text-overflow: ellipsis;
     word-break: break-word;
-    min-height: calc(1rem * 1.3 * 2);
+    /* em resolves against this element's OWN font-size, so the reserved
+       two lines track the title through any future size change with no
+       lockstep edit. The old calc(1rem * 1.3 * 2) restated the title's
+       metrics and silently desynced the moment either one moved. Also
+       now agrees with the height: 2.6em index.scss:1652 already sets on
+       the same element, instead of matching it only by coincidence. */
+    min-height: calc(2 * 1.3em);
 }
 /* Date: small, muted */
 body.stash-liquid-glass .scene-card .scene-card__date {
@@ -3122,6 +3128,57 @@ body.stash-liquid-glass.refract-minimal-cards .scene-card .stash-performer-circl
 }
 body.stash-liquid-glass.refract-minimal-cards .scene-card .stash-performer-circles > * {
     pointer-events: auto;
+}
+
+/* ───────────────────────────────────────────────────────────────────
+   Scene card type hierarchy.
+
+   SIZES ONLY. docker/production/config/custom.css owns the scene-card
+   title and performer-name FONT, colour and text-shadow (Concert One),
+   and it loads after every theme layer at doubled-class specificity —
+   anything set there wins here regardless, so don't restate it.
+
+   Before this block the title was 0.92rem (15.2px) while .performers
+   and .footer inherited body size (16.5px): the metadata rendered
+   LARGER than the title. Both are styled only by index.scss:1599-1676
+   and had never been given a theme rule.
+   ─────────────────────────────────────────────────────────────────── */
+body.stash-liquid-glass.refract-minimal-cards .scene-card .card-section-title {
+    font-size: var(--fs-lg) !important;
+    line-height: var(--lh-snug) !important;
+}
+body.stash-liquid-glass .scene-card .card-section .performers {
+    font-size: var(--fs-xs) !important;
+}
+body.stash-liquid-glass .scene-card .card-section .performers .list a {
+    font-weight: 600 !important;
+}
+body.stash-liquid-glass .scene-card .card-section .footer span.date,
+body.stash-liquid-glass .scene-card .card-section .footer span.views {
+    font-size: var(--fs-2xs) !important;
+}
+body.stash-liquid-glass .scene-card .card-section .footer span.date {
+    color: rgba(255, 255, 255, 0.82) !important;
+}
+body.stash-liquid-glass .scene-card .card-section .footer span.views {
+    color: var(--text-muted) !important;
+}
+
+/* The chin is a FULL-FACE overlay, not a bottom strip — index.scss:1594
+   gives .card-section height: 100%, so the names sit at the TOP, where
+   the old one-way gradient was still fully transparent and only
+   custom.css's text-shadow carried them. Darken both ends and keep the
+   middle clear so the thumbnail still reads. */
+body.stash-liquid-glass.refract-minimal-cards .scene-card .card-section {
+    padding: 0.5rem 0.8rem 0.6rem !important;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.62) 0%,
+        rgba(0, 0, 0, 0.18) 26%,
+        rgba(0, 0, 0, 0) 50%,
+        rgba(0, 0, 0, 0.45) 78%,
+        rgba(0, 0, 0, 0.82) 100%
+    ) !important;
 }
 
 /* O-count in minimal mode — match the accent-glass treatment used by

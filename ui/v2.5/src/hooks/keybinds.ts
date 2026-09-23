@@ -1,6 +1,6 @@
 import Mousetrap from "mousetrap";
 import { useEffect, useRef } from "react";
-import { RatingSystemType } from "src/utils/rating";
+import { defaultRatingSystemType, RatingSystemType } from "src/utils/rating";
 
 export function useRatingKeybinds(
   isVisible: boolean,
@@ -71,7 +71,12 @@ export function useRatingKeybinds(
         document.activeElement.blur();
       }
 
-      if (!ratingSystem || ratingSystem === RatingSystemType.Stars) {
+      // Fall back to the configured default, not to stars. All six callers
+      // pass configuration?.ui.ratingSystemOptions?.type, which is undefined
+      // for any account that has never customised it — so `!ratingSystem`
+      // meant those accounts rendered decimal ratings but got star keybinds.
+      const effectiveSystem = ratingSystem ?? defaultRatingSystemType;
+      if (effectiveSystem === RatingSystemType.Stars) {
         return handleStarRatingKeybinds();
       } else {
         return handleDecimalKeybinds();

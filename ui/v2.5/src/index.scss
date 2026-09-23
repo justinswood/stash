@@ -49,8 +49,34 @@ $sidebar-width: 250px;
 }
 /* stylelint-enable */
 
+/* Root type scale. Every rem in the app (335 declarations in the Refract theme
+   alone) resolves against this, so moving the root lifts the whole hierarchy at
+   once and preserves every hand-tuned ratio. Breakpoints deliberately match the
+   --nav-btn-size ladder in theme/css/01_tokens.css so there is one responsive
+   vocabulary, not two. */
 html {
-  font-size: 14px;
+  font-size: 16px;
+}
+
+@media (max-width: 767.98px) {
+  html {
+    font-size: 15px;
+  }
+}
+@media (min-width: 1441px) {
+  html {
+    font-size: 16.5px;
+  }
+}
+@media (min-width: 1921px) {
+  html {
+    font-size: 17.5px;
+  }
+}
+@media (min-width: 2561px) {
+  html {
+    font-size: 19px;
+  }
 }
 
 body {

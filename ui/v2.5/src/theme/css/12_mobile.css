@@ -935,4 +935,12 @@ body.stash-liquid-glass .refract-mobile-drawer {
         flex: initial !important;
         margin: 0 !important;
     }
+
+    /* The card itself is clamped above, but the portrait inside it is not:
+       .performer-card-image carries min-width: 11.25rem (Performers/styles.scss).
+       That was 157.5px at the old 14px root and fit a 2-column 360px viewport;
+       at the 15px mobile root it is 168.75px and overflows the cell. */
+    body.stash-liquid-glass .row.justify-content-center > .performer-card .performer-card-image {
+        min-width: 0 !important;
+    }
 }

@@ -14,7 +14,11 @@ interface IPerformerCardGrid {
   extraCriteria?: IPerformerCardExtraCriteria;
 }
 
-const zoomWidths = [240, 300, 375, 470];
+// See the note in SceneCardsGrid. Width matters more here than on scene
+// cards: in playing-card rating style refract.js auto-shrinks the stat
+// chips to fit (--pc-badge-scale), so a narrow card silently costs chip
+// legibility rather than clipping visibly.
+const zoomWidths = [260, 330, 430, 540];
 
 export const PerformerCardGrid: React.FC<IPerformerCardGrid> = ({
   performers,

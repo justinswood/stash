@@ -8,9 +8,11 @@ import {
 } from "../../../models/list-filter/criteria/criterion";
 import { RatingSystem } from "src/components/Shared/Rating/RatingSystem";
 import { RatingStars } from "src/components/Shared/Rating/RatingStars";
+import { RatingNumber } from "src/components/Shared/Rating/RatingNumber";
 import {
   defaultRatingStarPrecision,
   defaultRatingSystemOptions,
+  RatingSystemType,
 } from "src/utils/rating";
 import { useConfigurationContext } from "src/hooks/Config";
 import { RatingCriterion } from "src/models/list-filter/criteria/rating";
@@ -178,16 +180,30 @@ export const SidebarRatingFilter: React.FC<ISidebarFilter> = ({
     setFilter(filter.replaceCriteria(option.type, [newCriterion]));
   }
 
-  const ratingStars = (
+  // This is the one rating site that ignored ratingSystemOptions.type and
+  // always rendered stars, so a decimal-rating instance still got a 0-5 star
+  // widget here. clickToRate is load-bearing, not cosmetic: without it
+  // RatingNumber keeps the input live and fires a filter refetch on every
+  // keystroke; with it, editing is staged locally and committed once onBlur.
+  const ratingControl = (
     <div className="no-icon-margin">
-      <RatingStars
-        value={ratingValue}
-        onSetRating={onRatingValueChange}
-        precision={
-          ratingSystemOptions.starPrecision ?? defaultRatingStarPrecision
-        }
-        orMore
-      />
+      {ratingSystemOptions.type === RatingSystemType.Decimal ? (
+        <RatingNumber
+          value={ratingValue}
+          onSetRating={onRatingValueChange}
+          clickToRate
+          withoutContext
+        />
+      ) : (
+        <RatingStars
+          value={ratingValue}
+          onSetRating={onRatingValueChange}
+          precision={
+            ratingSystemOptions.starPrecision ?? defaultRatingStarPrecision
+          }
+          orMore
+        />
+      )}
     </div>
   );
   return (
@@ -199,8 +215,8 @@ export const SidebarRatingFilter: React.FC<ISidebarFilter> = ({
         onUnselect={onUnselect}
         selected={selected}
         singleValue
-        preCandidates={ratingValue === null ? ratingStars : undefined}
-        preSelected={ratingValue !== null ? ratingStars : undefined}
+        preCandidates={ratingValue === null ? ratingControl : undefined}
+        preSelected={ratingValue !== null ? ratingControl : undefined}
         sectionID={sectionID}
       />
       <div></div>

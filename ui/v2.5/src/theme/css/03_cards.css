@@ -1530,13 +1530,16 @@ body.stash-liquid-glass .rating-number {
     align-items: center;
     justify-content: center;
     gap: 0.3rem;
-    padding: 0.35rem 0.85rem;
+    padding: 0.35rem 0.9rem;
     background: var(--glass-bg-strong) !important;
     border: 1px solid var(--glass-border) !important;
     border-radius: var(--radius-pill) !important;
     color: var(--text) !important;
-    font-size: 0.8rem;
-    font-weight: 600;
+    /* Decimal is now the default rating system, so this pill is the
+       primary rating read-out rather than an alternative to the stars.
+       0.8rem read as a footnote next to it. */
+    font-size: var(--fs-sm);
+    font-weight: 700;
     line-height: 1 !important;
     font-variant-numeric: tabular-nums;
     vertical-align: middle;
@@ -1582,9 +1585,9 @@ body.stash-liquid-glass .rating-number > span {
 /* Sidebar / scene-toolbar variant — slimmer 26px height to match the
    inline pill scale used by .adv-rating-btn + count-button in that row. */
 body.stash-liquid-glass :is(.scene-tabs, .image-tabs) :is(.scene-toolbar, .image-toolbar) .rating-number {
-    height: 26px !important;
-    padding: 0 0.55rem !important;
-    font-size: 0.72rem !important;
+    height: 30px !important;
+    padding: 0 0.7rem !important;
+    font-size: var(--fs-xs) !important;
     gap: 0.25rem !important;
     box-shadow: none !important;
     background: rgba(255, 255, 255, 0.05) !important;

@@ -117,9 +117,33 @@ body.stash-liquid-glass {
        inline style on <body> (inline beats this class rule). */
     --glow: 1;
 
-    --nav-btn-size: 2.4rem;
+    /* Re-pinned when the root moved 14px → 16px (src/index.scss). These are
+       rem, so they would otherwise have inflated 14% and wrapped the navbar.
+       --nav-icon-size and --nav-gap are deliberately left to grow. */
+    --nav-btn-size: 2.2rem;
     --nav-icon-size: 1rem;
     --nav-gap: 0.2rem;
+
+    /* Type scale. For the focal elements this redesign touches — card titles,
+       card metadata, headings. The other ~335 rem font-sizes in these 17 files
+       keep their hand-tuned values and ride the root ladder instead; remapping
+       them would flatten the hierarchy for no gain.
+       px values are at the 16px base. --fs-scale nudges the whole focal set
+       without touching the root; ship it at 1. */
+    --fs-scale: 1;
+    --fs-3xs: calc(0.6875rem * var(--fs-scale));  /* 11px */
+    --fs-2xs: calc(0.75rem * var(--fs-scale));    /* 12px — card date */
+    --fs-xs: calc(0.8125rem * var(--fs-scale));   /* 13px — card metadata */
+    --fs-sm: calc(0.875rem * var(--fs-scale));    /* 14px — table cells */
+    --fs-md: calc(1rem * var(--fs-scale));        /* 16px — body copy */
+    --fs-lg: calc(1.125rem * var(--fs-scale));    /* 18px — CARD TITLES */
+    --fs-xl: calc(1.375rem * var(--fs-scale));    /* 22px — section headings */
+    --fs-2xl: calc(1.75rem * var(--fs-scale));    /* 28px — page headings */
+    --fs-3xl: calc(2.25rem * var(--fs-scale));    /* 36px — detail hero */
+
+    --lh-tight: 1.2;
+    --lh-snug: 1.3;
+    --lh-normal: 1.5;
 
     --bs-body-bg: var(--bg-0);
     --bs-body-color: var(--text);
@@ -217,20 +241,20 @@ body.stash-liquid-glass .main.container-fluid:has(> .row > :is(.scene-tabs, .ima
    ─────────────────────────────────────────────────────────────────── */
 @media (min-width: 1441px) {
     body.stash-liquid-glass {
-        --nav-btn-size: 2.7rem;
+        --nav-btn-size: 2.45rem;
         --nav-icon-size: 1.15rem;
     }
 }
 @media (min-width: 1921px) {
     body.stash-liquid-glass {
-        --nav-btn-size: 3rem;
+        --nav-btn-size: 2.55rem;
         --nav-icon-size: 1.3rem;
         --nav-gap: 0.3rem;
     }
 }
 @media (min-width: 2561px) {
     body.stash-liquid-glass {
-        --nav-btn-size: 3.4rem;
+        --nav-btn-size: 2.7rem;
         --nav-icon-size: 1.5rem;
         --nav-gap: 0.4rem;
     }

@@ -3843,9 +3843,19 @@
                     }
                     /* Name banner — Concert One is moderately wide;
                        step font-size down through the ladder until the
-                       text fits the left 3/4 of the banner. */
+                       text fits the left 3/4 of the banner.
+
+                       The top two rungs were added for the large-type
+                       redesign. Measured before: every one of 24 visible
+                       names sat at the old 1.25 cap with zero overflow,
+                       so the cap — not the fit — was what limited the
+                       name size. Short names now land at 1.5rem and long
+                       ones still degrade gracefully down the same ladder.
+                       This is written as an INLINE style and therefore
+                       beats every CSS rule, so the size lives here and
+                       cannot be adjusted from the theme stylesheets. */
                     if (bannerInner) {
-                        var sizes = [1.25, 1.1, 0.95, 0.85, 0.75, 0.7];
+                        var sizes = [1.5, 1.35, 1.25, 1.1, 0.95, 0.85, 0.75, 0.7];
                         for (var j = 0; j < sizes.length; j++) {
                             bannerInner.style.fontSize = sizes[j] + "rem";
                             if (bannerInner.scrollWidth <= bannerInner.clientWidth + 1) { break; }
