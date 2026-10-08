@@ -990,10 +990,9 @@ body.stash-liquid-glass .filtered-list-toolbar .zoom-slider-container {
         0 4px 12px rgba(0, 0, 0, 0.18);
 }
 /* Zoom slider — accent-tracking thumb + filled-track on the left side.
-   The filled portion uses a webkit-only trick: ::-webkit-slider-thumb has a
-   massive box-shadow extending leftward, and the track's overflow:hidden
-   clips it to the track bounds. Firefox has a native ::-moz-range-progress
-   pseudo-element for the same effect. */
+   WebKit paints the fill as a gradient on the track, positioned by the
+   --zoom-pct variable ZoomSlider.tsx sets inline. Firefox has a native
+   ::-moz-range-progress pseudo-element for the same effect. */
 body.stash-liquid-glass input[type="range"].zoom-slider,
 body.stash-liquid-glass input[type="range"].zoom-slider.form-control-range {
     -webkit-appearance: none;
@@ -1019,10 +1018,18 @@ body.stash-liquid-glass input[type="range"].zoom-slider:focus-visible {
 body.stash-liquid-glass input[type="range"].zoom-slider::-webkit-slider-runnable-track {
     height: 5px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: var(--shadow-inset-track);
-    overflow: hidden;
+    /* Filled portion: set from ZoomSlider.tsx (--zoom-pct, 0-1). The thumb
+       centre travels 6px in from each end, hence the calc. No overflow clip
+       here - it would crop the 12px thumb to the 5px track. */
+    background:
+        linear-gradient(
+            to right,
+            rgba(var(--accent-rgb), 0.45) calc(6px + (100% - 12px) * var(--zoom-pct, 0)),
+            transparent 0
+        ),
+        rgba(255, 255, 255, 0.06);
 }
 body.stash-liquid-glass input[type="range"].zoom-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -1033,18 +1040,12 @@ body.stash-liquid-glass input[type="range"].zoom-slider::-webkit-slider-thumb {
     border-radius: 50%;
     background: rgba(var(--accent-rgb), 0.78);
     border: none;
-    box-shadow:
-        /* fill the track to the left of the thumb */
-        -100vw 0 0 calc(100vw - 6px) rgba(var(--accent-rgb), 0.45),
-        /* outer accent glow */
-        0 0 10px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1)));
+    box-shadow: 0 0 10px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1)));
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 body.stash-liquid-glass input[type="range"].zoom-slider:hover::-webkit-slider-thumb {
     transform: scale(1.15);
-    box-shadow:
-        -100vw 0 0 calc(100vw - 6px) rgba(var(--accent-rgb), 0.6),
-        0 0 14px rgba(var(--accent-rgb), calc(0.6 * var(--glow, 1)));
+    box-shadow: 0 0 14px rgba(var(--accent-rgb), calc(0.6 * var(--glow, 1)));
 }
 body.stash-liquid-glass input[type="range"].zoom-slider:active::-webkit-slider-thumb {
     transform: scale(1.04);

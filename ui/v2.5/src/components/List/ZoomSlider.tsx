@@ -45,6 +45,10 @@ export const ZoomSelect: React.FC<IZoomSelectProps> = ({
       min={minZoom}
       max={maxZoom}
       value={zoomIndex}
+      // fill position for the Refract track (04_filters.css)
+      style={
+        { "--zoom-pct": zoomIndex / (maxZoom - minZoom) } as React.CSSProperties
+      }
       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
         onChangeZoom(Number.parseInt(e.currentTarget.value, 10));
         e.preventDefault();
