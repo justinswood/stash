@@ -117,10 +117,7 @@ body.stash-liquid-glass {
        inline style on <body> (inline beats this class rule). */
     --glow: 1;
 
-    /* Re-pinned when the root moved 14px → 16px (src/index.scss). These are
-       rem, so they would otherwise have inflated 14% and wrapped the navbar.
-       --nav-icon-size and --nav-gap are deliberately left to grow. */
-    --nav-btn-size: 2.2rem;
+    --nav-btn-size: 2.4rem;
     --nav-icon-size: 1rem;
     --nav-gap: 0.2rem;
 
@@ -241,20 +238,20 @@ body.stash-liquid-glass .main.container-fluid:has(> .row > :is(.scene-tabs, .ima
    ─────────────────────────────────────────────────────────────────── */
 @media (min-width: 1441px) {
     body.stash-liquid-glass {
-        --nav-btn-size: 2.45rem;
+        --nav-btn-size: 2.7rem;
         --nav-icon-size: 1.15rem;
     }
 }
 @media (min-width: 1921px) {
     body.stash-liquid-glass {
-        --nav-btn-size: 2.55rem;
+        --nav-btn-size: 3rem;
         --nav-icon-size: 1.3rem;
         --nav-gap: 0.3rem;
     }
 }
 @media (min-width: 2561px) {
     body.stash-liquid-glass {
-        --nav-btn-size: 2.7rem;
+        --nav-btn-size: 3.4rem;
         --nav-icon-size: 1.5rem;
         --nav-gap: 0.4rem;
     }
