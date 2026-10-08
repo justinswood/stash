@@ -305,6 +305,12 @@
   height: 150px;
 }
 
+// Home-page performer rows run 30% smaller than the stock 20rem card
+// (variableWidth sliders size each slide from the card's own width).
+.performer-recommendations .slick-list .performer-card.card {
+  width: 14rem;
+}
+
 @media (max-width: 576px) {
   .slick-list .scene-card.card,
   .slick-list .studio-card.card,
@@ -319,6 +325,10 @@
 
   .slick-list .performer-card.card {
     width: 16rem;
+  }
+
+  .performer-recommendations .slick-list .performer-card.card {
+    width: 11.2rem;
   }
 }
 
