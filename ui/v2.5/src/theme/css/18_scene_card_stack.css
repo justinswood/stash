@@ -1,0 +1,215 @@
+/* ───────────────────────────────────────────────────────────────────
+   Scene card — "stacked" style (the default).
+
+   Thumbnail on top; title, date + studio, performer chips, description
+   and a count footer stacked below. Active when refract.js sets
+   body.refract-stack-cards. It does NOT carry refract-minimal-cards, so
+   none of the overlay rules in 08_misc_mid.css / 15_lite.css apply —
+   this file only has to style, never to undo.
+
+   The Meta / Chips / Description nodes are rendered by SceneCard.tsx in
+   every style; the first rule below keeps them out of "refract" and
+   "classic". The tagger's cards (.search-item) keep their own look.
+   ─────────────────────────────────────────────────────────────────── */
+
+.scene-card .scene-card-meta,
+.scene-card .scene-card-chips,
+.scene-card .scene-card-description {
+    display: none;
+}
+
+body.stash-liquid-glass.refract-stack-cards .scene-card:not(.search-item .scene-card) {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Thumbnail: fixed 16:9 so a row of cards lines up whatever the source. */
+body.stash-liquid-glass.refract-stack-cards .scene-card .video-section {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    flex: 0 0 auto;
+    overflow: hidden;
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-link,
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-preview {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-preview img,
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-preview video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Studio logo top-right. A studio with no logo falls back to its name as
+   text, which the meta line already shows — drop the duplicate. */
+body.stash-liquid-glass.refract-stack-cards .scene-card .studio-overlay {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.6rem;
+    left: auto;
+    bottom: auto;
+    background: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .studio-overlay a:not(:has(img)) {
+    display: none;
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .studio-overlay img {
+    max-height: 2.6rem;
+    max-width: 8rem;
+    object-fit: contain;
+}
+
+/* Resolution + duration pills, bottom-right. File size is dropped. */
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-specs-overlay {
+    position: absolute;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    display: flex;
+    gap: 0.35rem;
+    padding: 0;
+    background: none;
+    pointer-events: none;
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-specs-overlay .overlay-filesize {
+    display: none;
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-specs-overlay > span {
+    padding: 0.1rem 0.5rem;
+    border-radius: 0.4rem;
+    background: rgba(0, 0, 0, 0.78);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+/* Text block. Everything the overlay styles put on the thumbnail
+   (native performer list, views/date footer, and the avatar / duration /
+   tag strip refract.js injects) is superseded by the blocks below. */
+body.stash-liquid-glass.refract-stack-cards .scene-card .card-section {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    flex: 1 1 auto;
+    padding: 1rem 1.25rem 1.1rem !important;
+    background: none;
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .card-section .performers,
+body.stash-liquid-glass.refract-stack-cards .scene-card .card-section .footer,
+body.stash-liquid-glass.refract-stack-cards .scene-card .stash-performer-circles {
+    display: none;
+}
+
+/* Title first, then meta / chips / description. Size and weight stay with
+   the theme's own title rule; only its two-line reserve (min-height here,
+   height: 2.6em in index.scss) goes, because the text under it is no
+   longer an overlay that needs the cards to line up. */
+body.stash-liquid-glass.refract-stack-cards .scene-card .card-section > a { order: 0; }
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-meta { order: 1; }
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-chips { order: 2; }
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-description { order: 3; }
+body.stash-liquid-glass.refract-stack-cards .scene-card .card-section-title {
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+}
+
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-meta a {
+    color: var(--text-muted);
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-meta a:hover {
+    color: var(--text);
+}
+
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    max-width: 100%;
+    padding: 0.2rem 0.75rem 0.2rem 0.25rem;
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    background: var(--glass-bg);
+    color: var(--text);
+    font-size: 0.95rem;
+    line-height: 1.2;
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-chip:hover {
+    border-color: var(--glass-border-bright);
+    text-decoration: none;
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-chip.more {
+    padding: 0.35rem 0.75rem;
+    color: var(--text-muted);
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-chip img {
+    flex: 0 0 auto;
+    width: 1.7rem;
+    height: 1.7rem;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: top;
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.stash-liquid-glass.refract-stack-cards .scene-card .scene-card-description {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1.45;
+}
+
+/* Footer: divider, then centred performer / tag / organized counts. */
+/* The theme hides both unconditionally with !important (08_misc_mid.css,
+   "Hide native card popovers"), so these need it back. */
+body.stash-liquid-glass.refract-stack-cards .scene-card > hr {
+    display: block !important;
+    margin: 0;
+    border-color: var(--glass-border);
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .card-popovers {
+    display: flex !important;
+    justify-content: center;
+    gap: 1.25rem;
+    padding: 0.55rem 1rem 0.7rem;
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .card-popovers .performer-count { order: 1; }
+body.stash-liquid-glass.refract-stack-cards .scene-card .card-popovers .tag-count { order: 2; }
+body.stash-liquid-glass.refract-stack-cards .scene-card .card-popovers .organized { order: 3; }
+/* .btn-primary gets the accent colour with !important (theme), hence both here. */
+body.stash-liquid-glass.refract-stack-cards .scene-card .card-popovers .btn,
+body.stash-liquid-glass.refract-stack-cards .scene-card .card-popovers .btn svg {
+    color: var(--text-muted) !important;
+}
+body.stash-liquid-glass.refract-stack-cards .scene-card .card-popovers .btn:hover,
+body.stash-liquid-glass.refract-stack-cards .scene-card .card-popovers .btn:hover svg {
+    color: var(--text) !important;
+}

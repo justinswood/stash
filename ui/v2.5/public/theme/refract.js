@@ -659,11 +659,13 @@
                     R.createElement("div", null,
                         R.createElement("h3", null, "Scene card style"),
                         R.createElement("div", { className: "sub-heading" },
-                            R.createElement("b", null, "Refract"), " (default) — tidier minimal layout; description block hidden so the grid stays consistent across scenes with and without descriptions. ",
+                            R.createElement("b", null, "Stacked"), " (default) — thumbnail on top; title, studio, performers and description below. ",
+                            R.createElement("b", null, "Refract"), " — minimal overlay layout; title and performers sit on the thumbnail. ",
                             R.createElement("b", null, "Classic"), " — Stash's original card layout with description, file path, and details visible.")
                     ),
                     R.createElement("div", { className: "refract-setting-control refract-card-style-toggle" },
                         [
+                            { key: "stack", label: "Stacked" },
                             { key: "refract", label: "Refract" },
                             { key: "classic", label: "Classic" }
                         ].map(function (item) {
@@ -1015,9 +1017,10 @@
     }
     applyCenterControlsHiddenClass(isCenterControlsHidden());
 
-    /* Scene card style. "refract" (default) = tidier minimal layout —
-       description block hidden so the grid stays consistent across
-       scenes with and without descriptions. "classic" = Stash's
+    /* Scene card style. "stack" (default) = thumbnail on top, details
+       below. "refract" = tidier minimal overlay layout — description
+       block hidden so the grid stays consistent across scenes with and
+       without descriptions. "classic" = Stash's
        original layout with description, file path, and details
        visible. Body class `refract-minimal-cards` is on the "refract"
        branch — every selector in 08_misc_mid.css + 15_lite.css that
@@ -1029,12 +1032,18 @@
             var v = localStorage.getItem(MINIMAL_CARDS_STORAGE_KEY);
             if (v === "classic" || v === "0") { return "classic"; }
             if (v === "refract" || v === "1") { return "refract"; }
+            if (v === "stack") { return "stack"; }
         } catch (e) { /* ignore */ }
-        return "refract";
+        return "stack";
     }
     function applyCardStyleClass(style) {
         if (!document.body) { return; }
         document.body.classList.toggle("refract-minimal-cards", style === "refract");
+        /* "stack" = thumbnail on top, details below. It deliberately does
+           NOT carry refract-minimal-cards: every overlay rule in
+           08_misc_mid.css / 15_lite.css is scoped to that class, so its
+           absence is what switches the overlay layout off. */
+        document.body.classList.toggle("refract-stack-cards", style === "stack");
     }
     applyCardStyleClass(getStoredCardStyle());
 

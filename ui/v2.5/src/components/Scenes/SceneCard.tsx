@@ -382,11 +382,61 @@ const SceneCardFooter: React.FC<{
   );
 };
 
+const MAX_CARD_CHIPS = 3;
+
+// The three blocks below only exist for the "stacked" card style
+// (body.refract-stack-cards); every other style hides them in CSS.
+const SceneCardMeta: React.FC<{ scene: GQL.SlimSceneDataFragment }> = ({
+  scene,
+}) => {
+  if (!scene.date && !scene.studio) return null;
+
+  return (
+    <div className="scene-card-meta">
+      {scene.date && <span className="scene-card-meta-date">{scene.date}</span>}
+      {scene.studio && (
+        <Link to={`/studios/${scene.studio.id}`}>{scene.studio.name}</Link>
+      )}
+    </div>
+  );
+};
+
+const SceneCardChips: React.FC<{ scene: GQL.SlimSceneDataFragment }> = ({
+  scene,
+}) => {
+  const { performers } = scene;
+  if (performers.length === 0) return null;
+
+  const extra = performers.length - MAX_CARD_CHIPS;
+
+  return (
+    <div className="scene-card-chips">
+      {performers.slice(0, MAX_CARD_CHIPS).map((p) => (
+        <Link
+          key={p.id}
+          to={`/performers/${p.id}`}
+          className="scene-card-chip"
+          title={p.name}
+        >
+          {p.image_path && <img src={p.image_path} alt="" loading="lazy" />}
+          <span>{p.name}</span>
+        </Link>
+      ))}
+      {extra > 0 && <span className="scene-card-chip more">+{extra}</span>}
+    </div>
+  );
+};
+
 const SceneCardDetails = PatchComponent(
   "SceneCard.Details",
   (props: ISceneCardProps) => {
     return (
       <>
+        <SceneCardMeta scene={props.scene} />
+        <SceneCardChips scene={props.scene} />
+        {props.scene.details && (
+          <p className="scene-card-description">{props.scene.details}</p>
+        )}
         <SceneCardPerformerList
           performers={props.scene.performers}
           sceneDate={props.scene.date}
