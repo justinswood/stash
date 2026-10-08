@@ -16,7 +16,11 @@ export function getSlickSliderSettings(cardCount: number, isTouch: boolean) {
   return {
     dots: !isTouch,
     arrows: !isTouch,
-    infinite: !isTouch,
+    // Never loop. react-slick's infinite mode renders clones of the slides on
+    // both sides of the real ones: 75 slides for a 25-item row, which tripled
+    // the front page's DOM and made it the heaviest page by far. Touch devices
+    // already ran without it.
+    infinite: false,
     speed: 300,
     variableWidth: true,
     swipeToSlide: true,
