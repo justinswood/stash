@@ -430,8 +430,13 @@ body.stash-liquid-glass .st-op-menu-item:active {
    .main.container-fluid to reserve space for the bottom-pinned pager
    pill. On gallery-detail pages the pager scrolls inside the grid's
    internal scroll, so that padding only pushes the layout past the
-   viewport. Zero it when gallery layout is active. */
-body.stash-liquid-glass:has(.main.container-fluid > .row > .gallery-container) .main.container-fluid {
+   viewport. Zero it when gallery layout is active. .gallery-layout is a
+   body class set by Gallery.tsx while GalleryPage is mounted; it replaced
+   body:has(.main.container-fluid > .row > .gallery-container), a
+   body-rooted :has() that made the browser re-check the whole page on
+   every DOM change. (The pager rule excludes this class, so the two never
+   compete on specificity.) */
+body.stash-liquid-glass.gallery-layout .main.container-fluid {
     padding-bottom: 0 !important;
 }
 

@@ -351,14 +351,14 @@ body.stash-liquid-glass .search-item-check:focus {
    ANY element underneath the body (cards, panels, navbar, etc.) so
    no remaining filter can poison the render tree while zoom is
    active. Selectors are deliberately broad and !important. */
-body.stash-liquid-glass:has(.Lightbox) *,
-body.stash-liquid-glass:has(.Lightbox) *::before,
-body.stash-liquid-glass:has(.Lightbox) *::after {
+body.stash-liquid-glass.lightbox-open *,
+body.stash-liquid-glass.lightbox-open *::before,
+body.stash-liquid-glass.lightbox-open *::after {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
 }
-body.stash-liquid-glass:has(.Lightbox) .card,
-body.stash-liquid-glass:has(.Lightbox) .grid-card {
+body.stash-liquid-glass.lightbox-open .card,
+body.stash-liquid-glass.lightbox-open .grid-card {
     contain: none !important;
     animation: none !important;
 }
@@ -540,9 +540,12 @@ body.stash-liquid-glass .Lightbox-navbutton.btn.btn-link svg {
    When the lightbox is open, the gear button sits in the bottom footer,
    so popper's default `placement: bottom` would render the popover off
    the bottom edge of the viewport. Anchor it via position: fixed to the
-   bottom-right corner above the footer instead. The :has(.Lightbox)
-   guard scopes this so we don't mess with popovers in other contexts. */
-body.stash-liquid-glass:has(.Lightbox) .popover.show {
+   bottom-right corner above the footer instead. The .lightbox-open
+   guard (a body class set by Lightbox.tsx while it is mounted) scopes this
+   so we don't mess with popovers in other contexts. It is a class, not
+   body:has(.Lightbox), because a body-rooted :has() makes the browser
+   re-check the whole page on every DOM change. */
+body.stash-liquid-glass.lightbox-open .popover.show {
     position: fixed !important;
     inset: auto 1.25rem calc(48px + 0.6rem) auto !important;
     transform: none !important;
@@ -558,12 +561,12 @@ body.stash-liquid-glass:has(.Lightbox) .popover.show {
     color: var(--text) !important;
 }
 /* Hide popper's default arrow — we're not anchored to the trigger any more */
-body.stash-liquid-glass:has(.Lightbox) .popover.show .arrow,
-body.stash-liquid-glass:has(.Lightbox) .popover.show::before,
-body.stash-liquid-glass:has(.Lightbox) .popover.show::after {
+body.stash-liquid-glass.lightbox-open .popover.show .arrow,
+body.stash-liquid-glass.lightbox-open .popover.show::before,
+body.stash-liquid-glass.lightbox-open .popover.show::after {
     display: none !important;
 }
-body.stash-liquid-glass:has(.Lightbox) .popover.show .popover-header {
+body.stash-liquid-glass.lightbox-open .popover.show .popover-header {
     background: transparent !important;
     border-bottom: 1px solid var(--glass-border) !important;
     color: var(--accent-bright) !important;
@@ -573,21 +576,21 @@ body.stash-liquid-glass:has(.Lightbox) .popover.show .popover-header {
     text-transform: uppercase;
     padding: 0.55rem 0.85rem !important;
 }
-body.stash-liquid-glass:has(.Lightbox) .popover.show .popover-body {
+body.stash-liquid-glass.lightbox-open .popover.show .popover-body {
     padding: 0.85rem 1rem !important;
     color: var(--text);
 }
-body.stash-liquid-glass:has(.Lightbox) .popover.show .form-label {
+body.stash-liquid-glass.lightbox-open .popover.show .form-label {
     color: var(--text-muted) !important;
     font-size: 0.8rem;
 }
-body.stash-liquid-glass:has(.Lightbox) .popover.show .form-text {
+body.stash-liquid-glass.lightbox-open .popover.show .form-text {
     color: var(--text-muted) !important;
     font-size: 0.7rem;
     opacity: 0.7;
 }
-body.stash-liquid-glass:has(.Lightbox) .popover.show input.form-control,
-body.stash-liquid-glass:has(.Lightbox) .popover.show select.form-control {
+body.stash-liquid-glass.lightbox-open .popover.show input.form-control,
+body.stash-liquid-glass.lightbox-open .popover.show select.form-control {
     background: rgba(255, 255, 255, 0.06) !important;
     border: 1px solid var(--glass-border) !important;
     color: var(--text) !important;
@@ -602,7 +605,7 @@ body.stash-liquid-glass:has(.Lightbox) .popover.show select.form-control {
     vertical-align: middle;
 }
 /* Native select dropdown arrow — replace with themed chevron */
-body.stash-liquid-glass:has(.Lightbox) .popover.show select.form-control {
+body.stash-liquid-glass.lightbox-open .popover.show select.form-control {
     appearance: none !important;
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
@@ -612,8 +615,8 @@ body.stash-liquid-glass:has(.Lightbox) .popover.show select.form-control {
     background-position: right 0.6rem center !important;
     background-size: 0.62rem !important;
 }
-body.stash-liquid-glass:has(.Lightbox) .popover.show input.form-control:focus,
-body.stash-liquid-glass:has(.Lightbox) .popover.show select.form-control:focus {
+body.stash-liquid-glass.lightbox-open .popover.show input.form-control:focus,
+body.stash-liquid-glass.lightbox-open .popover.show select.form-control:focus {
     border-color: var(--accent-glow) !important;
     box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18) !important;
     outline: none !important;
@@ -621,7 +624,7 @@ body.stash-liquid-glass:has(.Lightbox) .popover.show select.form-control:focus {
 /* Custom checkbox — round glass dot, matching the table-list select-col
    idiom (05_list_views.css). Default = neutral glass; checked = orange
    fill with embedded SVG check + accent glow. */
-body.stash-liquid-glass:has(.Lightbox) .popover.show .form-check-input[type="checkbox"] {
+body.stash-liquid-glass.lightbox-open .popover.show .form-check-input[type="checkbox"] {
     appearance: none !important;
     -webkit-appearance: none !important;
     width: 1.15rem;
@@ -638,25 +641,25 @@ body.stash-liquid-glass:has(.Lightbox) .popover.show .form-check-input[type="che
     transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
     flex-shrink: 0;
 }
-body.stash-liquid-glass:has(.Lightbox) .popover.show .form-check-input[type="checkbox"]:checked {
+body.stash-liquid-glass.lightbox-open .popover.show .form-check-input[type="checkbox"]:checked {
     background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 8'%3E%3Cpath d='M1 4l2.5 2.5L9 1' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") center / 58% no-repeat !important;
     border-color: var(--accent-bright) !important;
     box-shadow: 0 0 8px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1))) !important;
 }
-body.stash-liquid-glass:has(.Lightbox) .popover.show .form-check-label {
+body.stash-liquid-glass.lightbox-open .popover.show .form-check-label {
     color: var(--text) !important;
     font-size: 0.8rem;
     cursor: pointer;
 }
 
 /* Number input — hide chunky native spinner; keep clean text input */
-body.stash-liquid-glass:has(.Lightbox) .popover.show input[type="number"].form-control {
+body.stash-liquid-glass.lightbox-open .popover.show input[type="number"].form-control {
     -moz-appearance: textfield;
     appearance: textfield;
     text-align: left;
 }
-body.stash-liquid-glass:has(.Lightbox) .popover.show input[type="number"].form-control::-webkit-outer-spin-button,
-body.stash-liquid-glass:has(.Lightbox) .popover.show input[type="number"].form-control::-webkit-inner-spin-button {
+body.stash-liquid-glass.lightbox-open .popover.show input[type="number"].form-control::-webkit-outer-spin-button,
+body.stash-liquid-glass.lightbox-open .popover.show input[type="number"].form-control::-webkit-inner-spin-button {
     -webkit-appearance: none !important;
     appearance: none !important;
     margin: 0 !important;

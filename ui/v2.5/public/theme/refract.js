@@ -4151,10 +4151,25 @@
 
     /* ── Floating pagination ─────────────────────────────────────────── */
 
+    /* Body-level mirror of "a floating pager row exists"; 09_buttons.css keys
+       its bottom-padding rule off this class. It replaced
+       body:has([data-pager-row="float"]), which made the browser re-check the
+       whole page on every DOM change (the body-rooted :has() rules dominated
+       the home page's style cost). Derived from the DOM rather than from what this function
+       just wrote, so it stays correct across the early returns below.
+       toggle(name, force) only touches the attribute when the state changes. */
+    function syncFloatPagerClass() {
+        if (!document.body) { return; }
+        document.body.classList.toggle(
+            "refract-float-pager",
+            !!document.querySelector('[data-pager-row="float"]')
+        );
+    }
+
     function initFloatingPager() {
         /* Match any element with class "pagination" regardless of tag */
         var pagers = Array.from(document.querySelectorAll(".pagination"));
-        if (!pagers.length) { return; }
+        if (!pagers.length) { syncFloatPagerClass(); return; }
 
         /* Reset previous markers */
         document.querySelectorAll("[data-pager-role],[data-pager-row]").forEach(function (el) {
@@ -4188,6 +4203,7 @@
            styling in 08_misc_mid.css) — skip it here so the two systems
            don't fight over the same elements. */
         if (document.querySelector("#scene-duplicate-checker")) {
+            syncFloatPagerClass();
             return;
         }
 
@@ -4200,6 +4216,7 @@
         var last = pagers[pagers.length - 1];
         last.setAttribute("data-pager-role", "float");
         rowOf(last).setAttribute("data-pager-row", "float");
+        syncFloatPagerClass();
     }
 
     /* ── Page-jump popover: dismiss on scroll ──────────────────────────

@@ -377,6 +377,15 @@ export const GalleryPage: React.FC<IProps> = ({ gallery, add }) => {
     };
   });
 
+  // Marks the two-column gallery layout on <body> for the theme, which drops
+  // the floating-pager bottom padding here. Replaces a body-rooted
+  // `:has(.main.container-fluid > .row > .gallery-container)`, which made the
+  // browser re-check the whole page on every DOM change.
+  useEffect(() => {
+    document.body.classList.add("gallery-layout");
+    return () => document.body.classList.remove("gallery-layout");
+  }, []);
+
   const title = galleryTitle(gallery);
 
   return (

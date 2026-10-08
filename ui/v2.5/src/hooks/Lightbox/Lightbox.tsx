@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   Button,
   Col,
@@ -308,6 +314,16 @@ export const LightboxComponent: React.FC<IProps> = ({
       Mousetrap.pause();
     }
   }, [initialIndex, isVisible, setIndex, index]);
+
+  // Mirror "a lightbox is open" onto <body>. The theme keys its lightbox
+  // overrides off this class: the body-rooted `:has(.Lightbox)` it replaced
+  // made the browser re-check the whole page on every DOM change. A layout
+  // effect, so the class lands in the same frame as the .Lightbox element.
+  useLayoutEffect(() => {
+    if (!isVisible) return undefined;
+    document.body.classList.add("lightbox-open");
+    return () => document.body.classList.remove("lightbox-open");
+  }, [isVisible]);
 
   const toggleSlideshow = useCallback(() => {
     if (slideshowInterval) {

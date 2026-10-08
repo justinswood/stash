@@ -466,8 +466,14 @@ body.stash-liquid-glass [data-pager-row="float"].pagination {
 /* When a floating pager is present, reserve bottom space inside the
    main scrollable container so the last row of cards can scroll past
    the pager island instead of sitting hidden behind it. The pager
-   sits at bottom: 1.5rem with ~50px content + gap → ~6rem total. */
-body.stash-liquid-glass:has([data-pager-row="float"]) .main.container-fluid {
+   sits at bottom: 1.5rem with ~50px content + gap → ~6rem total.
+   .refract-float-pager is set by refract.js (initFloatingPager); it
+   replaced body:has([data-pager-row="float"]), a body-rooted :has() that
+   made the browser re-check the whole page on every DOM change.
+   :not(.gallery-layout) makes this rule and the gallery rule in
+   07_scene_details.css mutually exclusive, which the old specificity gap
+   between the two used to do. */
+body.stash-liquid-glass.refract-float-pager:not(.gallery-layout) .main.container-fluid {
     padding-bottom: 6rem !important;
 }
 
