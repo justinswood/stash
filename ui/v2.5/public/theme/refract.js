@@ -4241,6 +4241,29 @@
     }
     bindPageJumpScrollDismiss();
 
+    /* ── Navbar: dock to the top edge once the page scrolls ─────────────
+       The navbar floats 12px clear of the viewport edges (02_navbar.css).
+       At rest that reads as a floating bar; while scrolling it leaves a
+       strip above the bar that the page content slides through. Past a few
+       pixels of scroll, body gets .refract-nav-docked and the CSS extends
+       the bar to the edges, keeping its buttons and bottom edge in place.
+       toggle(name, force) is a no-op when the state already matches (unlike
+       add/remove, which rewrite the attribute and wake every observer on
+       body), so this costs nothing except at the moment the bar crosses
+       the threshold. Bound once. */
+    var refractNavDockBound = false;
+    function bindNavDockOnScroll() {
+        if (refractNavDockBound) { return; }
+        refractNavDockBound = true;
+        function syncNavDock() {
+            if (!document.body) { return; }
+            document.body.classList.toggle("refract-nav-docked", window.pageYOffset > 2);
+        }
+        window.addEventListener("scroll", syncNavDock, { passive: true });
+        syncNavDock();
+    }
+    bindNavDockOnScroll();
+
     /* ── Table list view: strip overflowable so hover-popup never fires ── */
 
     function disableTableOverflowable() {
