@@ -1091,6 +1091,23 @@
         return "";
     }
 
+    /* Navbar-only stroke glyphs (Lucide, 24-unit grid, 2px stroke), matching the
+       segmented-track navbar (02_navbar.css). The shared PLUS_SVG and
+       SUN_ICON_SVG / MOON_ICON_SVG below stay as they are: the mobile New button
+       and the Theme settings swatch use them with fill-based CSS. */
+    var NAV_PLUS_SVG =
+        '<svg class="stash-injected-icon nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M5 12h14"/><path d="M12 5v14"/>' +
+        '</svg>';
+    var NAV_MOON_SVG =
+        '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>' +
+        '</svg>';
+    var NAV_SUN_SVG =
+        '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>' +
+        '</svg>';
+
     var PLUS_SVG =
         '<svg class="stash-injected-icon svg-inline--fa fa-icon" viewBox="0 0 448 512" aria-hidden="true">' +
         '<path fill="currentColor" d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/>' +
@@ -1448,7 +1465,7 @@
         if (!btn) { return false; }
         if (btn.querySelector("svg.stash-injected-icon")) { return true; }
         // Replace whatever's inside (text node "New", or anything) with the + SVG.
-        btn.innerHTML = PLUS_SVG;
+        btn.innerHTML = NAV_PLUS_SVG;
         btn.setAttribute("aria-label", btn.getAttribute("aria-label") || "New");
         return true;
     }
@@ -1849,7 +1866,8 @@
                     var link = links[j];
                     if (link.getAttribute("data-refract-icon") === item.icon) { continue; }
                     var oldSvg = link.querySelector("svg");
-                    if (!oldSvg) { continue; }
+                    /* NavIcons.tsx already drew the navbar glyph (data-nav-icon). */
+                    if (!oldSvg || oldSvg.hasAttribute("data-nav-icon")) { continue; }
                     var wrapper = document.createElement("span");
                     wrapper.innerHTML = iconSvgStr;
                     var newSvg = wrapper.firstElementChild;
@@ -2785,6 +2803,13 @@
 
     function markActiveUtilityButtons() {
         var currentPath = refractPathFromLocation();
+        /* .stash-nav-active drives the styling; aria-current="page" tells
+           assistive tech which item is current (the navbar design asks for it). */
+        function markActive(link, on) {
+            link.classList.toggle("stash-nav-active", on);
+            if (on) { link.setAttribute("aria-current", "page"); }
+            else { link.removeAttribute("aria-current"); }
+        }
         /* Right-side utility links (exact match) + left-side route links (prefix match).
            Left nav items have no .nav-link class — select all <a href> inside .navbar-nav,
            excluding javascript: pseudo-links. */
@@ -2803,16 +2828,16 @@
         });
         links.forEach(function (link) {
             var rawHref = link.getAttribute("href") || "";
-            if (!rawHref) { link.classList.remove("stash-nav-active"); return; }
+            if (!rawHref) { markActive(link, false); return; }
             if (rawHref.indexOf("http://") === 0 || rawHref.indexOf("https://") === 0 || rawHref.indexOf("//") === 0) {
                 try {
                     var abs = rawHref.indexOf("//") === 0 ? "https:" + rawHref : rawHref;
                     var u = new URL(abs, window.location.href);
-                    if (u.origin !== window.location.origin) { link.classList.remove("stash-nav-active"); return; }
-                } catch (e) { link.classList.remove("stash-nav-active"); return; }
+                    if (u.origin !== window.location.origin) { markActive(link, false); return; }
+                } catch (e) { markActive(link, false); return; }
             }
             var hrefPath = refractPathFromHref(rawHref);
-            if (!hrefPath || hrefPath === "/") { link.classList.remove("stash-nav-active"); return; }
+            if (!hrefPath || hrefPath === "/") { markActive(link, false); return; }
             /* Left-side route links use prefix match (e.g. /scenes active on /scenes/123).
                Utility links (.nav-utility) use exact match. */
             var isLeftNav = !link.classList.contains("nav-utility");
@@ -2834,9 +2859,20 @@
                 }
             } else {
                 isActive = (currentPath === hrefPath);
+                /* A utility link that carries a query (Recent: /scenes?sortby=
+                   created_at&...) is one particular VIEW of that page, so it
+                   is current only when the URL has those params, not on every
+                   visit to the path. */
+                var qAt = rawHref.indexOf("?");
+                if (isActive && qAt !== -1) {
+                    var wantParams = new URLSearchParams(rawHref.slice(qAt + 1));
+                    var haveParams = new URLSearchParams(window.location.search);
+                    wantParams.forEach(function (v, k) {
+                        if (haveParams.get(k) !== v) { isActive = false; }
+                    });
+                }
             }
-            if (isActive) { link.classList.add("stash-nav-active"); }
-            else { link.classList.remove("stash-nav-active"); }
+            markActive(link, isActive);
         });
     }
 
@@ -4245,8 +4281,9 @@
        The navbar floats 12px clear of the viewport edges (02_navbar.css).
        At rest that reads as a floating bar; while scrolling it leaves a
        strip above the bar that the page content slides through. Past a few
-       pixels of scroll, body gets .refract-nav-docked and the CSS extends
-       the bar to the edges, keeping its buttons and bottom edge in place.
+       pixels of scroll, body gets .refract-nav-docked and the CSS runs the
+       bar to the top and side edges (the design's full-width variant; it
+       keeps its height and just moves up by --nav-edge).
        toggle(name, force) is a no-op when the state already matches (unlike
        add/remove, which rewrite the attribute and wake every observer on
        body), so this costs nothing except at the moment the bar crosses
@@ -4471,8 +4508,11 @@
            .categories-toolbar is the same false positive: its own filter box
            has just one button, so the walk-up runs past it to the page
            container, which holds the card grid and therefore plenty of
-           buttons — the page itself would become display:flex. */
-        if (search.closest && search.closest('.modal, .modal-dialog, .modal-content, .sidebar, form, .edit-tags-overhaul, #tag-manager-host, .tag-manager, .categories-toolbar')) { return; }
+           buttons — the page itself would become display:flex.
+           nav.top-nav: the navbar's own performer search has a "Search"
+           placeholder and the utility cluster holds >= 4 buttons, so it would
+           be tagged and turned into a wrapping flex toolbar. */
+        if (search.closest && search.closest('.modal, .modal-dialog, .modal-content, .sidebar, form, .edit-tags-overhaul, #tag-manager-host, .tag-manager, .categories-toolbar, nav.top-nav')) { return; }
 
         /* Walk up until we find a div containing ≥ 4 buttons — that is the
            filter toolbar wrapper, whatever Stash names the class. */
@@ -8607,7 +8647,7 @@
             existing.classList.toggle("is-active", nowLight);
             existing.setAttribute("aria-label", nowLight ? "Switch to dark mode" : "Switch to light mode");
             existing.setAttribute("title", nowLight ? "Switch to dark mode" : "Switch to light mode");
-            existing.innerHTML = nowLight ? SUN_ICON_SVG : MOON_ICON_SVG;
+            existing.innerHTML = nowLight ? NAV_SUN_SVG : NAV_MOON_SVG;
             return;
         }
         var btn = document.createElement("button");
@@ -8617,7 +8657,7 @@
         if (on) btn.classList.add("is-active");
         btn.setAttribute("aria-label", on ? "Switch to dark mode" : "Switch to light mode");
         btn.setAttribute("title", on ? "Switch to dark mode" : "Switch to light mode");
-        btn.innerHTML = on ? SUN_ICON_SVG : MOON_ICON_SVG;
+        btn.innerHTML = on ? NAV_SUN_SVG : NAV_MOON_SVG;
         btn.addEventListener("click", function (e) {
             e.preventDefault();
             e.stopPropagation();
@@ -8923,6 +8963,8 @@
                so there's no positional jump on the first pointermove. */
             var clone = el.cloneNode(true);
             clone.removeAttribute("data-st-nav-drag-done");
+            /* 02_navbar.css styles it as a raised tab (it is outside the nav). */
+            clone.classList.add("refract-nav-drag-clone");
             var initCloneLeft = (currentX !== undefined)
                 ? currentX - (downX - dragRect.left)
                 : dragRect.left;

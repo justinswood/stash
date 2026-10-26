@@ -1,4 +1,5 @@
 {
+  "account": "Account",
   "actions": {
     "add": "Add",
     "add_directory": "Add Directory",

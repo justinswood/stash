@@ -391,32 +391,9 @@ body.stash-liquid-glass.refract-light :is(.scene-tabs, .image-tabs) .tab-content
 }
 
 
-/* ═══════ 17. Navbar icons — soft accent at rest ═══════════════════
-   Dark navbar icons (var(--text) = black) read as harsh on white.
-   Tint them with a transparent accent so the navbar reads as
-   "subtly themed" rather than monochrome. Active route already gets
-   full --accent via existing rules; just override resting + hover. */
-body.stash-liquid-glass.refract-light nav.top-nav a.btn,
-body.stash-liquid-glass.refract-light nav.top-nav button.btn,
-body.stash-liquid-glass.refract-light nav.top-nav .navbar-toggler,
-body.stash-liquid-glass.refract-light nav.top-nav a.nav-link,
-body.stash-liquid-glass.refract-light nav.top-nav a.nav-utility {
-    color: rgba(var(--accent-rgb), 0.65) !important;
-}
-body.stash-liquid-glass.refract-light nav.top-nav a.btn:hover,
-body.stash-liquid-glass.refract-light nav.top-nav button.btn:hover,
-body.stash-liquid-glass.refract-light nav.top-nav .navbar-toggler:hover,
-body.stash-liquid-glass.refract-light nav.top-nav a.nav-link:hover,
-body.stash-liquid-glass.refract-light nav.top-nav a.nav-utility:hover {
-    color: var(--accent-bright) !important;
-}
-/* Icon hover shimmer — original uses white drop-shadow; swap to
-   accent for visibility on white background. */
-body.stash-liquid-glass.refract-light nav.top-nav a.btn:hover svg,
-body.stash-liquid-glass.refract-light nav.top-nav button.btn:hover svg,
-body.stash-liquid-glass.refract-light nav.top-nav .navbar-toggler:hover svg {
-    filter: drop-shadow(0 0 6px rgba(var(--accent-rgb), calc(0.45 * var(--glow, 1)))) !important;
-}
+/* ═══════ 17. Navbar ═══════════════════════════════════════════════
+   The segmented-track navbar is dark in every mode (02_navbar.css), so the
+   light-mode icon tinting that lived here is gone. */
 
 
 /* ═══════ 18. Performer circles — accent halo at rest ══════════════ */

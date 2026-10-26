@@ -48,12 +48,11 @@ body.stash-liquid-glass.refract-lite .dropdown-menu {
     background: rgba(18, 18, 22, 0.96) !important;
 }
 
-/* ── 4. Floating glass platforms (navbar, filter toolbar pill,
-       pagination capsule, detail header). All use var(--glass-bg)
+/* ── 4. Floating glass platforms (filter toolbar pill,
+       pagination capsule, detail header; the navbar is solid in every mode). All use var(--glass-bg)
        (~0.06 alpha) + backdrop-blur in base mode; without blur the
        low alpha reads as transparent film over scrolling content.
        Pin to fully opaque dark. */
-body.stash-liquid-glass.refract-lite nav.top-nav.navbar,
 body.stash-liquid-glass.refract-lite .filtered-list-toolbar::before,
 body.stash-liquid-glass.refract-lite .pagination,
 body.stash-liquid-glass.refract-lite .detail-header {
@@ -84,44 +83,9 @@ body.stash-liquid-glass.refract-lite .performer-card:not(.refract-flip3d):hover 
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
 }
 
-/* ── 6. Navbar buttons: kill hover lift + accent halo + glare, but
-       paint a cheap accent tint instead. Background-color shift is
-       paint-only — no compositor cost. */
-body.stash-liquid-glass.refract-lite nav.top-nav a.btn:hover,
-body.stash-liquid-glass.refract-lite nav.top-nav button.btn:hover {
-    transform: none !important;
-    box-shadow: none !important;
-    background: rgba(var(--accent-rgb), 0.12) !important;
-}
-body.stash-liquid-glass.refract-lite nav.top-nav a.btn::before,
-body.stash-liquid-glass.refract-lite nav.top-nav button.btn::before,
-body.stash-liquid-glass.refract-lite nav.top-nav .gs-trigger.btn::before,
-body.stash-liquid-glass.refract-lite nav.top-nav button.gs-trigger::before {
-    display: none !important;
-}
-
-/* ── 7. ACTIVE-route navbar icons. The base rule that paints the
-       accent halo on active icons uses a high-specificity :is()
-       selector chain — equal-class +1 specificity (with .refract-lite
-       on body) is needed to win the cascade. Keep the accent COLOUR
-       on text/border so the active state is still visible — just
-       kill the glow + filter. */
-body.stash-liquid-glass.refract-lite nav.top-nav :is(a.nav-link, a.nav-utility):is(.stash-nav-active, .active) > :is(button, .btn),
-body.stash-liquid-glass.refract-lite nav.top-nav :is(a.nav-link, a.nav-utility):is(.stash-nav-active, .active).btn,
-body.stash-liquid-glass.refract-lite nav.top-nav .navbar-nav a.btn.stash-nav-active,
-body.stash-liquid-glass.refract-lite nav.top-nav .navbar-buttons a[href$="/new"] > :is(button, .btn) {
-    box-shadow: none !important;
-}
-body.stash-liquid-glass.refract-lite nav.top-nav :is(a.nav-link, a.nav-utility):is(.stash-nav-active, .active) svg,
-body.stash-liquid-glass.refract-lite nav.top-nav .navbar-nav a.btn.stash-nav-active svg,
-body.stash-liquid-glass.refract-lite nav.top-nav .navbar-buttons a[href$="/new"] svg {
-    filter: none !important;
-}
-body.stash-liquid-glass.refract-lite nav.top-nav .navbar-buttons a[href$="/new"] > button:hover,
-body.stash-liquid-glass.refract-lite nav.top-nav .navbar-buttons a[href$="/new"] > .btn:hover {
-    box-shadow: none !important;
-    transform: none !important;
-}
+/* ── 6-7. Navbar: nothing to strip. The segmented-track navbar has no hover
+       lift, glare, accent halo or active glow (02_navbar.css), so lite mode
+       needs no navbar rules of its own. ──────────────────────────────── */
 
 /* ── 8. Drop accent glow on focused list items / focused chips ── */
 body.stash-liquid-glass.refract-lite .gs-card.gs-focused,

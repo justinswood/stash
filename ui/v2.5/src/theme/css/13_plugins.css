@@ -2226,21 +2226,21 @@ body.stash-liquid-glass .refract-plugin-list {
    Tag Sidebar (tag-sidebar plugin) — docked tag-tree filter panel
    BEM `tag-sidebar__*`. Root `.tag-sidebar__panel` is position:absolute
    top:0 left:0 (360px, full height), so it slid UNDER refract's floating
-   navbar (fixed, top:12px, height ~nav-btn-size + padding). Push the panel
+   navbar (fixed, top:12px, --nav-height tall). Push the panel
    down to clear the nav and re-skin the whole thing in glass.
    ═══════════════════════════════════════════════════════════════════ */
 
-/* Panel shell — clear the navbar (~its top:12px + height + padding + gap,
-   which the existing scene-page calc treats as nav-btn-size + 1.6rem) and
-   shrink the height to match so the bottom doesn't overflow the viewport. */
+/* Panel shell — clear the navbar (its bottom edge, --nav-bottom, plus a gap)
+   and shrink the height to match so the bottom doesn't overflow the
+   viewport. */
 body.stash-liquid-glass .tag-sidebar__panel {
-    top: calc(var(--nav-btn-size) + 2.6rem) !important;
+    top: calc(var(--nav-bottom) + 0.8rem) !important;
     /* Float it off the left edge. margin-left (not left) so we don't fight
        the plugin's open/close which animates `left`/transform — margin just
        shifts the resting position; the closed state still tucks off-screen. */
     margin-left: 12px !important;
-    height: calc(100vh - var(--nav-btn-size) - 2.6rem - 12px) !important;
-    max-height: calc(100vh - var(--nav-btn-size) - 2.6rem - 12px) !important;
+    height: calc(100vh - var(--nav-bottom) - 0.8rem - 12px) !important;
+    max-height: calc(100vh - var(--nav-bottom) - 0.8rem - 12px) !important;
     background: rgba(16, 16, 20, 0.92) !important;
     -webkit-backdrop-filter: var(--glass-blur-lg-sat) !important;
             backdrop-filter: var(--glass-blur-lg-sat) !important;

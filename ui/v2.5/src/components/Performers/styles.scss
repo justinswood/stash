@@ -408,7 +408,9 @@
 // The handoff's fixed 3:4 portrait is not used: photos keep their own shape up
 // to a 2:3 height cap (see the portrait rule below). Forcing 3:4 would re-crop
 // the ~830 photos that were cropped to 2:3 on purpose (#25).
-$performer-sidebar-top: 4.8rem;
+// 0.3rem below the floating navbar (--nav-bottom, 01_tokens.css). The fallback
+// is the bar's bottom edge at 63px, for a page without the Refract theme.
+$performer-sidebar-top: calc(var(--nav-bottom, 63px) + 0.3rem);
 
 /* stylelint-disable selector-class-pattern */
 #performer-page.performer-sidebar-layout {

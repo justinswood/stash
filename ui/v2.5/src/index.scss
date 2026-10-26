@@ -2,8 +2,16 @@
 
 // variables required by other scss files
 
-// this is calculated from the existing height
-$navbar-height: 48.75px;
+// Where content starts below the top bar. The Refract navbar floats 12px clear
+// of the top and is 72px tall (src/theme/css/01_tokens.css --nav-bottom, 84px),
+// 21px lower than the bar this was tuned for, so every top offset built on it
+// moves down by the same 21px. This is a compile-time constant: if the bar's
+// height changes, change it too.
+$navbar-height: 69.75px;
+
+// The stock bar's own height, still right for the two uses that are about a
+// bar at the bottom of a phone-width viewport, not the floating top one.
+$mobile-navbar-height: 48.75px;
 
 $sticky-detail-header-height: 50px;
 
@@ -67,7 +75,9 @@ body {
 
   @include media-breakpoint-down(xs) {
     @media (orientation: portrait) {
-      padding: calc(0.5rem + env(safe-area-inset-top, 0)) 0
+      // 9px more at the top: the Refract navbar is 56px tall at this width, 9px
+      // taller than the bar this gap was tuned for (01_tokens.css --nav-height)
+      padding: calc(0.5rem + 9px + env(safe-area-inset-top, 0)) 0
         calc(56px + env(safe-area-inset-bottom, 0)); // mobile bottom nav height + iOS home indicator
     }
   }

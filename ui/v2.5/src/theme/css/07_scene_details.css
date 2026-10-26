@@ -32,12 +32,12 @@ body.stash-liquid-glass .main.container-fluid > .row:has(> :is(.scene-tabs, .ima
     grid-template-rows: 1fr !important;
     gap: 20px !important;
     padding: 20px !important;
-    /* Row top sits at ~70px below viewport top (navbar 12 + 52 + tiny
-       gap). Setting height to (100vh - 70) makes the row end flush
-       against the viewport bottom — no black band below. */
+    /* Row top sits 7px below the navbar's bottom edge (--nav-bottom,
+       01_tokens.css). Setting height to (100vh - that) makes the row end
+       flush against the viewport bottom — no black band below. */
     min-height: 0 !important;
-    max-height: calc(100vh - 70px) !important;
-    height: calc(100vh - 70px) !important;
+    max-height: calc(100vh - var(--nav-bottom) - 7px) !important;
+    height: calc(100vh - var(--nav-bottom) - 7px) !important;
     /* `overflow: clip` instead of `hidden` so card hover/tilt effects in
        the sidebar can extend past the row's viewport-height bounds (via
        `overflow-clip-margin`) instead of being snipped at the panel edge. */
@@ -266,8 +266,8 @@ body.stash-liquid-glass .main.container-fluid > .row:has(> .gallery-container) {
     gap: 20px !important;
     padding: 20px !important;
     min-height: 0 !important;
-    max-height: calc(100vh - 70px) !important;
-    height: calc(100vh - 70px) !important;
+    max-height: calc(100vh - var(--nav-bottom) - 7px) !important;
+    height: calc(100vh - var(--nav-bottom) - 7px) !important;
     overflow: hidden !important;
     margin: 0 !important;
     width: 100% !important;

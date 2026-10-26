@@ -27,6 +27,30 @@
     font-display: block;
 }
 
+/* Inter — the navbar's typeface (02_navbar.css). Self-hosted like the faces
+   above; Google Fonts is not reachable under this app's CSP. One variable file
+   per unicode-range subset covers weights 400-700, and a browser fetches the
+   latin-ext file only when a label needs it. Cyrillic, Greek and Vietnamese
+   labels fall back to the theme font. Licence: public/theme/fonts/Inter-OFL.txt.
+   index.html preloads the latin file so the tabs do not change width when it
+   arrives. */
+@font-face {
+    font-family: "Inter";
+    src: url("/theme/fonts/Inter-Variable.latin.woff2") format("woff2");
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: block;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: "Inter";
+    src: url("/theme/fonts/Inter-Variable.latin-ext.woff2") format("woff2");
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: block;
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 body.stash-liquid-glass {
     --theme-font-stack: "Albert Sans", system-ui, sans-serif;
     --bg-0: #0a0a0a;
@@ -117,8 +141,17 @@ body.stash-liquid-glass {
        inline style on <body> (inline beats this class rule). */
     --glow: 1;
 
-    --nav-btn-size: 2.4rem;
-    --nav-icon-size: 1rem;
+    /* Navbar. The segmented-track design (02_navbar.css) is specified in px, so
+       these are px: they follow neither the root size nor the viewport width
+       (the old bar scaled up at 1441 / 1921 / 2561px; the design does not).
+       --nav-bottom is where the floating bar ends. Everything that sits below
+       it (sticky toolbars, the scene page's height, the body's top padding in
+       src/index.scss) is offset from that line. */
+    --nav-edge: 12px;
+    --nav-height: 72px;
+    --nav-bottom: calc(var(--nav-edge) + var(--nav-height));
+    --nav-btn-size: 42px;
+    --nav-icon-size: 20px;
     --nav-gap: 0.2rem;
 
     /* Type scale. For the focal elements this redesign touches — card titles,
@@ -234,28 +267,12 @@ body.stash-liquid-glass .main.container-fluid:has(> .row > :is(.scene-tabs, .ima
 }
 
 /* ───────────────────────────────────────────────────────────────────
-   Navbar scaling — bumps icon + button size on larger viewports so
-   the navbar doesn't feel cramped on 1440p / 4K / ultrawide displays.
-   Defaults (above) are tuned for 13-15" laptops at 100% scaling.
+   Navbar height. Where the burger replaces the tabs (12_mobile.css, same
+   breakpoint) the bar is shorter, so it does not eat a landscape viewport.
    ─────────────────────────────────────────────────────────────────── */
-@media (min-width: 1441px) {
+@media (max-width: 1059.98px) {
     body.stash-liquid-glass {
-        --nav-btn-size: 2.7rem;
-        --nav-icon-size: 1.15rem;
-    }
-}
-@media (min-width: 1921px) {
-    body.stash-liquid-glass {
-        --nav-btn-size: 3rem;
-        --nav-icon-size: 1.3rem;
-        --nav-gap: 0.3rem;
-    }
-}
-@media (min-width: 2561px) {
-    body.stash-liquid-glass {
-        --nav-btn-size: 3.4rem;
-        --nav-icon-size: 1.5rem;
-        --nav-gap: 0.4rem;
+        --nav-height: 56px;
     }
 }
 

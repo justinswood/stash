@@ -12,7 +12,6 @@ import {
   useIntl,
 } from "react-intl";
 import { Nav, Navbar, Button, Dropdown } from "react-bootstrap";
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { LinkContainer } from "react-router-bootstrap";
 import { Link, NavLink, useLocation, useHistory } from "react-router-dom";
 import Mousetrap from "mousetrap";
@@ -22,24 +21,14 @@ import { Icon } from "src/components/Shared/Icon";
 import { useConfigurationContext } from "src/hooks/Config";
 import { ManualStateContext } from "./Help/context";
 import { SettingsButton } from "./SettingsButton";
+import { NavIcon, NavIconName } from "./NavIcons";
 import {
   faBars,
-  faChartColumn,
-  faFilm,
-  faHardDrive,
-  faImage,
-  faImages,
-  faClock,
-  faLayerGroup,
   faSearch,
-  faMapMarkerAlt,
-  faPlayCircle,
   faQuestionCircle,
   faSignOutAlt,
-  faTag,
   faTimes,
   faUser,
-  faVideo,
 } from "@fortawesome/free-solid-svg-icons";
 import { baseURL } from "src/core/createClient";
 import { PatchComponent } from "src/patch";
@@ -61,7 +50,7 @@ interface IMenuItem {
   name: string;
   message: MessageDescriptor;
   href: string;
-  icon: IconDefinition;
+  icon: NavIconName;
   hotkey: string;
   userCreatable?: boolean;
 }
@@ -125,21 +114,21 @@ const allMenuItems: IMenuItem[] = [
     name: "scenes",
     message: messages.scenes,
     href: "/scenes",
-    icon: faPlayCircle,
+    icon: "scenes",
     hotkey: "g s",
   },
   {
     name: "images",
     message: messages.images,
     href: "/images",
-    icon: faImage,
+    icon: "images",
     hotkey: "g i",
   },
   {
     name: "groups",
     message: messages.groups,
     href: "/groups",
-    icon: faFilm,
+    icon: "groups",
     hotkey: "g v",
     userCreatable: true,
   },
@@ -147,14 +136,14 @@ const allMenuItems: IMenuItem[] = [
     name: "markers",
     message: messages.markers,
     href: "/scenes/markers",
-    icon: faMapMarkerAlt,
+    icon: "markers",
     hotkey: "g k",
   },
   {
     name: "galleries",
     message: messages.galleries,
     href: "/galleries",
-    icon: faImages,
+    icon: "galleries",
     hotkey: "g l",
     userCreatable: true,
   },
@@ -162,7 +151,7 @@ const allMenuItems: IMenuItem[] = [
     name: "performers",
     message: messages.performers,
     href: "/performers",
-    icon: faUser,
+    icon: "performers",
     hotkey: "g p",
     userCreatable: true,
   },
@@ -170,7 +159,7 @@ const allMenuItems: IMenuItem[] = [
     name: "studios",
     message: messages.studios,
     href: "/studios",
-    icon: faVideo,
+    icon: "studios",
     hotkey: "g u",
     userCreatable: true,
   },
@@ -178,7 +167,7 @@ const allMenuItems: IMenuItem[] = [
     name: "tags",
     message: messages.tags,
     href: "/tags",
-    icon: faTag,
+    icon: "tags",
     hotkey: "g t",
     userCreatable: true,
   },
@@ -202,11 +191,61 @@ const MainNavbarUtilityItems = PatchComponent(
   }
 );
 
+// Ctrl+K / Cmd+K opens the command palette (App.tsx); the search field shows it.
+const searchShortcut =
+  typeof navigator !== "undefined" &&
+  /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    ? "⌘K"
+    : "Ctrl K";
+
+// Avatar button and its menu. Settings and Log out live here rather than in
+// the icon row. The avatar shows the account's initial, or a person glyph when
+// there is no login (authentication disabled).
+const AccountMenu: React.FC<{
+  username?: string;
+  loggedIn: boolean;
+  onSelect: () => void;
+}> = ({ username, loggedIn, onSelect }) => {
+  const intl = useIntl();
+  const label = username || intl.formatMessage({ id: "account" });
+
+  return (
+    <Dropdown className="nav-utility nav-account" drop="down">
+      <Dropdown.Toggle
+        id="nav-account-toggle"
+        as="button"
+        type="button"
+        className="nav-avatar"
+        title={label}
+        aria-label={label}
+      >
+        {username ? username.charAt(0).toUpperCase() : <NavIcon name="user" />}
+      </Dropdown.Toggle>
+      <Dropdown.Menu alignRight>
+        <LinkContainer exact to="/settings">
+          <Dropdown.Item onClick={onSelect}>
+            <NavIcon name="settings" />
+            {intl.formatMessage({ id: "settings" })}
+          </Dropdown.Item>
+        </LinkContainer>
+        {loggedIn && (
+          <Dropdown.Item href={`${baseURL}logout`}>
+            <NavIcon name="logout" />
+            {intl.formatMessage({ id: "actions.logout" })}
+          </Dropdown.Item>
+        )}
+      </Dropdown.Menu>
+    </Dropdown>
+  );
+};
+
 // Categories navbar dropdown: "Browse Categories" opens the /categories hub;
 // below it, quick links to each category tag (child of the "Categories" tag)
 // go to that tag's scenes, then quick links apply each scene-mode Saved Filter.
 const CategoriesNavItem: React.FC = () => {
   const intl = useIntl();
+  const location = useLocation();
+  const onCategories = location.pathname.replace(/\/$/, "") === "/categories";
   const { configuration } = useConfigurationContext();
   const { data } = useFindSavedFilters(GQL.FilterMode.Scenes);
 
@@ -260,12 +299,15 @@ const CategoriesNavItem: React.FC = () => {
       <Dropdown className="categories-nav-dropdown">
         <Dropdown.Toggle
           variant="secondary"
-          className="minimal p-4 p-xl-2 d-flex d-xl-inline-block flex-column justify-content-between align-items-center"
+          className={
+            "minimal p-4 p-xl-2 d-flex d-xl-inline-block flex-column justify-content-between align-items-center" +
+            // the hub page is this tab's route; the dropdown has no href for
+            // react-router to match, unlike the other tabs
+            (onCategories ? " active" : "")
+          }
+          aria-current={onCategories ? "page" : undefined}
         >
-          <Icon
-            icon={faLayerGroup}
-            className="nav-menu-icon d-block d-xl-inline mb-2 mb-xl-0"
-          />
+          <NavIcon name="layers" className="nav-menu-icon" />
           <span>{intl.formatMessage(messages.categories)}</span>
         </Dropdown.Toggle>
         <Dropdown.Menu>
@@ -545,14 +587,16 @@ export const MainNavbar: React.FC = () => {
     });
   }
 
-  function renderUtilityButtons() {
+  // The persistent cluster (account = true) folds Settings and Log out into the
+  // account menu. The copy inside the collapsed menu keeps them as buttons.
+  function renderUtilityButtons(account: boolean) {
     return (
       <>
         <div className="nav-utility navbar-performer-search">
-          <Icon icon={faSearch} className="navbar-performer-search-icon" />
+          <NavIcon name="search" className="navbar-performer-search-icon" />
           <input
             className="form-control form-control-sm"
-            placeholder=""
+            placeholder={intl.formatMessage({ id: "actions.search" })}
             aria-label={intl.formatMessage({ id: "actions.search" })}
             value={performerQuery}
             onFocus={() => setShowPerformerResults(true)}
@@ -562,6 +606,9 @@ export const MainNavbar: React.FC = () => {
             onChange={(event) => setPerformerQuery(event.target.value)}
             onKeyDown={onPerformerKeyDown}
           />
+          <kbd className="navbar-search-kbd" aria-hidden="true">
+            {searchShortcut}
+          </kbd>
           {showPerformerResults && performerQuery.trim() && (
             <div className="navbar-performer-search-results">
               {performerLoading && (
@@ -633,7 +680,7 @@ export const MainNavbar: React.FC = () => {
           )}
         </div>
         <NavLink
-          className="nav-utility"
+          className="nav-utility nav-recents"
           exact
           to={{
             pathname: "/scenes",
@@ -645,11 +692,11 @@ export const MainNavbar: React.FC = () => {
             className="minimal d-flex align-items-center h-100"
             title={intl.formatMessage(messages.recents)}
           >
-            <Icon icon={faClock} />
+            <NavIcon name="recent" />
           </Button>
         </NavLink>
         <NavLink
-          className="nav-utility"
+          className="nav-utility nav-stats"
           exact
           to="/stats"
           onClick={handleDismiss}
@@ -658,7 +705,7 @@ export const MainNavbar: React.FC = () => {
             className="minimal d-flex align-items-center h-100"
             title={intl.formatMessage({ id: "statistics" })}
           >
-            <Icon icon={faChartColumn} />
+            <NavIcon name="stats" />
           </Button>
         </NavLink>
         <Dropdown className="nav-utility nav-scan-dropdown" drop="down">
@@ -667,7 +714,7 @@ export const MainNavbar: React.FC = () => {
             className="minimal d-flex align-items-center h-100"
             title={intl.formatMessage({ id: "actions.scan" })}
           >
-            <Icon icon={faHardDrive} />
+            <NavIcon name="storage" />
           </Dropdown.Toggle>
           <Dropdown.Menu>
             <Dropdown.Item
@@ -692,14 +739,16 @@ export const MainNavbar: React.FC = () => {
             ))}
           </Dropdown.Menu>
         </Dropdown>
-        <NavLink
-          className="nav-utility"
-          exact
-          to="/settings"
-          onClick={handleDismiss}
-        >
-          <SettingsButton />
-        </NavLink>
+        {!account && (
+          <NavLink
+            className="nav-utility"
+            exact
+            to="/settings"
+            onClick={handleDismiss}
+          >
+            <SettingsButton />
+          </NavLink>
+        )}
         <Button
           className="nav-utility minimal"
           onClick={() => openManual()}
@@ -707,7 +756,15 @@ export const MainNavbar: React.FC = () => {
         >
           <Icon icon={faQuestionCircle} />
         </Button>
-        {maybeRenderLogout()}
+        {account ? (
+          <AccountMenu
+            username={meData?.me?.username}
+            loggedIn={SessionUtils.isLoggedIn()}
+            onSelect={handleDismiss}
+          />
+        ) : (
+          maybeRenderLogout()
+        )}
       </>
     );
   }
@@ -736,10 +793,7 @@ export const MainNavbar: React.FC = () => {
                 >
                   <LinkContainer activeClassName="active" exact to={href}>
                     <Button className="minimal p-4 p-xl-2 d-flex d-xl-inline-block flex-column justify-content-between align-items-center">
-                      <Icon
-                        {...{ icon }}
-                        className="nav-menu-icon d-block d-xl-inline mb-2 mb-xl-0"
-                      />
+                      <NavIcon name={icon} className="nav-menu-icon" />
                       <span>{intl.formatMessage(message)}</span>
                     </Button>
                   </LinkContainer>
@@ -750,7 +804,7 @@ export const MainNavbar: React.FC = () => {
           </MainNavbarMenuItems>
           <Nav>
             <MainNavbarUtilityItems>
-              {renderUtilityButtons()}
+              {renderUtilityButtons(false)}
             </MainNavbarUtilityItems>
           </Nav>
         </Navbar.Collapse>
@@ -772,7 +826,7 @@ export const MainNavbar: React.FC = () => {
             </div>
           )}
           <MainNavbarUtilityItems>
-            {renderUtilityButtons()}
+            {renderUtilityButtons(true)}
           </MainNavbarUtilityItems>
           <Navbar.Toggle className="nav-menu-toggle ml-sm-2">
             <Icon icon={expanded ? faTimes : faBars} />

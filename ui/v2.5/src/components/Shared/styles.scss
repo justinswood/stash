@@ -1006,8 +1006,8 @@ $sticky-header-height: calc(50px + 3.3rem);
 
     .sidebar {
       // flex: 100% 0 0;
-      height: calc(100vh - $navbar-height);
-      max-height: calc(100vh - $navbar-height);
+      height: calc(100vh - $mobile-navbar-height);
+      max-height: calc(100vh - $mobile-navbar-height);
       top: 0;
     }
   }
