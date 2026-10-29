@@ -7,6 +7,14 @@
     padding-right: 0;
   }
 
+  // The theme pads .main by 2.5rem on every page (01_tokens.css), which left
+  // 44px between the bar and the first row's heading. Take 30% of it (13.2px)
+  // back here, so no other page moves. Below 992px .main pads by 5rem instead
+  // and the bar is shorter, so those widths are left alone.
+  @media (min-width: 992px) {
+    margin-top: -13.2px;
+  }
+
   .recommendations-footer {
     display: flex;
     justify-content: right;
@@ -305,10 +313,11 @@
   height: 150px;
 }
 
-// Home-page performer rows run 30% smaller than the stock 20rem card
-// (variableWidth sliders size each slide from the card's own width).
+// Home-page performer rows use a 16.8rem card (stock is 20rem; 13.44rem on
+// phones, where stock is 16rem - the same 0.84 ratio). variableWidth sliders
+// size each slide from the card's own width, so this sets how many cards fit.
 .performer-recommendations .slick-list .performer-card.card {
-  width: 14rem;
+  width: 16.8rem;
 }
 
 @media (max-width: 576px) {
@@ -328,7 +337,7 @@
   }
 
   .performer-recommendations .slick-list .performer-card.card {
-    width: 11.2rem;
+    width: 13.44rem;
   }
 }
 
