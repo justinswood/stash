@@ -561,6 +561,10 @@ body.stash-liquid-glass nav.top-nav .navbar-performer-search .navbar-performer-s
     color: var(--nb-placeholder) !important;
     pointer-events: none;
 }
+/* No padding, so the caret sits on the input's own edge. The theme rounds every
+   .form-control (12px: a full pill at 19px tall) and Chrome clips an input's
+   contents to that rounded box, which left a ~9px sliver of the caret visible.
+   No radius, no clip. */
 body.stash-liquid-glass nav.top-nav .navbar-performer-search input.form-control {
     flex: 1 1 auto !important;
     min-width: 0 !important;
@@ -570,6 +574,7 @@ body.stash-liquid-glass nav.top-nav .navbar-performer-search input.form-control 
     margin: 0 !important;
     background: none !important;
     border: 0 !important;
+    border-radius: 0 !important;
     outline: 0 !important;
     box-shadow: none !important;
     color: var(--nb-text) !important;

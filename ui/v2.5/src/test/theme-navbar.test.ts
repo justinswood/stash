@@ -157,6 +157,22 @@ describe("navbar markup hooks", () => {
     expect(mainNavbar).toMatch(/placeholder=\{intl\.formatMessage/);
     expect(refractJs.includes(".categories-toolbar, nav.top-nav'")).toBe(true);
   });
+
+  it("the search input has no corner radius, so its caret is not clipped", () => {
+    // WHY: the input has no padding, so its caret sits on the input's own
+    // edge. The theme rounds every .form-control (12px: a full pill at 19px
+    // tall) and Chrome clips an input's contents to that rounded box, which
+    // left a ~9px sliver of the caret visible: it read as a hidden cursor.
+    // Found by diffing blink frames, not by reading the CSS.
+    const rule = ruleBody(
+      navbarCss,
+      "body.stash-liquid-glass nav.top-nav .navbar-performer-search input.form-control"
+    );
+    expect(
+      /border-radius:\s*0\s*!important/.test(rule),
+      "the navbar search input is rounded again: its caret will be clipped"
+    ).toBe(true);
+  });
 });
 
 describe("navbar typeface", () => {
