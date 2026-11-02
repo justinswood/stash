@@ -37,6 +37,7 @@ interface DHealthCounts {
   noFiles: number; duplicates: number; lowRes: number;
   noPerformers: number; untagged: number; missingPhash: number;
   unmatched: number;
+  duplicateFiles: number; duplicateFilesBytes: number;
 }
 interface DashboardData {
   ready: boolean;
@@ -53,10 +54,10 @@ const INITIAL_DATA: DashboardData = {
   ready: false,
   stats: null, studios: [], performers: [], tags: [],
   addedScenes: [], playedScenes: [],
-  health: { noFiles: 0, duplicates: 0, lowRes: 0, noPerformers: 0, untagged: 0, missingPhash: 0, unmatched: 0 },
+  health: { noFiles: 0, duplicates: 0, lowRes: 0, noPerformers: 0, untagged: 0, missingPhash: 0, unmatched: 0, duplicateFiles: 0, duplicateFilesBytes: 0 },
 };
 
-// Single hook fetches all dashboard data with 3 parallel raw-fetch calls (no Apollo).
+// Single hook fetches all dashboard data with 4 parallel raw-fetch calls (no Apollo).
 function useDashboardData(): DashboardData {
   const [data, setData] = useState<DashboardData>(INITIAL_DATA);
   useEffect(() => {
@@ -87,15 +88,30 @@ function useDashboardData(): DashboardData {
       // Request 3: library health counts (aliased into a single query)
       post(`{
         noFiles: findScenes(filter:{per_page:0},scene_filter:{file_count:{modifier:EQUALS,value:0}}) { count }
-        duplicates: findScenes(filter:{per_page:0},scene_filter:{duplicated:{duplicated:true}}) { count }
+        duplicateFiles: findScenes(filter:{per_page:2000},scene_filter:{duplicated:{duplicated:true},file_count:{modifier:GREATER_THAN,value:1}}) { count scenes { files { size } } }
         lowRes: findScenes(filter:{per_page:0},scene_filter:{resolution:{modifier:LESS_THAN,value:STANDARD_HD}}) { count }
         noPerformers: findScenes(filter:{per_page:0},scene_filter:{performer_count:{modifier:EQUALS,value:0}}) { count }
         untagged: findScenes(filter:{per_page:0},scene_filter:{tag_count:{modifier:EQUALS,value:0}}) { count }
         missingPhash: findScenes(filter:{per_page:0},scene_filter:{is_missing:"phash"}) { count }
         unmatched: findScenes(filter:{per_page:0},scene_filter:{is_missing:"stash_id"}) { count }
       }`),
+      // Request 4: scenes in exact duplicate sets. This is the duplicate checker's own
+      // query at its default settings (SceneDuplicateChecker.tsx: distance 0, duration
+      // difference 1s), so the checker lists exactly this many scenes. It has its own
+      // request because findDuplicateScenes is non-null: if it ever failed, the error
+      // would blank every count in Request 3's document.
+      post(`{ findDuplicateScenes(distance:0,duration_diff:1) { id } }`),
     ])
-      .then(([main, activity, health]) => {
+      .then(([main, activity, health, dupes]) => {
+        // findDuplicateScenes returns sets of scenes; the row counts the scenes.
+        const dupSets: { id: string }[][] = dupes.data?.findDuplicateScenes ?? [];
+        // Bytes a scene holds beyond its largest file, for scenes with duplicate files.
+        const dupFileScenes: { files: { size: number }[] }[] =
+          health.data?.duplicateFiles?.scenes ?? [];
+        const duplicateFilesBytes = dupFileScenes.reduce((sum, s) => {
+          const sizes = s.files.map((f) => f.size);
+          return sum + sizes.reduce((a, b) => a + b, 0) - Math.max(0, ...sizes);
+        }, 0);
         setData({
           ready: true,
           stats: main.data?.stats ?? null,
@@ -106,7 +122,9 @@ function useDashboardData(): DashboardData {
           playedScenes: activity.data?.playedScenes?.scenes ?? [],
           health: {
             noFiles:      n(health.data?.noFiles?.count),
-            duplicates:   n(health.data?.duplicates?.count),
+            duplicates:   dupSets.reduce((sum, set) => sum + set.length, 0),
+            duplicateFiles: n(health.data?.duplicateFiles?.count),
+            duplicateFilesBytes,
             lowRes:       n(health.data?.lowRes?.count),
             noPerformers: n(health.data?.noPerformers?.count),
             untagged:     n(health.data?.untagged?.count),
@@ -765,16 +783,38 @@ interface HealthItem {
   severity: "high" | "med" | "low";
   count: number;
   linkTo: string;
+  sub?: string;
 }
 
 function LibraryHealth({ health, totalScenes }: { health: DHealthCounts; totalScenes: number }) {
   const history = useHistory();
+  // The app's standard size formatting (GiB here), not fmtSize: that one rounds
+  // anything over 0.1 TiB to a single digit, which is useless for "194 GiB".
+  const dupFilesSize = TextUtils.fileSize(health.duplicateFilesBytes);
+  const dupFilesLabel = `${dupFilesSize.size.toFixed(
+    TextUtils.fileSizeFractionalDigits(dupFilesSize.unit)
+  )} ${TextUtils.formatFileSizeUnit(dupFilesSize.unit)} reclaimable`;
 
   const items: HealthItem[] = [
-    // Each linkTo mirrors the matching count query in loadDashboard() above, so
+    // Each linkTo mirrors the matching count query in useDashboardData() above, so
     // the list the user lands on holds exactly the number shown next to it.
     { label: "Missing files",      hint: "Tracked but not on disk",    severity: "high", count: health.noFiles,      linkTo: zeroCountScenesUrl("file_count") },
-    { label: "Duplicate scenes",   hint: "Matched by phash",           severity: "med",  count: health.duplicates,   linkTo: "/sceneDuplicateChecker" },
+    // The checker's own result at its default settings; see Request 4.
+    { label: "Duplicate scenes",   hint: "Exact phash match across scenes", severity: "med", count: health.duplicates, linkTo: "/sceneDuplicateChecker" },
+    // The same video stored twice inside ONE scene. The checker only compares
+    // different scenes and cannot show these, so this row opens the scenes list
+    // with the two clauses the count query uses.
+    { label: "Scenes with duplicate files", hint: "Same video stored twice in one scene", severity: "med", count: health.duplicateFiles,
+      sub: health.duplicateFilesBytes > 0 ? dupFilesLabel : undefined,
+      linkTo: scenesUrl((filter) => {
+        const duplicated = filter.makeCriterion("duplicated") as StringCriterion;
+        duplicated.value = "true";
+        filter.criteria.push(duplicated);
+        const fileCount = filter.makeCriterion("file_count") as NumberCriterion;
+        fileCount.modifier = GQL.CriterionModifier.GreaterThan;
+        fileCount.value = { value: 1, value2: undefined };
+        filter.criteria.push(fileCount);
+      }) },
     { label: "Low-res scenes",     hint: "Below 720p",                 severity: "low",  count: health.lowRes,       linkTo: scenesUrl((filter) => {
         const criterion = filter.makeCriterion("resolution") as StringCriterion;
         criterion.modifier = GQL.CriterionModifier.LessThan;
@@ -837,6 +877,7 @@ function LibraryHealth({ health, totalScenes }: { health: DHealthCounts; totalSc
                 </svg>
                 <span className="db-health__tooltip">{it.hint}</span>
               </span>
+              {it.sub && <span className="db-health__sub">{it.sub}</span>}
             </div>
             <span className="db-health__count">{fmtNum(it.count)}</span>
             <button

@@ -5636,13 +5636,15 @@
         });
 
         /* Trim Stash's verbose "N sets of duplicates found." h6 down to
-           "N duplicates". React may re-render and reset this; the next
+           "N sets". The number counts SETS (groups of scenes), not scenes:
+           labelling it "duplicates" made 84 sets (253 scenes) read as 84
+           duplicate scenes. React may re-render and reset this; the next
            mutation cycle calls back here and fixes it. */
         var pagerH6s = dc.querySelectorAll('[data-refract-pager] > h6');
         pagerH6s.forEach(function (pagerH6) {
             var numMatch = (pagerH6.textContent || "").match(/[\d,]+/);
             if (numMatch) {
-                var want = '<b>' + numMatch[0] + '</b> duplicates';
+                var want = '<b>' + numMatch[0] + '</b> sets';
                 if (pagerH6.innerHTML.trim() !== want) {
                     pagerH6.innerHTML = want;
                 }
@@ -5750,19 +5752,29 @@
             });
             var summary = document.createElement("div");
             summary.className = "refract-dup-summary";
-            /* Total-duplicates count: read from the (already trimmed) React
-               pager h6 — it's the page-independent total, which refract's
-               per-page group math can't reproduce. */
+            /* Total sets across every page: read from the (already trimmed)
+               React pager h6 — it's the page-independent total, which
+               refract's per-page group math can't reproduce. It counts SETS,
+               so it says so. Everything else here is summed from the rows on
+               THIS page, and says so whenever there are other pages. */
             var topH6 = dc.querySelector('[data-refract-pager] > h6');
             var countMatch = topH6 ? (topH6.textContent || "").match(/[\d,]+/) : null;
+            var totalSets = countMatch ? parseInt(countMatch[0].replace(/,/g, ""), 10) : NaN;
+            var paged = totalSets > groups.length;
             var countHTML = countMatch
-                ? '<span class="refract-dup-summary__count"><b>' + escapeHtml(countMatch[0]) + '</b> duplicates</span>'
+                ? '<span class="refract-dup-summary__count"><b>' + escapeHtml(countMatch[0]) + '</b> sets</span>'
                 : '';
+            /* With a known total, the sets on this page only add something
+               when some sets are on other pages; without one it is the only
+               set count there is. */
+            var pageSetsHTML = paged
+                ? '<span class="refract-dup-summary__stat"><b>' + groups.length + '</b> on this page</span>'
+                : (countMatch ? '' : '<span class="refract-dup-summary__stat"><b>' + groups.length + '</b> sets</span>');
             summary.innerHTML =
                 countHTML +
-                '<span class="refract-dup-summary__stat"><b>' + groups.length + '</b> sets</span>' +
-                '<span class="refract-dup-summary__stat"><b>' + escapeHtml(refractFormatBytes(totalBytes)) + '</b> across duplicates</span>' +
-                '<span class="refract-dup-summary__reclaim">Reclaim up to <b>' + escapeHtml(refractFormatBytes(reclaimable)) + '</b> by deleting suggested</span>';
+                pageSetsHTML +
+                '<span class="refract-dup-summary__stat"><b>' + escapeHtml(refractFormatBytes(totalBytes)) + '</b> ' + (paged ? 'on this page' : 'across duplicates') + '</span>' +
+                '<span class="refract-dup-summary__reclaim">Reclaim up to <b>' + escapeHtml(refractFormatBytes(reclaimable)) + '</b>' + (paged ? ' on this page' : '') + ' by deleting suggested</span>';
 
             panels.appendChild(summary);
 

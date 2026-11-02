@@ -493,8 +493,19 @@
   font-size: 13px;
   color: var(--db-fg);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 5px;
+}
+
+// Secondary figure after the label, e.g. the space duplicate files take up.
+// Wraps under the label on narrow cards instead of pushing the count out.
+.db-health__sub {
+  color: var(--db-muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  margin-left: 4px;
+  white-space: nowrap;
 }
 
 .db-health__info {
