@@ -7,25 +7,9 @@
     <title>Login</title>
 
     <link rel="shortcut icon" href="data:,">
+    <link rel="preload" href="/theme/fonts/Figtree-Variable.latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="login/login.css">
     <link rel="stylesheet" href="css">
-
-    <!-- follow the theme accent chosen in the app (stored in localStorage) -->
-    <script>
-        (function () {
-            var map = {
-                orange: ["#f97316", "249,115,22"], blue: ["#3b82f6", "59,130,246"],
-                pink: ["#ec4899", "236,72,153"], red: ["#ef4444", "239,68,68"],
-                yellow: ["#eab308", "234,179,8"], purple: ["#a855f7", "168,85,247"],
-                green: ["#22c55e", "34,197,94"], teal: ["#14b8a6", "20,184,166"]
-            };
-            var a = null;
-            try { a = localStorage.getItem("refract.accent"); } catch (e) { /* ignore */ }
-            var c = map[a] || map.orange;
-            document.documentElement.style.setProperty("--login-accent", c[0]);
-            document.documentElement.style.setProperty("--login-accent-rgb", c[1]);
-        })();
-    </script>
 
     <!-- load locale -->
     <script>
@@ -66,29 +50,66 @@
     }
 </script>
 
-<body class="login stash-liquid-glass">
-    <div class="dialog">
-        <div class="card">
-            <form action="login" method="POST" onsubmit="event.preventDefault(); login();">
-                <div class="form-group">
-                    <label for="username"><h6 id="username-heading">Username</h6></label>
-                    <input class="text-input form-control" id="username" name="username" type="text" placeholder="Username" />
-                </div>
-                <div class="form-group">
-                    <label for="password"><h6 id="password-heading">Password</h6></label>
-                    <input class="text-input form-control" id="password" name="password" type="password" placeholder="Password" />
-                </div>
-                <div class="login-error">
-                    {{.Error}}
+<body class="login">
+    <div class="login-page">
+        <section class="login-wall" aria-hidden="true">
+            <div class="login-wall-grid">
+                <div style="background: #3B2A5C"></div>
+                <div class="drop" style="background: #1E3A4C"></div>
+                <div style="background: #5A2E3A"></div>
+                <div class="drop" style="background: #2B4A3A"></div>
+                <div style="background: #4A3B22"></div>
+                <div style="background: #24304F"></div>
+                <div class="drop" style="background: #4C2550"></div>
+                <div style="background: #1F3D3F"></div>
+                <div class="drop" style="background: #3F2A2A"></div>
+                <div style="background: #2E2A52"></div>
+                <div style="background: #4A2E1F"></div>
+                <div class="drop" style="background: #2A3F2A"></div>
+                <div style="background: #3A2A4A"></div>
+                <div class="drop" style="background: #1E2E4A"></div>
+                <div style="background: #4F2A3F"></div>
+            </div>
+            <div class="login-wall-scrim"></div>
+            <div class="login-wall-caption">
+                <p class="login-eyebrow">Your library</p>
+                <p class="login-tagline">Everything you collect, in one stash.</p>
+            </div>
+        </section>
+
+        <main class="login-main">
+            <div class="login-panel">
+                <div class="login-brand">
+                    <div class="login-brand-mark">
+                        <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5Z"></path><path d="m3 13 9 5 9-5"></path><path d="m3 17.5 9 4.5 9-4.5"></path></svg>
+                    </div>
+                    <span class="login-brand-name">Stash</span>
                 </div>
 
-                <input type="hidden" id="returnURL" name="returnURL" value="{{.URL}}" />
-
-                <div>
-                    <input id="login-button" class="btn btn-primary" type="submit" value="Login">
+                <div class="login-heading">
+                    <h1>Welcome back</h1>
+                    <p>Sign in to pick up where you left off.</p>
                 </div>
-            </form>
-        </div>
+
+                <form action="login" method="POST" onsubmit="event.preventDefault(); login();">
+                    <div class="form-group">
+                        <label for="username" id="username-heading">Username</label>
+                        <input class="text-input" id="username" name="username" type="text" autocomplete="username" placeholder="Username" />
+                    </div>
+                    <div class="form-group">
+                        <label for="password" id="password-heading">Password</label>
+                        <input class="text-input" id="password" name="password" type="password" autocomplete="current-password" placeholder="Password" />
+                    </div>
+                    <div class="login-error">{{.Error}}</div>
+
+                    <input type="hidden" id="returnURL" name="returnURL" value="{{.URL}}" />
+
+                    <input id="login-button" class="login-button" type="submit" value="Login">
+                </form>
+
+                <p class="login-footnote">Need an account? Ask your admin.</p>
+            </div>
+        </main>
     </div>
 
 </body>
