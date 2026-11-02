@@ -1,0 +1,238 @@
+/* Performer card: "stat tiles" design (handoff: stash-performer-card.html).
+   Under the photo: the name at 26px with the gender icon after it, then two
+   tiles, Age and Scenes. A 4px pink rule closes the photo, the country flag
+   sits in its top-left corner (under the rating badge when there is one).
+
+   Styling only. Every element here already exists: the tiles are the
+   `.stash-perf-stats` row refract.js injects (initPerformerCards), whose
+   "Age" / "Scenes" `.stash-perf-label`s the base theme hides outside
+   playing-card mode (16_playing_card.css). This file shows and arranges them.
+
+   Scoped away from two modes that keep their own card:
+   - playing-card rating style (16_playing_card.css: full-art card + flip);
+   - light mode (14_light.css restyles the same stats for a light page).
+
+   The photo keeps its size: the card has no padding and no border (a border
+   would take 2px off the image), its outline is a box-shadow ring, and the
+   pink rule is added BELOW the photo rather than drawn over it. Rated cards
+   keep their tier frame, which is also a box-shadow, so the ring skips them.
+
+   Sizes step down with the card's own width (container queries), so the
+   front-page slider (235px), zoom 0 and the phone grid stay readable. */
+
+@font-face {
+    font-family: "Figtree";
+    src: url("/theme/fonts/Figtree-Variable.latin.woff2") format("woff2");
+    font-weight: 300 900;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: "Figtree";
+    src: url("/theme/fonts/Figtree-Variable.latin-ext.woff2") format("woff2");
+    font-weight: 300 900;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ── Card ─────────────────────────────────────────────────────────── */
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card {
+    container-type: inline-size;
+    background: #17171C !important;
+    border-radius: 20px !important;
+    color: #F4F4F5;
+}
+
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card:not([class*="refract-card-tier-"]) {
+    box-shadow: 0 0 0 1px #2A2A32 !important;
+}
+
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card,
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card :is(.card-section-title, .TruncatedText, .performer-name),
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card :is(.card-section-title, .TruncatedText, .performer-name) *,
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .stash-perf-stats * {
+    font-family: Figtree, system-ui, -apple-system, sans-serif !important;
+}
+
+/* ── Photo: pink rule under it, flag top-left ─────────────────────── */
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .thumbnail-section {
+    border-bottom: 4px solid #F472B6;
+}
+
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .performer-card__country-flag:not(.stash-perf-flag) {
+    top: 12px;
+    left: 12px;
+    right: auto;
+    bottom: auto;
+    width: 32px;
+    height: 24px;
+    border-radius: 6px;
+    background-size: cover;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+    z-index: 1;
+}
+
+/* The rating badge owns the corner on rated cards; the flag drops under it
+   (badge is 51px from 6px down). Not document-rooted, so allowed (#48). */
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card:has(.thumbnail-section > .rating-banner) .performer-card__country-flag:not(.stash-perf-flag) {
+    top: 65px;
+}
+
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .thumbnail-section .favorite-button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 999px !important;
+    background: rgba(0, 0, 0, 0.45) !important;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Name row ─────────────────────────────────────────────────────── */
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .card-section {
+    padding: 14px 8px 8px !important;
+    gap: 12px !important;
+    background: none !important;
+    box-shadow: none !important;
+}
+
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .card-section-title {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px;
+    font-size: 26px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.02em;
+    color: #F4F4F5;
+}
+
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .card-section-title .TruncatedText {
+    min-width: 0;
+}
+
+/* The gender icon renders before the name; `order` moves it after. */
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .card-section-title .gender-icon {
+    order: 2;
+    width: 20px !important;
+    height: 20px !important;
+    margin: 0 !important;
+}
+
+/* ── Tiles ────────────────────────────────────────────────────────── */
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .stash-perf-stats {
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    border-top: none;
+}
+
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .stash-perf-stats > :is(.stash-perf-age, .stash-perf-scenes) {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 56px;
+    margin: 0;
+    padding: 0 14px;
+    border-radius: 12px;
+    background: #22222A;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    color: #A1A1AA;
+}
+
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .stash-perf-stats > :is(.stash-perf-age, .stash-perf-scenes) .stash-perf-label {
+    display: inline;
+    white-space: nowrap;
+}
+
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .stash-perf-stats > :is(.stash-perf-age, .stash-perf-scenes) > span:last-child {
+    margin-left: auto;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: #F4F4F5;
+}
+
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .stash-perf-stats > .stash-perf-empty > span:last-child {
+    color: #71717A;
+}
+
+/* refract.js's PLAY_SVG draws its triangle in the middle ~37% of a 512 box,
+   so the box is oversized and pulled in to give the design's ~9px glyph. */
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .stash-perf-scenes > svg {
+    width: 24px;
+    height: 24px;
+    margin: 0 -5px 0 -7px;
+    flex-shrink: 0;
+    color: #F472B6;
+}
+
+body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .stash-perf-scenes[href]:hover {
+    background: #2A2A33;
+    color: #D4D4D8;
+}
+
+/* ── Narrower cards ───────────────────────────────────────────────── */
+@container (max-width: 279px) {
+    body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .card-section-title {
+        font-size: 21px !important;
+    }
+
+    body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .stash-perf-stats > :is(.stash-perf-age, .stash-perf-scenes) {
+        height: 48px;
+        padding: 0 10px;
+        font-size: 12px;
+    }
+
+    body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .stash-perf-stats > :is(.stash-perf-age, .stash-perf-scenes) > span:last-child {
+        font-size: 20px;
+    }
+}
+
+/* Phone grid / zoom 0: the Scenes tile keeps its play icon, drops the word. */
+@container (max-width: 209px) {
+    body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .card-section-title {
+        font-size: 17px !important;
+        gap: 6px;
+        padding: 0 4px;
+    }
+
+    body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .card-section-title .gender-icon {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .card-section {
+        padding: 10px 6px 6px !important;
+        gap: 8px !important;
+    }
+
+    body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .stash-perf-stats {
+        gap: 6px;
+    }
+
+    body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .stash-perf-stats > :is(.stash-perf-age, .stash-perf-scenes) {
+        height: 40px;
+        padding: 0 8px;
+    }
+
+    /* Same selector shape as the rule that shows labels, so it wins on order. */
+    body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .stash-perf-stats > :is(.stash-perf-scenes) .stash-perf-label {
+        display: none;
+    }
+
+    body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .stash-perf-stats > :is(.stash-perf-age, .stash-perf-scenes) > span:last-child {
+        font-size: 17px;
+    }
+}

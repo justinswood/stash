@@ -22,3 +22,4 @@ import "./css/16_playing_card.css";
 import "./css/17_scroll_perf.css";
 import "./css/15_lite.css";
 import "./css/18_scene_card_stack.css";
+import "./css/19_performer_card_tiles.css";
