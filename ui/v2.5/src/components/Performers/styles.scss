@@ -421,6 +421,17 @@ body.stash-liquid-glass .performer-category-bar {
       color: var(--nb-text, #fff) !important;
     }
 
+    // A clicked chip keeps focus until the next click elsewhere, and the
+    // theme's glass `.btn.btn-secondary:focus` fill (same specificity as the
+    // rule above, loaded later) then painted it - so a chip just clicked to
+    // deselect still read as selected. The hover fill under the pointer (or a
+    // sticky touch :hover) looked the same. Mouse/tap focus never matches
+    // :focus-visible, so this drops both; keyboard focus keeps its ring.
+    &:not(.btn-primary):focus:not(:focus-visible) {
+      background: transparent !important;
+      color: var(--nb-text-muted, #a8a7a3) !important;
+    }
+
     &.btn-primary {
       background: var(--nb-tab-active, #2a2a2a) !important;
       color: var(--nb-text, #fff) !important;
