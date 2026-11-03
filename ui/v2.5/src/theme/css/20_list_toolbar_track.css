@@ -1,0 +1,124 @@
+/* List toolbar: the navbar's segmented track (02_navbar.css section 5).
+   Replaces the glass pill platform and the outlined glass controls from
+   04_filters.css with the track look: a flat dark track, borderless 15px/600
+   Inter tabs in muted text, hover and selected states filled. Same --nb-*
+   tokens as the bar, so it is dark in every mode, as the bar is. The
+   performer category bar above /performers uses the same look
+   (Performers/styles.scss).
+
+   Desktop only (> 900px): 12_mobile.css rebuilds the toolbar below that
+   (collapsing search, scrolling row) and is left as it is.
+
+   Specificity. The rules this replaces go up to (1,5,1): `#more-menu` is an
+   id, and 14_light.css adds `.refract-light` to the prefix. So the prefix
+   carries `:not(.rfx-track)` (matches the light prefix's class count) and
+   controls carry `:not(#rfx-track)` (an id's weight). Neither name exists:
+   the :not()s always match and only add weight. With the tie, this file
+   wins by loading last (theme/index.ts). */
+
+@media (min-width: 901px) {
+    /* ── The track ─────────────────────────────────────────────────── */
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar:not(#rfx-track) {
+        gap: 4px !important;
+        padding: 4px !important;
+        min-height: 0 !important;
+    }
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar:not(#rfx-track)::before {
+        inset: 0 !important;
+        background: var(--nb-track) !important;
+        border: 1px solid var(--nb-border-track) !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+    }
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar .btn-group:not(#rfx-track) {
+        gap: 2px;
+    }
+
+    /* ── Tabs: every text or icon button, and the page-size select ──── */
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar .btn.btn-secondary:not(.minimal):not(#rfx-track),
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar select.form-control:not(#rfx-track) {
+        height: 36px !important;
+        min-height: 0 !important;
+        padding: 0 12px !important;
+        border: 0 !important;
+        border-radius: 9px !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+        color: var(--nb-text-muted) !important;
+        font: 600 15px/1.2 var(--nb-font) !important;
+        letter-spacing: 0 !important;
+        transition: color 20ms ease-in, background-color 120ms ease !important;
+    }
+    /* Buttons have no background image of their own to keep (the select's
+       is its chevron, so it only loses the colour above). */
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar .btn.btn-secondary:not(.minimal):not(#rfx-track) {
+        background-image: none !important;
+    }
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar select.form-control:not(#rfx-track) {
+        padding-right: 28px !important;
+    }
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar .btn.btn-secondary:not(.minimal):not(#rfx-track):has(> svg:only-child) {
+        padding: 0 10px !important;
+    }
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar .btn.btn-secondary:not(.minimal):not(#rfx-track) svg {
+        width: 16px;
+        height: 16px;
+        filter: none;
+    }
+
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar .btn.btn-secondary:not(.minimal):not(#rfx-track):hover,
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar select.form-control:not(#rfx-track):hover {
+        background-color: var(--nb-hover) !important;
+        border: 0 !important;
+        color: var(--nb-text) !important;
+    }
+
+    /* Selected: the current display mode, an open dropdown. */
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar .btn.btn-secondary:not(.minimal):not(#rfx-track):is(.active, .btn-primary, [aria-expanded="true"]) {
+        background-color: var(--nb-tab-active) !important;
+        color: var(--nb-text) !important;
+        box-shadow: none !important;
+    }
+
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar .btn.btn-secondary:not(.minimal):not(#rfx-track):focus-visible,
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar select.form-control:not(#rfx-track):focus-visible {
+        outline: 2px solid var(--nb-accent) !important;
+        outline-offset: 1px;
+    }
+
+    /* ── Search: the navbar's search field ─────────────────────────── */
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar .clearable-input-group .form-control:not(#rfx-track) {
+        height: 36px !important;
+        padding: 0 12px !important;
+        border: 1px solid var(--nb-border-bar) !important;
+        border-radius: 9px !important;
+        background: var(--nb-bar) !important;
+        box-shadow: none !important;
+        color: var(--nb-text) !important;
+        font: 400 15px/normal var(--nb-font) !important;
+    }
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar .clearable-input-group .form-control:not(#rfx-track)::placeholder {
+        color: var(--nb-placeholder) !important;
+    }
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar .clearable-input-group .form-control:not(#rfx-track):focus {
+        outline: 2px solid var(--nb-accent) !important;
+        outline-offset: 1px;
+    }
+
+    /* ── Zoom slider: no pill of its own inside the track ──────────── */
+    body.stash-liquid-glass:not(.rfx-track) .filtered-list-toolbar .zoom-slider-container:not(#rfx-track) {
+        height: 36px !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        margin-left: 0 !important;
+        padding: 0 12px !important;
+        border: 0 !important;
+        border-radius: 9px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+}
