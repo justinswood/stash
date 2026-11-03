@@ -381,19 +381,58 @@
 // One-click category chips above the performers list. Wraps rather than
 // scrolls: the row is capped at performerCategoryBarMax entries, so at most it
 // becomes two short lines on a narrow viewport.
+//
+// Drawn as the navbar's segmented track (02_navbar.css section 5, its --nb-*
+// tokens): a dark track, borderless 15px/600 Inter tabs, the selected ones
+// filled. The theme's .btn / .btn-primary rules are !important, hence these
+// are too, under the theme's body prefix.
 .performer-category-bar {
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
   margin-bottom: 0.75rem;
+}
 
-  .performer-category-chip {
-    border-radius: 1rem;
-    font-size: 0.875rem;
-    padding: 0.2rem 0.85rem;
+/* stylelint-disable declaration-no-important */
+body.stash-liquid-glass .performer-category-bar {
+  background: var(--nb-track, #141414);
+  border: 1px solid var(--nb-border-track, rgba(255, 255, 255, 0.06));
+  border-radius: 12px;
+  display: inline-flex;
+  gap: 2px;
+  max-width: 100%;
+  padding: 4px;
+
+  .performer-category-chip.btn {
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    box-shadow: none !important;
+    color: var(--nb-text-muted, #a8a7a3) !important;
+    font: 600 15px/1.2 var(--nb-font, Inter, system-ui, sans-serif) !important;
+    letter-spacing: 0 !important;
+    padding: 9px 14px !important;
+    transform: none !important;
+    transition: color 20ms ease-in, background 120ms ease !important;
     white-space: nowrap;
+
+    &:hover {
+      background: var(--nb-hover, #252525) !important;
+      color: var(--nb-text, #fff) !important;
+    }
+
+    &.btn-primary {
+      background: var(--nb-tab-active, #2a2a2a) !important;
+      color: var(--nb-text, #fff) !important;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--nb-accent, #9065b0) !important;
+      outline-offset: 1px;
+    }
   }
 }
+/* stylelint-enable declaration-no-important */
 
 // ── Performer page: sidebar layout (viewing mode) ──────────────────────────
 // A fixed 280px sidebar holds the portrait and all the metadata; the tabs own
