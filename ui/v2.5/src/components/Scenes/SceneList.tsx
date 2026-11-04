@@ -29,6 +29,7 @@ import { SceneMergeModal } from "./SceneMergeDialog";
 import { objectTitle } from "src/core/files";
 import TextUtils from "src/utils/text";
 import { View } from "../List/views";
+import { SceneCategoryBar } from "../Performers/PerformerCategoryBar";
 import { FileSize } from "../Shared/FileSize";
 import { LoadedContent } from "../List/PagedList";
 import { useCloseEditDelete, useFilterOperations } from "../List/util";
@@ -754,6 +755,11 @@ export const FilteredSceneList = (props: IFilteredScenes) => {
             <SidebarPaneContent
               onSidebarToggle={() => setShowSidebar(!showSidebar)}
             >
+              {/* Main scenes list only: scene tabs on a performer, tag or
+                  studio page already carry a filter of their own. */}
+              {view === View.Scenes && (
+                <SceneCategoryBar filter={filter} setFilter={setFilter} />
+              )}
               <FilteredListToolbar
                 filter={filter}
                 listSelect={listSelect}

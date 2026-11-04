@@ -6,6 +6,7 @@ import { useConfigurationContext } from "src/hooks/Config";
 import { IUIConfig, performerCategoryBarMax } from "src/core/config";
 import { useFilter } from "../List/FilterProvider";
 import {
+  PerformerTagsCriterionOption,
   TagsCriterion,
   TagsCriterionOption,
 } from "src/models/list-filter/criteria/tags";
@@ -21,10 +22,15 @@ import { ListFilterModel } from "src/models/list-filter/filter";
 // separate local filter would have silently disagreed with what the filter bar
 // said was applied.
 //
-// Because of that it MUST render inside ItemListContext - useFilter throws
+// PerformerCategoryBar MUST render inside ItemListContext - useFilter throws
 // outside a FilterStateContext. See PerformerList's preListContent prop.
-
-const CRITERION_TYPE = "tags";
+// The scenes list keeps its filter in local state instead (useFilteredItemList)
+// and passes it to SceneCategoryBar directly.
+//
+// The scenes bar uses the same configured tags but filters on
+// `performer_tags`: the categories describe performers, and a performer's tag
+// is not inherited by their scenes (fork mod #30), so a plain scene `tags`
+// filter would show only the few scenes tagged by hand.
 
 // Chips union rather than intersect: selecting two categories shows performers
 // in EITHER, not performers carrying both.
@@ -42,9 +48,12 @@ const CHIP_MODIFIER = GQL.CriterionModifier.Includes;
 // by hand in the filter dialog (to Includes All, or Is Null) the chips stop
 // claiming to represent it rather than mislabelling a filter they did not
 // build.
-function activeTagIDs(filter: ListFilterModel): Set<string> {
+function activeTagIDs(
+  filter: ListFilterModel,
+  criterionType: string
+): Set<string> {
   const criterion = filter.criteria.find(
-    (c) => c.criterionOption.type === CRITERION_TYPE
+    (c) => c.criterionOption.type === criterionType
   ) as TagsCriterion | undefined;
 
   if (!criterion || criterion.modifier !== CHIP_MODIFIER) {
@@ -54,9 +63,19 @@ function activeTagIDs(filter: ListFilterModel): Set<string> {
   return new Set(criterion.value.items.map((i) => i.id));
 }
 
-export const PerformerCategoryBar: React.FC = () => {
+interface ICategoryBar {
+  filter: ListFilterModel;
+  setFilter: (filter: ListFilterModel) => void;
+  criterionOption: typeof TagsCriterionOption;
+}
+
+const CategoryBar: React.FC<ICategoryBar> = ({
+  filter,
+  setFilter,
+  criterionOption,
+}) => {
   const { configuration } = useConfigurationContext();
-  const { filter, setFilter } = useFilter();
+  const criterionType = criterionOption.type;
 
   const configuredIDs = useMemo(() => {
     const ui = (configuration?.ui ?? {}) as IUIConfig;
@@ -78,30 +97,32 @@ export const PerformerCategoryBar: React.FC = () => {
     );
   }, [data]);
 
-  const active = useMemo(() => activeTagIDs(filter), [filter]);
+  const active = useMemo(
+    () => activeTagIDs(filter, criterionType),
+    [filter, criterionType]
+  );
 
   function apply(ids: string[], labels: Map<string, string>) {
-    setFilter((current) => {
-      if (ids.length === 0) {
-        // removeCriterion resets to page 1 itself
-        return current.removeCriterion(CRITERION_TYPE);
-      }
+    if (ids.length === 0) {
+      // removeCriterion resets to page 1 itself
+      setFilter(filter.removeCriterion(criterionType));
+      return;
+    }
 
-      const criterion = new TagsCriterion(TagsCriterionOption);
-      criterion.modifier = CHIP_MODIFIER;
-      criterion.value = {
-        items: ids.map((id) => ({ id, label: labels.get(id) ?? id })),
-        excluded: [],
-        depth: 0,
-      };
+    const criterion = new TagsCriterion(criterionOption);
+    criterion.modifier = CHIP_MODIFIER;
+    criterion.value = {
+      items: ids.map((id) => ({ id, label: labels.get(id) ?? id })),
+      excluded: [],
+      depth: 0,
+    };
 
-      const next = current.replaceCriteria(CRITERION_TYPE, [criterion]);
-      // A narrowed list has fewer pages than the one being looked at, so
-      // staying on page 7 would land on an empty list that looks like "no
-      // performers in this category".
-      next.currentPage = 1;
-      return next;
-    });
+    const next = filter.replaceCriteria(criterionType, [criterion]);
+    // A narrowed list has fewer pages than the one being looked at, so
+    // staying on page 7 would land on an empty list that looks like "no
+    // performers in this category".
+    next.currentPage = 1;
+    setFilter(next);
   }
 
   const labels = useMemo(
@@ -124,7 +145,10 @@ export const PerformerCategoryBar: React.FC = () => {
   }
 
   return (
-    <div className="performer-category-bar" data-testid="performer-category-bar">
+    <div
+      className="performer-category-bar"
+      data-testid="performer-category-bar"
+    >
       <Button
         className="performer-category-chip"
         variant={active.size === 0 ? "primary" : "secondary"}
@@ -146,5 +170,27 @@ export const PerformerCategoryBar: React.FC = () => {
     </div>
   );
 };
+
+export const PerformerCategoryBar: React.FC = () => {
+  const { filter, setFilter } = useFilter();
+  return (
+    <CategoryBar
+      filter={filter}
+      setFilter={setFilter}
+      criterionOption={TagsCriterionOption}
+    />
+  );
+};
+
+export const SceneCategoryBar: React.FC<{
+  filter: ListFilterModel;
+  setFilter: (filter: ListFilterModel) => void;
+}> = ({ filter, setFilter }) => (
+  <CategoryBar
+    filter={filter}
+    setFilter={setFilter}
+    criterionOption={PerformerTagsCriterionOption}
+  />
+);
 
 export default PerformerCategoryBar;
