@@ -42,7 +42,7 @@ import {
   faChevronLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import { objectPath, objectTitle } from "src/core/files";
-import { RatingSystem } from "src/components/Shared/Rating/RatingSystem";
+import { RatingSelect } from "src/components/Shared/Rating/RatingSelect";
 import TextUtils from "src/utils/text";
 import {
   OCounterButton,
@@ -664,12 +664,7 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
 
           <div className="scene-toolbar">
             <span className="scene-toolbar-group">
-              <RatingSystem
-                value={scene.rating100}
-                onSetRating={setRating}
-                clickToRate
-                withoutContext
-              />
+              <RatingSelect value={scene.rating100} onSetRating={setRating} />
             </span>
             <span className="scene-toolbar-group">
               <span>

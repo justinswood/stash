@@ -17,7 +17,7 @@ import { ErrorMessage } from "src/components/Shared/ErrorMessage";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { useToast } from "src/hooks/Toast";
 import { useConfigurationContext } from "src/hooks/Config";
-import { RatingSystem } from "src/components/Shared/Rating/RatingSystem";
+import { RatingSelect } from "src/components/Shared/Rating/RatingSelect";
 import { PerformerDetailsPanel } from "./PerformerDetailsPanel";
 import { PerformerScenesPanel } from "./PerformerScenesPanel";
 import { PerformerGalleriesPanel } from "./PerformerGalleriesPanel";
@@ -213,13 +213,7 @@ interface IPerformerHeaderImageProps {
 const PerformerHeaderImage: React.FC<IPerformerHeaderImageProps> =
   PatchComponent(
     "PerformerHeaderImage",
-    ({
-      encodingImage,
-      activeImage,
-      isEditing,
-      lightboxImages,
-      performer,
-    }) => {
+    ({ encodingImage, activeImage, isEditing, lightboxImages, performer }) => {
       const [cropping, setCropping] = useState(false);
 
       return (
@@ -307,7 +301,7 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
     );
 
     const [updatePerformer] = usePerformerUpdate();
-  const [setPerformerRating] = usePerformerSetRating();
+    const [setPerformerRating] = usePerformerSetRating();
     const [deletePerformer, { loading: isDestroying }] = usePerformerDestroy();
 
     async function onAutoTag() {
@@ -443,11 +437,9 @@ const PerformerPage: React.FC<IProps> = PatchComponent(
 
     const ratingGroup = (
       <div className="quality-group">
-        <RatingSystem
+        <RatingSelect
           value={performer.rating100}
           onSetRating={(value) => setRating(value)}
-          clickToRate
-          withoutContext
         />
         {!!performer.o_counter && (
           <OCounterButton value={performer.o_counter} />

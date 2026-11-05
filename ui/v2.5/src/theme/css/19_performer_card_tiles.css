@@ -75,10 +75,12 @@ body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-lig
     z-index: 1;
 }
 
-/* The rating badge owns the corner on rated cards; the flag drops under it
-   (badge is 51px from 6px down). Not document-rooted, so allowed (#48). */
-body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card:has(.thumbnail-section > .rating-banner) .performer-card__country-flag:not(.stash-perf-flag) {
-    top: 65px;
+/* No rating badge on performer cards, in any style: the favourite heart is
+   the card's only marker, and the badge sat over the flag. The rating is
+   still on the performer page and still sorts / filters. Hidden, not
+   removed: the Extravagant tier frame is keyed off the rating elsewhere. */
+body.stash-liquid-glass .performer-card .thumbnail-section > .rating-banner {
+    display: none !important;
 }
 
 body.stash-liquid-glass:not(.refract-rating-style-playing-card):not(.refract-light) .performer-card .thumbnail-section .favorite-button {
