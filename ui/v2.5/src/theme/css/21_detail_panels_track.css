@@ -1,0 +1,229 @@
+/* Scene details panel and performer sidebar: the navbar's look
+   (02_navbar.css, --nb-* tokens). The panel is the bar's surface; its tab
+   strip is the bar's segmented track; buttons, pills and tag chips are flat
+   track-coloured boxes; all text is Inter in the bar's text colours.
+
+   Covers `.scene-tabs` (the left column on /scenes/:id) and
+   `aside.performer-sidebar` (/performers/:id, #42). Performer cards inside
+   the scene panel keep their own design (#53), so text rules skip
+   `.performer-card` descendants.
+
+   Dark in every mode, as the bar is (same choice as 20_list_toolbar_track.css).
+
+   Specificity: the rules replaced are `body.stash-liquid-glass ...` with
+   !important, up to (0,4,1) plus `.refract-light` in 14_light.css. So the
+   prefix carries `:not(.rfx-track)` and the panel `:not(#rfx-track)` (an
+   id's weight). Neither name exists; they only add weight. This file loads
+   last (theme/index.ts). */
+
+/* ── 1. Panel surface and font ─────────────────────────────────────── */
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs, .performer-sidebar):not(#rfx-track) {
+    background: var(--nb-bar) !important;
+    border: 1px solid var(--nb-border-bar) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    color: var(--nb-text) !important;
+    font-family: var(--nb-font) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs, .performer-sidebar):not(#rfx-track)
+    :is(h1, h2, h3, h4, h5, h6, p, span, a, button, div, li, label, input, textarea, select):not(.performer-card *) {
+    font-family: var(--nb-font) !important;
+}
+/* Dividers between sections */
+body.stash-liquid-glass:not(.rfx-track) .performer-sidebar:not(#rfx-track) :is(.detail-group, .detail-item, .performer-sidebar-footer) {
+    border-color: var(--nb-border-bar) !important;
+}
+
+/* ── 2. Headings and body text ─────────────────────────────────────── */
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) .scene-header {
+    color: var(--nb-text) !important;
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+    line-height: 1.3 !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) .scene-subheader,
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) .scene-subheader span {
+    color: var(--nb-text-muted) !important;
+    font-size: 13px !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) .scene-subheader .date {
+    color: var(--nb-text) !important;
+    font-weight: 600 !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) .scene-subheader .resolution {
+    font-weight: 700 !important;
+}
+/* Section labels: "Details:", "Tags", "Studio" ... */
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) .tab-content h6 {
+    color: var(--nb-placeholder) !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) .tab-content p.pre {
+    color: var(--nb-menu-text) !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+}
+/* Performer name and details rows */
+body.stash-liquid-glass:not(.rfx-track) .performer-sidebar:not(#rfx-track) .performer-name {
+    color: var(--nb-text) !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+}
+body.stash-liquid-glass:not(.rfx-track) .performer-sidebar:not(#rfx-track) .performer-disambiguation {
+    color: var(--nb-text-muted) !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+}
+body.stash-liquid-glass:not(.rfx-track) .performer-sidebar:not(#rfx-track) .detail-item-title {
+    color: var(--nb-text-muted) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+}
+body.stash-liquid-glass:not(.rfx-track) .performer-sidebar:not(#rfx-track) .detail-item-value {
+    color: var(--nb-text) !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+}
+
+/* ── 3. Scene tab strip: the segmented track ───────────────────────── */
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) .nav-tabs {
+    gap: 2px !important;
+    padding: 4px !important;
+    background: var(--nb-track) !important;
+    border: 1px solid var(--nb-border-track) !important;
+    border-radius: 12px !important;
+    /* Wraps instead of scrolling: at narrow panel widths the last tabs
+       (History, Edit) would otherwise be hidden off the end of the strip. */
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) .nav-tabs .nav-link {
+    padding: 7px 10px !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--nb-text-muted) !important;
+    font: 600 13px/1.2 var(--nb-font) !important;
+    transition: color 20ms ease-in, background 120ms ease !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) .nav-tabs .nav-link:hover {
+    color: var(--nb-text) !important;
+    background: transparent !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) .nav-tabs .nav-link.active {
+    background: var(--nb-tab-active) !important;
+    color: var(--nb-text) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) .nav-tabs .nav-link:focus-visible {
+    outline: 2px solid var(--nb-accent) !important;
+    outline-offset: 2px !important;
+}
+
+/* ── 4. Buttons and pills: flat track boxes ────────────────────────── */
+/* Scene toolbar (rating, play/O counters, organized, ⋯), the performer's
+   Edit / More / Crop buttons and footer rating. */
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) :is(.scene-toolbar, .image-toolbar) :is(.rating-number, .rating-select, .count-button, .organized-button, #operation-menu),
+body.stash-liquid-glass:not(.rfx-track) .performer-sidebar:not(#rfx-track) :is(.performer-sidebar-actions .btn, .crop-start-btn, .quality-group :is(.rating-number, .rating-select)) {
+    min-height: 34px !important;
+    background: var(--nb-track) !important;
+    border: 1px solid var(--nb-border-track) !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    color: var(--nb-text-muted) !important;
+    font: 600 13px/1.2 var(--nb-font) !important;
+    transition: color 20ms ease-in, background 120ms ease !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) :is(.scene-toolbar, .image-toolbar) :is(.organized-button, #operation-menu),
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) :is(.scene-toolbar, .image-toolbar) .rating-number {
+    min-width: 34px !important;
+    padding: 0 10px !important;
+}
+body.stash-liquid-glass:not(.rfx-track) .performer-sidebar:not(#rfx-track) :is(.performer-sidebar-actions .btn, .crop-start-btn) {
+    padding: 0 12px !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) :is(.scene-toolbar, .image-toolbar) :is(.rating-number, .rating-select, .count-button, .organized-button, #operation-menu):hover,
+body.stash-liquid-glass:not(.rfx-track) .performer-sidebar:not(#rfx-track) :is(.performer-sidebar-actions .btn, .crop-start-btn):hover {
+    background: var(--nb-hover) !important;
+    color: var(--nb-text) !important;
+}
+/* The counter halves are buttons inside the box: no box of their own. */
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) :is(.scene-toolbar, .image-toolbar) .count-button .btn {
+    min-height: 32px !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    color: inherit !important;
+    font: 600 13px/1.2 var(--nb-font) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) :is(.scene-toolbar, .image-toolbar) .rating-number span {
+    color: var(--nb-text) !important;
+    font-size: 13px !important;
+}
+/* "On" states use the bar's accent (the logo tile's purple). */
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs):not(#rfx-track) :is(.scene-toolbar, .image-toolbar) .organized-button.organized,
+body.stash-liquid-glass:not(.rfx-track) .performer-sidebar:not(#rfx-track) .performer-sidebar-actions .btn.edit {
+    background: var(--nb-accent-tint) !important;
+    border-color: var(--nb-accent-border) !important;
+    color: var(--nb-accent-text) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs, .performer-sidebar):not(#rfx-track) :is(.scene-toolbar, .image-toolbar, .performer-sidebar-actions) .btn:focus-visible {
+    outline: 2px solid var(--nb-accent) !important;
+    outline-offset: 2px !important;
+}
+
+/* ── 5. Tag chips ──────────────────────────────────────────────────── */
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs, .performer-sidebar):not(#rfx-track) .tag-item.badge:not(.performer-card *) {
+    padding: 5px 10px !important;
+    background: var(--nb-track) !important;
+    border: 1px solid var(--nb-border-track) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    color: var(--nb-menu-text) !important;
+    font: 600 13px/1.2 var(--nb-font) !important;
+    transition: color 20ms ease-in, background 120ms ease !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs, .performer-sidebar):not(#rfx-track) .tag-item.badge:not(.performer-card *) a {
+    padding: 0 !important;
+    color: inherit !important;
+    font: inherit !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .image-tabs, .gallery-tabs, .performer-sidebar):not(#rfx-track) .tag-item.badge:not(.performer-card *):hover {
+    background: var(--nb-hover) !important;
+    color: var(--nb-text) !important;
+}
+
+/* ── 6. The 1-10 rating dropdown (RatingSelect) ────────────────────── */
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .performer-sidebar):not(#rfx-track) :is(.scene-toolbar, .quality-group) select.rating-select:not(#rfx-track) {
+    width: auto !important;
+    height: 34px !important;
+    padding: 0 30px 0 12px !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    background-color: var(--nb-track) !important;
+    /* the theme strips the native arrow; draw one so it reads as a dropdown */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a8a7a3' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 10px center !important;
+    background-size: 12px !important;
+    color: var(--nb-text) !important;
+    font: 600 14px/1.2 var(--nb-font) !important;
+    cursor: pointer;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .performer-sidebar):not(#rfx-track) :is(.scene-toolbar, .quality-group) select.rating-select:not(#rfx-track):hover {
+    background-color: var(--nb-hover) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(.scene-tabs, .performer-sidebar):not(#rfx-track) :is(.scene-toolbar, .quality-group) select.rating-select:not(#rfx-track):focus-visible {
+    outline: 2px solid var(--nb-accent) !important;
+    outline-offset: 2px !important;
+}

@@ -1,0 +1,219 @@
+/* Settings, dialogs and page tab strips: the navbar's look (02_navbar.css,
+   --nb-* tokens), as 20_list_toolbar_track.css and 21_detail_panels_track.css
+   do for the list toolbar and the detail panels. Replaces the glass panels,
+   glass buttons and purple-tint active pills with the bar's flat surfaces:
+   panels are the bar, menus and segmented controls are its track, buttons
+   are flat track boxes, text is Inter.
+
+   Scope:
+   - Settings: the left menu (`#settings-menu-container`) and everything in
+     the content column beside it (`#settings-menu-container ~ div`).
+   - Dialogs (`.modal-content`) and the studio / tag / group page header
+     (`.detail-header`): the header surface, buttons and inputs.
+   - Tab strips (`.nav-tabs`) on the other detail pages (studio, tag, group,
+     image, gallery). NOT `.performer-tabs`: the performer page keeps its
+     underline tabs (#42), and the scene/image side panels are 21's.
+
+   Dark in every mode, as the bar is. Specificity: same boosts as 20/21
+   (`:not(.rfx-track)` on body, `:not(#rfx-track)` on the target; neither
+   exists, they only add weight), and this file loads last. */
+
+/* ── 1. Settings menu: the bar, with track tabs ────────────────────── */
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container .nav-pills:not(#rfx-track) {
+    gap: 2px;
+    padding: 6px !important;
+    background: var(--nb-bar) !important;
+    border: 1px solid var(--nb-border-bar) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container .nav-pills .nav-link:not(#rfx-track),
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container .nav-pills .advanced-switch:not(#rfx-track) {
+    padding: 9px 12px !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--nb-text-muted) !important;
+    font: 600 14px/1.2 var(--nb-font) !important;
+    transition: color 20ms ease-in, background 120ms ease !important;
+}
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container .nav-pills .advanced-switch:not(#rfx-track) label {
+    color: inherit !important;
+    font: inherit !important;
+    margin: 0 !important;
+}
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container .nav-pills :is(.nav-link, .advanced-switch):not(#rfx-track):hover {
+    color: var(--nb-text) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container .nav-pills .nav-link.active:not(#rfx-track) {
+    background: var(--nb-tab-active) !important;
+    color: var(--nb-text) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container .nav-pills .nav-link:not(#rfx-track):focus-visible {
+    outline: 2px solid var(--nb-accent) !important;
+    outline-offset: 2px !important;
+}
+
+/* ── 2. Settings content: Inter, cards are the bar's surface ───────── */
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container ~ div:not(#rfx-track) {
+    font-family: var(--nb-font) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container ~ div :is(h1, h2, h3, h4, h5, h6, p, span, a, button, label, div, li, td, th, small, input, select, textarea):not(#rfx-track) {
+    font-family: var(--nb-font) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container ~ div .card:not(#rfx-track) {
+    background: var(--nb-bar) !important;
+    border: 1px solid var(--nb-border-bar) !important;
+    border-radius: 16px !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+/* ── 3. Buttons: flat track boxes (settings + dialogs) ─────────────── */
+body.stash-liquid-glass:not(.rfx-track) :is(#settings-menu-container ~ div, .modal-content, .detail-header) .btn:is(.btn-secondary, .btn-primary, .btn-danger, .btn-success, .btn-warning, .btn-info):not(.minimal):not(.btn-link):not(#rfx-track),
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container ~ div .refract-glow-reset:not(#rfx-track) {
+    background: var(--nb-track) !important;
+    background-image: none !important;
+    border: 1px solid var(--nb-border-track) !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    color: var(--nb-menu-text) !important;
+    font: 600 14px/1.2 var(--nb-font) !important;
+    transform: none !important;
+    transition: color 20ms ease-in, background 120ms ease !important;
+}
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container ~ div .refract-glow-reset:not(#rfx-track),
+body.stash-liquid-glass:not(.rfx-track) :is(#settings-menu-container ~ div, .modal-content, .detail-header) .btn.btn-sm:not(.minimal):not(.btn-link):not(#rfx-track) {
+    font-size: 12.5px !important;
+    border-radius: 8px !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(#settings-menu-container ~ div, .modal-content, .detail-header) .btn:is(.btn-secondary, .btn-primary, .btn-danger, .btn-success, .btn-warning, .btn-info):not(.minimal):not(.btn-link):not(#rfx-track):hover:not(:disabled),
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container ~ div .refract-glow-reset:not(#rfx-track):hover {
+    background: var(--nb-hover) !important;
+    color: var(--nb-text) !important;
+}
+/* Primary / success: the bar's accent, as the scene panel's "on" states. */
+body.stash-liquid-glass:not(.rfx-track) :is(#settings-menu-container ~ div, .modal-content, .detail-header) .btn:is(.btn-primary, .btn-success):not(.minimal):not(.btn-link):not(#rfx-track) {
+    background: var(--nb-accent-tint) !important;
+    border-color: var(--nb-accent-border) !important;
+    color: var(--nb-accent-text) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(#settings-menu-container ~ div, .modal-content, .detail-header) .btn:is(.btn-primary, .btn-success):not(.minimal):not(.btn-link):not(#rfx-track):hover:not(:disabled) {
+    background: rgba(144, 101, 176, 0.32) !important;
+    color: var(--nb-text) !important;
+}
+/* Danger keeps reading as danger (the old theme painted it purple). */
+body.stash-liquid-glass:not(.rfx-track) :is(#settings-menu-container ~ div, .modal-content, .detail-header) .btn.btn-danger:not(.minimal):not(.btn-link):not(#rfx-track) {
+    background: rgba(239, 68, 68, 0.12) !important;
+    border-color: rgba(239, 68, 68, 0.35) !important;
+    color: #f4a5a5 !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(#settings-menu-container ~ div, .modal-content, .detail-header) .btn.btn-danger:not(.minimal):not(.btn-link):not(#rfx-track):hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.22) !important;
+    color: #fff !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(#settings-menu-container ~ div, .modal-content, .detail-header) .btn:not(#rfx-track):focus-visible {
+    outline: 2px solid var(--nb-accent) !important;
+    outline-offset: 2px !important;
+}
+
+/* ── 4. Inputs and selects: the navbar search field ────────────────── */
+body.stash-liquid-glass:not(.rfx-track) :is(#settings-menu-container ~ div, .modal-content, .detail-header) :is(input.form-control, select.form-control, textarea.form-control):not(#rfx-track) {
+    background-color: var(--nb-track) !important;
+    border: 1px solid var(--nb-border-track) !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    color: var(--nb-text) !important;
+    font-family: var(--nb-font) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) :is(#settings-menu-container ~ div, .modal-content, .detail-header) :is(input.form-control, select.form-control, textarea.form-control):not(#rfx-track):focus {
+    border-color: var(--nb-accent-border) !important;
+}
+
+/* ── 5. Theme settings' segmented controls: the track ──────────────── */
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container ~ div .refract-setting-control:has(> .refract-segmented-btn):not(#rfx-track) {
+    gap: 2px !important;
+    padding: 4px !important;
+    background: var(--nb-track) !important;
+    border: 1px solid var(--nb-border-track) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+}
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container ~ div .refract-segmented-btn:not(#rfx-track) {
+    padding: 7px 12px !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--nb-text-muted) !important;
+    font: 600 13px/1.2 var(--nb-font) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container ~ div .refract-segmented-btn:not(#rfx-track):hover {
+    color: var(--nb-text) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) #settings-menu-container ~ div .refract-segmented-btn.is-active:not(#rfx-track) {
+    background: var(--nb-tab-active) !important;
+    color: var(--nb-text) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ── 6. Tab strips on the other detail pages ───────────────────────── */
+body.stash-liquid-glass:not(.rfx-track) .nav-tabs:not(.performer-tabs *):not(:is(.scene-tabs, .image-tabs, .gallery-tabs) *):not(#rfx-track) {
+    gap: 2px !important;
+    padding: 4px !important;
+    background: var(--nb-track) !important;
+    border: 1px solid var(--nb-border-track) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    /* hugs its tabs, centred, like the navbar's track */
+    width: fit-content !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+body.stash-liquid-glass:not(.rfx-track) .nav-tabs:not(.performer-tabs *):not(:is(.scene-tabs, .image-tabs, .gallery-tabs) *) .nav-link:not(#rfx-track) {
+    padding: 8px 12px !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--nb-text-muted) !important;
+    font: 600 14px/1.2 var(--nb-font) !important;
+    transition: color 20ms ease-in, background 120ms ease !important;
+}
+body.stash-liquid-glass:not(.rfx-track) .nav-tabs:not(.performer-tabs *):not(:is(.scene-tabs, .image-tabs, .gallery-tabs) *) .nav-link:not(#rfx-track):hover {
+    color: var(--nb-text) !important;
+    background: transparent !important;
+}
+body.stash-liquid-glass:not(.rfx-track) .nav-tabs:not(.performer-tabs *):not(:is(.scene-tabs, .image-tabs, .gallery-tabs) *) .nav-link.active:not(#rfx-track) {
+    background: var(--nb-tab-active) !important;
+    color: var(--nb-text) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) .nav-tabs:not(.performer-tabs *):not(:is(.scene-tabs, .image-tabs, .gallery-tabs) *) .nav-link:not(#rfx-track):focus-visible {
+    outline: 2px solid var(--nb-accent) !important;
+    outline-offset: 2px !important;
+}
+
+/* ── 7. Studio / tag / group page header: the bar's surface ────────── */
+body.stash-liquid-glass:not(.rfx-track) .detail-header:not(#rfx-track) {
+    background: var(--nb-bar) !important;
+    border: 1px solid var(--nb-border-bar) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    font-family: var(--nb-font) !important;
+}
+body.stash-liquid-glass:not(.rfx-track) .detail-header :is(h2, .detail-group, .detail-item-title, .detail-item-value, .btn):not(#rfx-track) {
+    font-family: var(--nb-font) !important;
+}

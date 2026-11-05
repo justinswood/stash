@@ -24,3 +24,5 @@ import "./css/15_lite.css";
 import "./css/18_scene_card_stack.css";
 import "./css/19_performer_card_tiles.css";
 import "./css/20_list_toolbar_track.css";
+import "./css/21_detail_panels_track.css";
+import "./css/22_settings_track.css";
