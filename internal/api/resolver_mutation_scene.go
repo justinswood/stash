@@ -688,7 +688,27 @@ func (r *mutationResolver) SceneMarkerCreate(ctx context.Context, input SceneMar
 	}
 
 	r.hookExecutor.ExecutePostHooks(ctx, newMarker.ID, hook.SceneMarkerCreatePost, input, nil)
+	queueMarkerGenerate(ctx, newMarker.ID)
 	return r.getSceneMarker(ctx, newMarker.ID)
+}
+
+// queueMarkerGenerate queues a Generate job for one marker so its preview and
+// screenshot exist without a manual Generate run. Otherwise a new marker shows
+// "pending generate" until someone runs Generate by hand. The animated preview
+// follows the instance's default generate settings, as a manual run would. A
+// failure to queue is logged, not returned: the marker itself is already saved.
+func queueMarkerGenerate(ctx context.Context, markerID int) {
+	input := manager.GenerateMetadataInput{
+		Markers:           true,
+		MarkerScreenshots: true,
+		MarkerIDs:         []string{strconv.Itoa(markerID)},
+	}
+	if d := manager.GetInstance().Config.GetDefaultGenerateSettings(); d != nil {
+		input.MarkerImagePreviews = d.MarkerImagePreviews
+	}
+	if _, err := manager.GetInstance().Generate(ctx, input); err != nil {
+		logger.Warnf("could not queue generate for marker %d: %v", markerID, err)
+	}
 }
 
 func validateSceneMarkerEndSeconds(seconds, endSeconds float64) error {
@@ -748,6 +768,9 @@ func (r *mutationResolver) SceneMarkerUpdate(ctx context.Context, input SceneMar
 		Paths:          mgr.Paths,
 	}
 
+	// set when the marker moves, so its preview is regenerated after commit
+	regenerate := false
+
 	// Start the transaction and save the scene marker
 	if err := r.withTxn(ctx, func(ctx context.Context) error {
 		qb := r.repository.SceneMarker
@@ -797,6 +820,7 @@ func (r *mutationResolver) SceneMarkerUpdate(ctx context.Context, input SceneMar
 
 		// remove the marker preview if the scene changed or if the timestamp was changed
 		if existingMarker.SceneID != newMarker.SceneID || existingMarker.Seconds != newMarker.Seconds || float64OrZero(existingMarker.EndSeconds) != float64OrZero(newMarker.EndSeconds) {
+			regenerate = true
 			seconds := int(existingMarker.Seconds)
 			if err := fileDeleter.MarkMarkerFiles(existingScene, seconds); err != nil {
 				return err
@@ -822,6 +846,10 @@ func (r *mutationResolver) SceneMarkerUpdate(ctx context.Context, input SceneMar
 	fileDeleter.Commit()
 
 	r.hookExecutor.ExecutePostHooks(ctx, markerID, hook.SceneMarkerUpdatePost, input, translator.getFields())
+	// the old preview was just deleted, so make the one for the new position
+	if regenerate {
+		queueMarkerGenerate(ctx, markerID)
+	}
 	return r.getSceneMarker(ctx, markerID)
 }
 
